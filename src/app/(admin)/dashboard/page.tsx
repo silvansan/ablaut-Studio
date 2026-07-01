@@ -1,12 +1,14 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import configPromise from '@payload-config'
+import { getPayload } from 'payload'
 
 import { Layout } from '@/components/Layout'
 import { ListGroupRow } from '@/components/ListGroupRow'
 import { requireAppUser } from '@/lib/app-auth'
 import { getDashboardSummary } from '@/lib/dashboard-data'
 import { assignGroupTints } from '@/lib/list-group-tints'
-import { isAdminUser } from '@/lib/permissions'
+import { canCreateEvents } from '@/lib/permissions'
 import { pageMetadata } from '@/lib/branding'
 
 export const metadata: Metadata = pageMetadata('Dashboard')
@@ -14,8 +16,12 @@ export const metadata: Metadata = pageMetadata('Dashboard')
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
-  const [summary, user] = await Promise.all([getDashboardSummary(), requireAppUser()])
-  const canCreateEvents = isAdminUser(user)
+  const user = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
+  const [summary, canCreateEventsUser] = await Promise.all([
+    getDashboardSummary(),
+    canCreateEvents({ payload, user } as never),
+  ])
   const channelItems = summary.recentChannels.slice(0, 4).map((channel) => ({
     eventSlug: channel.eventSlug,
     groupKey: `channel:${channel.eventSlug}`,
@@ -92,7 +98,7 @@ export default async function DashboardPage() {
           </article>
         ) : null}
 
-        {canCreateEvents ? (
+        {canCreateEventsUser ? (
           <Link className="us-button-primary inline-flex px-5 py-3 text-sm font-medium" href="/events/new">
             Create event
           </Link>

@@ -7,14 +7,20 @@ import {
   generateVerificationEmailSubject,
 } from '@/lib/email'
 import { shouldUseSecureCookies } from '@/lib/cookies'
-import { getVisibleUserIDsForRequest } from '@/lib/organizations'
+import { getVisibleUserIDsForRequest, hasOrganizationManagementAccess } from '@/lib/organizations'
 import { isAdminUser, isSuperAdminUser } from '@/lib/permissions'
 
 export const Users: CollectionConfig = {
   slug: 'users',
   access: {
     admin: ({ req }) => isSuperAdminUser(req.user),
-    create: ({ req }) => isAdminUser(req.user),
+    create: async ({ req }) => {
+      if (isSuperAdminUser(req.user) || isAdminUser(req.user)) {
+        return true
+      }
+
+      return hasOrganizationManagementAccess(req)
+    },
     delete: async ({ req }) => {
       if (isSuperAdminUser(req.user)) {
         return true

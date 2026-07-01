@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import configPromise from '@payload-config'
+import { getPayload } from 'payload'
 
 import { OrganizationEventsPanel } from '@/components/OrganizationEventsPanel'
 import { OrganizationSettingsPanel } from '@/components/OrganizationSettingsPanel'
@@ -9,7 +11,8 @@ import { Layout } from '@/components/Layout'
 import { requireAppUser } from '@/lib/app-auth'
 import { getOrganizationBySlug, getOrganizationSummary } from '@/lib/organization-data'
 import { getOrganizationUsersData } from '@/lib/organization-users-data'
-import { isAdminUser, isSuperAdminUser } from '@/lib/permissions'
+import { hasOrganizationManagementAccess } from '@/lib/organizations'
+import { isSuperAdminUser } from '@/lib/permissions'
 
 type PageProps = {
   params: Promise<{ orgSlug: string }>
@@ -33,8 +36,9 @@ export default async function OrganizationDetailPage({ params, searchParams }: P
   const { orgSlug } = await params
   const { status, tab: tabParam } = await searchParams
   const currentUser = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
 
-  if (!isAdminUser(currentUser)) {
+  if (!(await hasOrganizationManagementAccess({ payload, user: currentUser } as never))) {
     notFound()
   }
 
@@ -48,6 +52,7 @@ export default async function OrganizationDetailPage({ params, searchParams }: P
   }
 
   const tab = tabParam && VALID_TABS.has(tabParam) ? tabParam : 'events'
+  const canManageOrgUsers = await hasOrganizationManagementAccess({ payload, user: currentUser } as never)
   const usersData = tab === 'users' ? await getOrganizationUsersData(organization.id) : null
   const tabBase = `/organizations/${organization.slug}`
 
@@ -104,7 +109,12 @@ export default async function OrganizationDetailPage({ params, searchParams }: P
         </div>
 
         {tab === 'users' && usersData ? (
-          <OrganizationUsersPanel currentUser={currentUser} data={usersData} organization={organization} />
+          <OrganizationUsersPanel
+            canManageOrgUsers={canManageOrgUsers}
+            currentUser={currentUser}
+            data={usersData}
+            organization={organization}
+          />
         ) : null}
         {tab === 'events' ? <OrganizationEventsPanel organization={organization} status={status} /> : null}
         {tab === 'settings' ? (

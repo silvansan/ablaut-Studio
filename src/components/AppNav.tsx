@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 
 type AppNavItem = {
+  badge?: number
   children?: Array<{ href: string; label: string }>
   href: string
   label: string
@@ -127,6 +128,11 @@ export function AppNav({ items }: AppNavProps) {
                 <div className="us-app-nav__control">
                   <Link className="us-app-nav__link us-app-nav__link--split" href={item.href}>
                     <span>{item.label}</span>
+                    {item.badge ? (
+                      <span className="us-app-nav__badge" title={`${item.badge} pending join request${item.badge === 1 ? '' : 's'}`}>
+                        {item.badge}
+                      </span>
+                    ) : null}
                   </Link>
                   <button
                     aria-controls={submenuId}
@@ -144,6 +150,11 @@ export function AppNav({ items }: AppNavProps) {
               ) : (
                 <Link className="us-app-nav__link" href={item.href}>
                   <span>{item.label}</span>
+                  {item.badge ? (
+                    <span className="us-app-nav__badge" title={`${item.badge} pending join request${item.badge === 1 ? '' : 's'}`}>
+                      {item.badge}
+                    </span>
+                  ) : null}
                 </Link>
               )}
             </div>

@@ -2,7 +2,7 @@ import type { CollectionConfig, PayloadRequest } from 'payload'
 
 import { canAssignModerators } from '@/access/canAssignModerators'
 import { userHasActiveOrganizationMembership } from '@/lib/organizations'
-import { getManageableEventIDs, getViewableEventIDs, isAdminUser, isModeratorUser, isSuperAdminUser } from '@/lib/permissions'
+import { canUserManageEventByID, getManageableEventIDs, getViewableEventIDs, isModeratorUser, isSuperAdminUser } from '@/lib/permissions'
 
 type EventRole = 'admin' | 'moderator' | 'viewer'
 
@@ -100,10 +100,6 @@ export const EventAssignments: CollectionConfig = {
         return true
       }
 
-      if (!isAdminUser(req.user)) {
-        return false
-      }
-
       const eventIDs = await getManageableEventIDs(req)
 
       if (eventIDs === null) {
@@ -148,10 +144,6 @@ export const EventAssignments: CollectionConfig = {
     update: async ({ req }) => {
       if (isSuperAdminUser(req.user)) {
         return true
-      }
-
-      if (!isAdminUser(req.user)) {
-        return false
       }
 
       const eventIDs = await getManageableEventIDs(req)

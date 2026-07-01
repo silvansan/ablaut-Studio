@@ -11,9 +11,9 @@ import {
   getBaseUrl,
   joinUrl,
 } from '@/lib/email'
-import { getManageableOrganizationIDs } from '@/lib/organizations'
+import { getManageableOrganizationIDs, hasOrganizationManagementAccess } from '@/lib/organizations'
 import { revalidateOrganizationPaths } from '@/lib/revalidate-organization-paths'
-import { isAdminUser, isSuperAdminUser } from '@/lib/permissions'
+import { isSuperAdminUser } from '@/lib/permissions'
 import type { User } from '@/payload-types'
 
 function stringValue(formData: FormData, key: string): string | undefined {
@@ -134,9 +134,10 @@ export async function createOrganizationAction(formData: FormData) {
 
 export async function updateOrganizationAction(formData: FormData) {
   const currentUser = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
 
-  if (!isAdminUser(currentUser)) {
-    throw new Error('Only admins can update organizations.')
+  if (!(await hasOrganizationManagementAccess({ payload, user: currentUser } as never))) {
+    throw new Error('You do not have permission to update organizations.')
   }
 
   const organizationID = numericValue(formData, 'organizationId')
@@ -147,7 +148,6 @@ export async function updateOrganizationAction(formData: FormData) {
     throw new Error('Organization ID, original slug, and name are required.')
   }
 
-  const payload = await getPayload({ config: configPromise })
   await assertCanManageOrganization(payload, currentUser, organizationID)
 
   const organization = await payload.update({

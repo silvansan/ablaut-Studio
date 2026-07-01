@@ -17,16 +17,23 @@ import { UserOrganizationMembershipsSection } from '@/components/UserOrganizatio
 import { assignGroupTints, assignZebraTints, rowTintClass } from '@/lib/list-group-tints'
 import { getUserEventSummary, userID, userLabel } from '@/lib/organization-user-utils'
 import type { OrganizationUsersData } from '@/lib/organization-users-data'
-import { isAdminUser, isSuperAdminUser } from '@/lib/permissions'
+import { INVITABLE_ORGANIZATION_ROLES } from '@/lib/organizations'
+import { isSuperAdminUser } from '@/lib/permissions'
 import type { Organization, User } from '@/payload-types'
 
 type OrganizationUsersPanelProps = {
+  canManageOrgUsers: boolean
   currentUser: User
   data: OrganizationUsersData
   organization: Organization
 }
 
-export function OrganizationUsersPanel({ currentUser, data, organization }: OrganizationUsersPanelProps) {
+export function OrganizationUsersPanel({
+  canManageOrgUsers,
+  currentUser,
+  data,
+  organization,
+}: OrganizationUsersPanelProps) {
   const {
     assignableEvents,
     assignableUsers,
@@ -69,7 +76,7 @@ export function OrganizationUsersPanel({ currentUser, data, organization }: Orga
         </p>
         <InviteUserPanel
           canCreateOrganization={false}
-          canInviteAdmin={isSuperAdminUser(currentUser)}
+          canSetPlatformRole={isSuperAdminUser(currentUser)}
           defaultOrganizationId={organization.id}
           hideOrganizationSelector
           organizations={[organization]}
@@ -102,9 +109,11 @@ export function OrganizationUsersPanel({ currentUser, data, organization }: Orga
             <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
               Org role
               <select className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none" defaultValue="moderator" name="roleInOrganization" style={{ borderColor: 'var(--us-border)' }}>
-                <option value="manager">Manager</option>
-                <option value="moderator">Moderator</option>
-                <option value="viewer">Viewer</option>
+                {INVITABLE_ORGANIZATION_ROLES.map((role) => (
+                  <option key={role.value} value={role.value}>
+                    {role.label}
+                  </option>
+                ))}
               </select>
             </label>
             <button type="submit" className="us-button-secondary px-5 py-3 text-sm font-medium">
@@ -285,7 +294,7 @@ export function OrganizationUsersPanel({ currentUser, data, organization }: Orga
                     </form>
 
                     <UserOrganizationMembershipsSection
-                      canManageMemberships={isAdminUser(currentUser)}
+                      canManageMemberships={canManageOrgUsers}
                       memberships={organizationMembershipsByUserID.get(user.id) ?? []}
                       organizations={manageableOrganizations}
                       targetUserID={user.id}
@@ -295,7 +304,7 @@ export function OrganizationUsersPanel({ currentUser, data, organization }: Orga
                       <UserEventAssignmentsSection
                         assignments={assignmentsByUserID.get(user.id) ?? []}
                         assignableEvents={assignableEvents}
-                        canManageAssignments={isAdminUser(currentUser)}
+                        canManageAssignments={canManageOrgUsers}
                         canSetAdminRole={isSuperAdminUser(currentUser)}
                         targetUserID={user.id}
                       />

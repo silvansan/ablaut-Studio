@@ -6,6 +6,7 @@ import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
 import { ListGroupRow } from '@/components/ListGroupRow'
 import { TruncatedList } from '@/components/TruncatedList'
 import { assignGroupTints } from '@/lib/list-group-tints'
+import { INVITABLE_ORGANIZATION_ROLES } from '@/lib/organizations'
 import type { Organization, OrganizationMembership } from '@/payload-types'
 
 type UserOrganizationMembershipsSectionProps = {
@@ -115,9 +116,11 @@ export function UserOrganizationMembershipsSection({
               <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
                 Org role
                 <select className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none" defaultValue="moderator" name="roleInOrganization" style={{ borderColor: 'var(--us-border)' }}>
-                  <option value="manager">Manager</option>
-                  <option value="moderator">Moderator</option>
-                  <option value="viewer">Viewer</option>
+                  {INVITABLE_ORGANIZATION_ROLES.map((role) => (
+                    <option key={role.value} value={role.value}>
+                      {role.label}
+                    </option>
+                  ))}
                 </select>
               </label>
             </div>

@@ -10,8 +10,9 @@ import { requireAppUser } from '@/lib/app-auth'
 import {
   canManageUserInOrganization,
   getManageableOrganizationIDs,
+  hasOrganizationManagementAccess,
 } from '@/lib/organizations'
-import { isAdminUser, isSuperAdminUser } from '@/lib/permissions'
+import { isSuperAdminUser } from '@/lib/permissions'
 import {
   generateOrganizationMembershipApprovedEmailHTML,
   generateOrganizationMembershipApprovedEmailSubject,
@@ -51,10 +52,10 @@ function updateRoleValue(formData: FormData): 'admin' | 'moderator' | 'super_adm
   return 'moderator'
 }
 
-function membershipRoleValue(formData: FormData): 'owner' | 'manager' | 'moderator' | 'viewer' {
+function membershipRoleValue(formData: FormData): 'owner' | 'manager' | 'moderator' {
   const role = stringValue(formData, 'roleInOrganization')
 
-  if (role === 'owner' || role === 'manager' || role === 'viewer') {
+  if (role === 'owner' || role === 'manager') {
     return role
   }
 
@@ -139,14 +140,20 @@ async function assertCanManageOrganization(
   throw new Error('You do not have permission to manage this organization.')
 }
 
+async function assertCanManageOrganizationUsers(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  currentUser: Awaited<ReturnType<typeof requireAppUser>>,
+) {
+  if (!(await hasOrganizationManagementAccess({ payload, user: currentUser } as never))) {
+    throw new Error('You do not have permission to manage organization users.')
+  }
+}
+
 export async function inviteUserAction(formData: FormData) {
   const currentUser = await requireAppUser()
-
-  if (!isAdminUser(currentUser)) {
-    throw new Error('Only admins can invite users.')
-  }
-
   const payload = await getPayload({ config: configPromise })
+
+  await assertCanManageOrganizationUsers(payload, currentUser)
   const email = stringValue(formData, 'email')?.toLowerCase()
   const name = stringValue(formData, 'name')
   const organizationChoice = stringValue(formData, 'organizationId')
@@ -216,9 +223,10 @@ export async function inviteUserAction(formData: FormData) {
 
 export async function updateUserAction(formData: FormData) {
   const currentUser = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
 
-  if (!isAdminUser(currentUser)) {
-    throw new Error('Only admins can update users.')
+  if (!isSuperAdminUser(currentUser)) {
+    await assertCanManageOrganizationUsers(payload, currentUser)
   }
 
   const id = stringValue(formData, 'id')
@@ -229,7 +237,6 @@ export async function updateUserAction(formData: FormData) {
     throw new Error('User ID and name are required.')
   }
 
-  const payload = await getPayload({ config: configPromise })
   const data = isSuperAdminUser(currentUser)
     ? {
         active: formData.get('active') === 'on',
@@ -255,10 +262,9 @@ export async function updateUserAction(formData: FormData) {
 
 export async function sendPasswordResetForUserAction(formData: FormData) {
   const currentUser = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
 
-  if (!isAdminUser(currentUser)) {
-    throw new Error('Only admins can send password resets.')
-  }
+  await assertCanManageOrganizationUsers(payload, currentUser)
 
   const userID = stringValue(formData, 'id')
   const organizationID = numericValue(formData, 'organizationId')
@@ -267,7 +273,6 @@ export async function sendPasswordResetForUserAction(formData: FormData) {
     throw new Error('User ID is required.')
   }
 
-  const payload = await getPayload({ config: configPromise })
   const targetUser = await payload.findByID({
     id: userID,
     collection: 'users',
@@ -296,10 +301,9 @@ export async function sendPasswordResetForUserAction(formData: FormData) {
 
 export async function resendInviteForUserAction(formData: FormData) {
   const currentUser = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
 
-  if (!isAdminUser(currentUser)) {
-    throw new Error('Only admins can resend invites.')
-  }
+  await assertCanManageOrganizationUsers(payload, currentUser)
 
   const userID = stringValue(formData, 'id')
   const organizationID = numericValue(formData, 'organizationId')
@@ -308,7 +312,6 @@ export async function resendInviteForUserAction(formData: FormData) {
     throw new Error('User ID and organization are required.')
   }
 
-  const payload = await getPayload({ config: configPromise })
   const targetUser = await payload.findByID({
     id: userID,
     collection: 'users',
@@ -337,10 +340,9 @@ export async function resendInviteForUserAction(formData: FormData) {
 
 export async function approveMembershipAction(formData: FormData) {
   const currentUser = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
 
-  if (!isAdminUser(currentUser)) {
-    throw new Error('Only admins can approve membership requests.')
-  }
+  await assertCanManageOrganizationUsers(payload, currentUser)
 
   const membershipID = numericValue(formData, 'membershipId')
   const organizationID = numericValue(formData, 'organizationId')
@@ -349,7 +351,6 @@ export async function approveMembershipAction(formData: FormData) {
     throw new Error('Membership ID and organization are required.')
   }
 
-  const payload = await getPayload({ config: configPromise })
   await assertCanManageOrganization(payload, currentUser, organizationID)
 
   const existingMembership = await payload.findByID({
@@ -399,10 +400,9 @@ export async function approveMembershipAction(formData: FormData) {
 
 export async function rejectMembershipAction(formData: FormData) {
   const currentUser = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
 
-  if (!isAdminUser(currentUser)) {
-    throw new Error('Only admins can reject membership requests.')
-  }
+  await assertCanManageOrganizationUsers(payload, currentUser)
 
   const membershipID = numericValue(formData, 'membershipId')
   const organizationID = numericValue(formData, 'organizationId')
@@ -411,7 +411,6 @@ export async function rejectMembershipAction(formData: FormData) {
     throw new Error('Membership ID and organization are required.')
   }
 
-  const payload = await getPayload({ config: configPromise })
   await assertCanManageOrganization(payload, currentUser, organizationID)
 
   const existingMembership = await payload.findByID({
@@ -452,10 +451,9 @@ export async function rejectMembershipAction(formData: FormData) {
 
 export async function removeMembershipAction(formData: FormData) {
   const currentUser = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
 
-  if (!isAdminUser(currentUser)) {
-    throw new Error('Only admins can remove organization members.')
-  }
+  await assertCanManageOrganizationUsers(payload, currentUser)
 
   const membershipID = numericValue(formData, 'membershipId')
   const organizationID = numericValue(formData, 'organizationId')
@@ -464,7 +462,6 @@ export async function removeMembershipAction(formData: FormData) {
     throw new Error('Membership ID and organization are required.')
   }
 
-  const payload = await getPayload({ config: configPromise })
   await assertCanManageOrganization(payload, currentUser, organizationID)
 
   await payload.update({
@@ -482,10 +479,9 @@ export async function removeMembershipAction(formData: FormData) {
 
 export async function upsertUserOrganizationMembershipAction(formData: FormData) {
   const currentUser = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
 
-  if (!isAdminUser(currentUser)) {
-    throw new Error('Only admins can manage organization memberships.')
-  }
+  await assertCanManageOrganizationUsers(payload, currentUser)
 
   const organizationID = numericValue(formData, 'organizationId')
   const targetUserID = numericValue(formData, 'userID')
@@ -494,7 +490,6 @@ export async function upsertUserOrganizationMembershipAction(formData: FormData)
     throw new Error('User and organization are required.')
   }
 
-  const payload = await getPayload({ config: configPromise })
   await assertCanManageOrganization(payload, currentUser, organizationID)
 
   await payload.findByID({
@@ -560,10 +555,9 @@ export async function upsertUserOrganizationMembershipAction(formData: FormData)
 
 export async function deleteUserAction(formData: FormData) {
   const currentUser = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
 
-  if (!isAdminUser(currentUser)) {
-    throw new Error('Only admins can delete users.')
-  }
+  await assertCanManageOrganizationUsers(payload, currentUser)
 
   const id = stringValue(formData, 'id')
   const organizationID = numericValue(formData, 'organizationId')
@@ -572,7 +566,6 @@ export async function deleteUserAction(formData: FormData) {
     throw new Error('A valid user other than yourself is required.')
   }
 
-  const payload = await getPayload({ config: configPromise })
   const targetUser = await payload.findByID({
     id,
     collection: 'users',

@@ -1,5 +1,7 @@
 import Link from 'next/link'
+import configPromise from '@payload-config'
 import { notFound, redirect } from 'next/navigation'
+import { getPayload } from 'payload'
 
 import { InviteUserPanel } from '@/components/InviteUserPanel'
 import { Layout } from '@/components/Layout'
@@ -8,7 +10,8 @@ import { UserHubRow } from '@/components/UserHubRow'
 import { pageMetadata } from '@/lib/branding'
 import { requireAppUser } from '@/lib/app-auth'
 import { assignZebraTints } from '@/lib/list-group-tints'
-import { isAdminUser, isSuperAdminUser } from '@/lib/permissions'
+import { hasOrganizationManagementAccess } from '@/lib/organizations'
+import { isSuperAdminUser } from '@/lib/permissions'
 import { getUsersHubData } from '@/lib/users-hub-data'
 
 export const metadata = pageMetadata('Users')
@@ -21,8 +24,9 @@ type PageProps = {
 
 export default async function UsersPage({ searchParams }: PageProps) {
   const currentUser = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
 
-  if (!isAdminUser(currentUser)) {
+  if (!(await hasOrganizationManagementAccess({ payload, user: currentUser } as never))) {
     notFound()
   }
 
@@ -46,7 +50,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
           </p>
           <InviteUserPanel
             canCreateOrganization={isSuperAdminUser(currentUser)}
-            canInviteAdmin={isSuperAdminUser(currentUser)}
+            canSetPlatformRole={isSuperAdminUser(currentUser)}
             defaultOrganizationId={organizations.length === 1 ? organizations[0]?.id : undefined}
             hideOrganizationSelector={organizations.length === 1}
             organizations={organizations}

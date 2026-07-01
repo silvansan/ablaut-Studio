@@ -11,18 +11,20 @@ import { getCurrentAppUser, requireAppUser } from '@/lib/app-auth'
 import { APP_PRONUNCIATION, APP_PRODUCT_NAME, APP_STUDIO_NAME } from '@/lib/branding'
 import { getFeatureNavItems } from '@/features/registry'
 import { loadPublicMobileAppRelease } from '@/lib/mobile-app-release'
-import { countActiveOrganizationsForUser, shouldShowMultiOrganizationNav } from '@/lib/organizations'
+import { countActiveOrganizationsForUser, countPendingJoinRequestsForUser, hasOrganizationManagementAccess, shouldShowMultiOrganizationNav } from '@/lib/organizations'
 import { generateQrDataUrl } from '@/lib/qrcode'
 import { isAdminUser, isSuperAdminUser } from '@/lib/permissions'
 
 type LayoutProps = {
   children: ReactNode
+  hideBetaBanner?: boolean
   hideHeader?: boolean
   requireAuth?: boolean
   title?: string
 }
 
 type NavItem = {
+  badge?: number
   children?: Array<{ href: string; label: string }>
   href: string
   label: string
@@ -31,6 +33,7 @@ type NavItem = {
 
 export async function Layout({
   children,
+  hideBetaBanner = false,
   hideHeader = false,
   requireAuth = true,
   title,
@@ -49,11 +52,18 @@ export async function Layout({
       ? await countActiveOrganizationsForUser(payload, user.id)
       : 0
   const showMultiOrganizationNav = shouldShowMultiOrganizationNav(user, activeOrganizationCount)
+  const isOrganizationManager = user
+    ? await hasOrganizationManagementAccess({ payload, user } as never)
+    : false
+  const pendingJoinRequestCount =
+    user && isOrganizationManager ? await countPendingJoinRequestsForUser(payload, user) : 0
   const currentYear = new Date().getFullYear()
   const navItems: NavItem[] = [
     ...getFeatureNavItems({
       isAdmin: Boolean(user && isAdminUser(user)),
+      isOrganizationManager,
       isSuperAdmin: showPayloadAdmin,
+      pendingJoinRequestCount,
       showMultiOrganizationNav,
     }).map((item) => ({ ...item, show: true })),
     { href: '/admin', label: 'Payload Admin', show: showPayloadAdmin },
@@ -124,7 +134,23 @@ export async function Layout({
             </header>
           )}
 
-          <main className="min-w-0 flex-1">{children}</main>
+          <main className="min-w-0 flex-1">
+            {user && !hideBetaBanner ? (
+              <div
+                className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-3xl border px-4 py-3 text-sm"
+                style={{ backgroundColor: 'var(--us-card)', borderColor: 'var(--us-border)', color: 'var(--us-muted)' }}
+              >
+                <span>
+                  <span className="us-chip us-chip-blue mr-2">Beta</span>
+                  ablaut-Studio is in active development.
+                </span>
+                <Link className="font-medium hover:underline" href="/feedback" style={{ color: 'var(--us-blue-dark)' }}>
+                  Send feedback
+                </Link>
+              </div>
+            ) : null}
+            {children}
+          </main>
 
           <footer className="us-panel px-5 py-4 text-xs md:px-6" style={{ color: 'var(--us-muted)' }}>
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -132,6 +158,9 @@ export async function Layout({
                 Copyright © {currentYear} {APP_STUDIO_NAME} · {APP_PRODUCT_NAME} {APP_PRONUNCIATION}
               </p>
               <div className="flex flex-wrap gap-x-4 gap-y-2">
+                <Link className="inline-flex items-center gap-1.5 font-medium" href="/feedback" style={{ color: 'var(--us-blue-dark)' }}>
+                  Beta feedback
+                </Link>
                 <a
                   className="inline-flex items-center gap-1.5 font-medium"
                   href="https://github.com/silvansan/ablaut-Studio"

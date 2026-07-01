@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 import { getPayload, type Payload } from 'payload'
 
 import { requireAppUser } from '@/lib/app-auth'
-import { isAdminUser, isSuperAdminUser } from '@/lib/permissions'
+import { canUserManageEventByID, isSuperAdminUser } from '@/lib/permissions'
 import type { User } from '@/payload-types'
 
 function stringValue(formData: FormData, key: string): string | undefined {
@@ -48,54 +48,7 @@ function relationshipID(value: number | string | { id?: number | string } | null
 }
 
 export async function canManageAssignment(payload: Payload, user: User, eventID: number | string) {
-  if (isSuperAdminUser(user)) {
-    return true
-  }
-
-  if (!isAdminUser(user)) {
-    return false
-  }
-
-  const event = await payload.findByID({
-    id: eventID,
-    collection: 'events',
-    overrideAccess: true,
-    user,
-  })
-
-  if (relationshipID(event.createdBy) === user.id) {
-    return true
-  }
-
-  const assignments = await payload.find({
-    collection: 'event-assignments',
-    depth: 0,
-    limit: 1,
-    overrideAccess: true,
-    pagination: false,
-    user,
-    where: {
-      and: [
-        {
-          event: {
-            equals: eventID,
-          },
-        },
-        {
-          user: {
-            equals: user.id,
-          },
-        },
-        {
-          roleForEvent: {
-            equals: 'admin',
-          },
-        },
-      ],
-    },
-  })
-
-  return assignments.docs.length > 0
+  return canUserManageEventByID({ payload, user } as never, eventID)
 }
 
 export async function upsertEventAssignmentAction(formData: FormData) {

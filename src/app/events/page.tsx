@@ -14,7 +14,7 @@ import { assignGroupTints } from '@/lib/list-group-tints'
 import { getManageableOrganizations } from '@/lib/organization-data'
 import { requireAppUser } from '@/lib/app-auth'
 import { pageMetadata } from '@/lib/branding'
-import { isAdminUser } from '@/lib/permissions'
+import { canCreateEvents } from '@/lib/permissions'
 export const metadata: Metadata = pageMetadata('Events')
 
 export const dynamic = 'force-dynamic'
@@ -35,7 +35,7 @@ export default async function EventsPage({ searchParams }: PageProps) {
     status === 'active' || status === 'draft' || status === 'archived'
       ? events.filter((event) => event.status === status)
       : events
-  const canCreateEvents = isAdminUser(user)
+  const canCreateEventsUser = await canCreateEvents({ payload, user } as never)
 
   const sortedEvents = [...visibleEvents].sort((a, b) => {
     const orgCompare = (a.organizationTitle ?? '').localeCompare(b.organizationTitle ?? '')
@@ -86,7 +86,7 @@ export default async function EventsPage({ searchParams }: PageProps) {
               </Link>
             )
           })}
-          {canCreateEvents ? (
+          {canCreateEventsUser ? (
             <div className="ml-auto">
               <PanelDrawer description="Choose an organization and create a new event." title="Create event">
                 <EventForm
@@ -130,15 +130,15 @@ export default async function EventsPage({ searchParams }: PageProps) {
         ) : (
           <div className="us-panel px-6 py-6">
             <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              {organizations.length === 0 && canCreateEvents
+              {organizations.length === 0 && canCreateEventsUser
                 ? 'No events yet. Create or join an organization first, then add an event.'
                 : 'No events exist yet.'}
             </p>
-            {organizations.length === 0 && canCreateEvents ? (
+            {organizations.length === 0 && canCreateEventsUser ? (
               <Link className="us-button-primary mt-4 inline-flex px-4 py-2.5 text-sm font-medium" href="/organizations">
                 Open organizations
               </Link>
-            ) : canCreateEvents ? (
+            ) : canCreateEventsUser ? (
               <PanelDrawer description="Choose an organization and create a new event." title="Create event">
                 <EventForm
                   action={createEventAction}

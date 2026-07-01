@@ -8,7 +8,7 @@ import { getPayload, type Payload } from 'payload'
 import { requireAppUser } from '@/lib/app-auth'
 import { getManageableOrganizationIDs } from '@/lib/organizations'
 import { revalidateOrganizationPaths } from '@/lib/revalidate-organization-paths'
-import { isAdminUser, isSuperAdminUser } from '@/lib/permissions'
+import { canCreateEvents, isSuperAdminUser } from '@/lib/permissions'
 import type { Event, User } from '@/payload-types'
 
 function slugify(value: string): string {
@@ -52,13 +52,23 @@ function relationshipID(value: number | string | { id?: number | string } | null
 export async function canDeleteEvent(
   payload: Payload,
   user: User,
-  event: Pick<Event, 'createdBy' | 'id'>,
+  event: Pick<Event, 'createdBy' | 'id' | 'organization'>,
 ) {
   if (isSuperAdminUser(user)) {
     return true
   }
 
-  if (!isAdminUser(user)) {
+  const organizationID = relationshipID(event.organization)
+
+  if (organizationID) {
+    const manageableOrganizationIDs = await getManageableOrganizationIDs({ payload, user } as never)
+
+    if (manageableOrganizationIDs !== null && manageableOrganizationIDs.includes(organizationID)) {
+      return true
+    }
+  }
+
+  if (!(await canCreateEvents({ payload, user } as never))) {
     return false
   }
 
@@ -109,8 +119,8 @@ async function assertCanCreateEventInOrganization(
   user: User,
   organizationId: number,
 ) {
-  if (!isAdminUser(user)) {
-    throw new Error('Only admins can create events in an organization.')
+  if (!(await canCreateEvents({ payload, user } as never))) {
+    throw new Error('You do not have permission to create events in an organization.')
   }
 
   if (isSuperAdminUser(user)) {

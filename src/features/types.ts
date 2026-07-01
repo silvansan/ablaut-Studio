@@ -1,4 +1,5 @@
 export type FeatureNavItem = {
+  badge?: number
   children?: Array<{ href: string; label: string }>
   featureId: string
   href: string
@@ -14,7 +15,9 @@ export type AblautFeature = {
 
 export type FeatureNavContext = {
   isAdmin: boolean
+  isOrganizationManager: boolean
   isSuperAdmin: boolean
+  pendingJoinRequestCount: number
   showMultiOrganizationNav: boolean
 }
 

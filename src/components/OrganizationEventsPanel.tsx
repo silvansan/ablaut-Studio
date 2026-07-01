@@ -10,7 +10,7 @@ import { TruncatedList } from '@/components/TruncatedList'
 import { requireAppUser } from '@/lib/app-auth'
 import { getDashboardEventsForOrganization } from '@/lib/dashboard-data'
 import { assignGroupTints } from '@/lib/list-group-tints'
-import { isAdminUser } from '@/lib/permissions'
+import { canCreateEvents } from '@/lib/permissions'
 import type { Organization } from '@/payload-types'
 
 type OrganizationEventsPanelProps = {
@@ -26,7 +26,7 @@ export async function OrganizationEventsPanel({ organization, status }: Organiza
     status === 'active' || status === 'draft' || status === 'archived'
       ? events.filter((event) => event.status === status)
       : events
-  const canCreateEvents = isAdminUser(user)
+  const canCreateEventsUser = await canCreateEvents({ payload, user } as never)
 
   const sortedEvents = [...visibleEvents].sort((a, b) => a.title.localeCompare(b.title))
   const eventsWithDelete = await Promise.all(
@@ -69,7 +69,7 @@ export async function OrganizationEventsPanel({ organization, status }: Organiza
             </Link>
           )
         })}
-        {canCreateEvents ? (
+        {canCreateEventsUser ? (
           <div className="ml-auto">
             <PanelDrawer description="Create an event in this organization." title="Create event">
               <EventForm action={createEventAction} organizationId={organization.id} submitLabel="Create event" variant="drawer" />

@@ -115,16 +115,236 @@ export async function getAccessibleEventIDs(req: PayloadRequest) {
     .filter((value): value is number | string => value !== null)
 }
 
-export async function getManageableEventIDs(req: PayloadRequest) {
+type EventWithOrganization = EventWithOwner & {
+  organization?: number | string | { id?: number | string } | null
+}
+
+async function getEventIDsForOrganizationIDs(
+  req: PayloadRequest,
+  organizationIDs: Array<number | string>,
+): Promise<Array<number | string>> {
+  if (organizationIDs.length === 0) {
+    return []
+  }
+
+  const result = await req.payload.find({
+    collection: 'events',
+    depth: 0,
+    limit: 2000,
+    overrideAccess: true,
+    pagination: false,
+    req,
+    where: {
+      organization: {
+        in: organizationIDs,
+      },
+    },
+  })
+
+  return result.docs
+    .map((event) => toComparableID(event.id))
+    .filter((value): value is number | string => value !== null)
+}
+
+async function getOrganizationEventIDsForRoles(
+  req: PayloadRequest,
+  roles: Array<'owner' | 'manager' | 'moderator' | 'viewer'>,
+): Promise<Array<number | string>> {
+  const userId = toComparableID(req.user?.id)
+
+  if (!userId) {
+    return []
+  }
+
+  const memberships = await req.payload.find({
+    collection: 'organization-memberships',
+    depth: 0,
+    limit: 500,
+    overrideAccess: true,
+    pagination: false,
+    req,
+    where: {
+      and: [
+        {
+          user: {
+            equals: userId,
+          },
+        },
+        {
+          status: {
+            equals: 'active',
+          },
+        },
+        {
+          roleInOrganization: {
+            in: roles,
+          },
+        },
+      ],
+    },
+  })
+
+  const organizationIDs = memberships.docs
+    .map((membership) => toComparableID(membership.organization))
+    .filter((value): value is number | string => value !== null)
+
+  return getEventIDsForOrganizationIDs(req, uniqueIDs(organizationIDs))
+}
+
+async function getManagedOrganizationEventIDs(req: PayloadRequest) {
+  return getOrganizationEventIDsForRoles(req, ['owner', 'manager'])
+}
+
+async function getMemberOrganizationEventIDs(req: PayloadRequest) {
+  if (isSuperAdminUser(req.user) || isAdminUser(req.user)) {
+    return []
+  }
+
+  return getOrganizationEventIDsForRoles(req, ['owner', 'manager', 'moderator'])
+}
+
+async function getChannelManagedOrganizationEventIDs(req: PayloadRequest) {
+  return getOrganizationEventIDsForRoles(req, ['owner', 'manager', 'moderator'])
+}
+
+async function eventBelongsToManagedOrganization(req: PayloadRequest, eventID: number | string) {
+  const event = await req.payload.findByID({
+    collection: 'events',
+    id: eventID,
+    overrideAccess: true,
+    req,
+  })
+
+  const organizationID = toComparableID((event as EventWithOrganization).organization)
+
+  if (!organizationID) {
+    return false
+  }
+
+  const userId = toComparableID(req.user?.id)
+
+  if (!userId) {
+    return false
+  }
+
+  const memberships = await req.payload.find({
+    collection: 'organization-memberships',
+    depth: 0,
+    limit: 1,
+    overrideAccess: true,
+    pagination: false,
+    req,
+    where: {
+      and: [
+        {
+          organization: {
+            equals: organizationID,
+          },
+        },
+        {
+          user: {
+            equals: userId,
+          },
+        },
+        {
+          status: {
+            equals: 'active',
+          },
+        },
+        {
+          roleInOrganization: {
+            in: ['owner', 'manager'],
+          },
+        },
+      ],
+    },
+  })
+
+  return memberships.docs.length > 0
+}
+
+async function eventBelongsToChannelManagedOrganization(req: PayloadRequest, eventID: number | string) {
+  const event = await req.payload.findByID({
+    collection: 'events',
+    id: eventID,
+    overrideAccess: true,
+    req,
+  })
+
+  const organizationID = toComparableID((event as EventWithOrganization).organization)
+
+  if (!organizationID) {
+    return false
+  }
+
+  const userId = toComparableID(req.user?.id)
+
+  if (!userId) {
+    return false
+  }
+
+  const memberships = await req.payload.find({
+    collection: 'organization-memberships',
+    depth: 0,
+    limit: 1,
+    overrideAccess: true,
+    pagination: false,
+    req,
+    where: {
+      and: [
+        {
+          organization: {
+            equals: organizationID,
+          },
+        },
+        {
+          user: {
+            equals: userId,
+          },
+        },
+        {
+          status: {
+            equals: 'active',
+          },
+        },
+        {
+          roleInOrganization: {
+            in: ['owner', 'manager', 'moderator'],
+          },
+        },
+      ],
+    },
+  })
+
+  return memberships.docs.length > 0
+}
+
+export async function canCreateEvents(req: PayloadRequest): Promise<boolean> {
   if (isSuperAdminUser(req.user)) {
+    return true
+  }
+
+  if (isAdminUser(req.user)) {
+    return true
+  }
+
+  const managedOrganizationEventIDs = await getManagedOrganizationEventIDs(req)
+
+  return managedOrganizationEventIDs.length > 0
+}
+
+export async function getManageableEventIDs(req: PayloadRequest) {
+  if (isSuperAdminUser(req.user) || isAdminUser(req.user)) {
     return null
   }
 
   const assignments = await getEventAssignments(req)
   const ownedEventIDs = await getOwnedEventIDs(req)
+  const managedOrganizationEventIDs = await getManagedOrganizationEventIDs(req)
 
   return uniqueIDs([
     ...ownedEventIDs,
+    ...managedOrganizationEventIDs,
     ...assignments
       .filter((assignment) => assignment.roleForEvent === 'admin')
       .map((assignment) => toComparableID(assignment.event))
@@ -133,15 +353,17 @@ export async function getManageableEventIDs(req: PayloadRequest) {
 }
 
 export async function getChannelManageableEventIDs(req: PayloadRequest) {
-  if (isSuperAdminUser(req.user)) {
+  if (isSuperAdminUser(req.user) || isAdminUser(req.user)) {
     return null
   }
 
   const assignments = await getEventAssignments(req)
   const ownedEventIDs = await getOwnedEventIDs(req)
+  const managedOrganizationEventIDs = await getChannelManagedOrganizationEventIDs(req)
 
   return uniqueIDs([
     ...ownedEventIDs,
+    ...managedOrganizationEventIDs,
     ...assignments
       .filter((assignment) => assignment.roleForEvent === 'admin' || assignment.roleForEvent === 'moderator')
       .map((assignment) => toComparableID(assignment.event))
@@ -150,14 +372,15 @@ export async function getChannelManageableEventIDs(req: PayloadRequest) {
 }
 
 export async function getViewableEventIDs(req: PayloadRequest) {
-  if (isSuperAdminUser(req.user)) {
+  if (isSuperAdminUser(req.user) || isAdminUser(req.user)) {
     return null
   }
 
   const ownedEventIDs = await getOwnedEventIDs(req)
   const assignedEventIDs = (await getAccessibleEventIDs(req)) ?? []
+  const memberOrganizationEventIDs = await getMemberOrganizationEventIDs(req)
 
-  return uniqueIDs([...ownedEventIDs, ...assignedEventIDs])
+  return uniqueIDs([...ownedEventIDs, ...assignedEventIDs, ...memberOrganizationEventIDs])
 }
 
 export function whereCreatedByOrIDs(userId: number | string | null, ids: Array<number | string>): Where | false {
@@ -198,12 +421,8 @@ export function whereCreatedByOrIDs(userId: number | string | null, ids: Array<n
 }
 
 export async function canUserManageEventByID(req: PayloadRequest, eventID: number | string | null | undefined) {
-  if (isSuperAdminUser(req.user)) {
+  if (isSuperAdminUser(req.user) || isAdminUser(req.user)) {
     return true
-  }
-
-  if (!isAdminUser(req.user)) {
-    return false
   }
 
   const userId = toComparableID(req.user?.id)
@@ -211,6 +430,10 @@ export async function canUserManageEventByID(req: PayloadRequest, eventID: numbe
 
   if (!userId || !comparableEventID) {
     return false
+  }
+
+  if (await eventBelongsToManagedOrganization(req, comparableEventID)) {
+    return true
   }
 
   const event = await req.payload.findByID({
@@ -250,6 +473,10 @@ export async function canUserManageChannelsForEventByID(
 
   if (!userId || !comparableEventID) {
     return false
+  }
+
+  if (await eventBelongsToChannelManagedOrganization(req, comparableEventID)) {
+    return true
   }
 
   const event = await req.payload.findByID({
@@ -309,10 +536,6 @@ export async function getManageableEventWhere(req: PayloadRequest): Promise<Wher
     return true
   }
 
-  if (!isAdminUser(req.user)) {
-    return false
-  }
-
   const userId = toComparableID(req.user?.id)
 
   if (!userId) {
@@ -323,6 +546,10 @@ export async function getManageableEventWhere(req: PayloadRequest): Promise<Wher
 
   if (eventIDs === null) {
     return true
+  }
+
+  if (eventIDs.length === 0) {
+    return false
   }
 
   return whereCreatedByOrIDs(userId, eventIDs)

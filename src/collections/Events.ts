@@ -1,8 +1,8 @@
 import type { CollectionConfig } from 'payload'
 
+import { canCreateEvent } from '@/access/canCreateEvent'
 import { canManageEvent } from '@/access/canManageEvent'
 import { canReadEvent } from '@/access/canReadEvent'
-import { isAdmin } from '@/access/isAdmin'
 import { hashSpeakerPassword } from '@/lib/speaker-password'
 
 function formatSlug(value: string): string {
@@ -16,7 +16,7 @@ function formatSlug(value: string): string {
 export const Events: CollectionConfig = {
   slug: 'events',
   access: {
-    create: isAdmin,
+    create: canCreateEvent,
     delete: canManageEvent,
     read: canReadEvent,
     update: canManageEvent,

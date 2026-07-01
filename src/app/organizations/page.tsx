@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import configPromise from '@payload-config'
+import { getPayload } from 'payload'
 
 import { OrganizationsManagement } from '@/components/OrganizationsManagement'
 import { OrganizationRow } from '@/components/OrganizationRow'
@@ -8,8 +10,9 @@ import { TruncatedList } from '@/components/TruncatedList'
 import { pageMetadata } from '@/lib/branding'
 import { requireAppUser } from '@/lib/app-auth'
 import { getOrganizationSummaries } from '@/lib/organization-data'
+import { countPendingJoinRequestsForUser, hasOrganizationManagementAccess } from '@/lib/organizations'
 import { assignZebraTints } from '@/lib/list-group-tints'
-import { isAdminUser, isSuperAdminUser } from '@/lib/permissions'
+import { isSuperAdminUser } from '@/lib/permissions'
 
 export const metadata = pageMetadata('Organizations')
 
@@ -17,12 +20,14 @@ export const dynamic = 'force-dynamic'
 
 export default async function OrganizationsPage() {
   const currentUser = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
 
-  if (!isAdminUser(currentUser)) {
+  if (!(await hasOrganizationManagementAccess({ payload, user: currentUser } as never))) {
     notFound()
   }
 
   const organizationSummaries = await getOrganizationSummaries()
+  const pendingJoinRequestCount = await countPendingJoinRequestsForUser(payload, currentUser)
   const tintedOrganizations = assignZebraTints(
     [...organizationSummaries].sort((a, b) => a.name.localeCompare(b.name)),
   )
@@ -31,6 +36,16 @@ export default async function OrganizationsPage() {
   return (
     <Layout hideHeader title="Organizations">
       <section className="space-y-4">
+        {pendingJoinRequestCount > 0 ? (
+          <div className="us-panel px-6 py-5">
+            <p className="text-sm font-medium" style={{ color: 'var(--us-green-dark)' }}>
+              {pendingJoinRequestCount} pending join request{pendingJoinRequestCount === 1 ? '' : 's'}
+            </p>
+            <p className="mt-2 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
+              Open an organization&apos;s Users tab to approve or reject requests.
+            </p>
+          </div>
+        ) : null}
         <div className="us-panel flex flex-wrap items-center gap-2 px-6 py-5">
           <p className="text-sm" style={{ color: 'var(--us-muted)' }}>
             {organizationSummaries.length} organization{organizationSummaries.length === 1 ? '' : 's'}

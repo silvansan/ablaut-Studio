@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react'
 
 import { inviteUserAction } from '@/app/users/actions'
 import { SideDrawer } from '@/components/SideDrawer'
+import { INVITABLE_ORGANIZATION_ROLES } from '@/lib/organizations'
 import type { Organization } from '@/payload-types'
 
 const CREATE_ORGANIZATION_VALUE = 'new'
 
 type InviteUserPanelProps = {
   canCreateOrganization?: boolean
-  canInviteAdmin: boolean
+  canSetPlatformRole: boolean
   defaultOrganizationId?: number
   hideOrganizationSelector?: boolean
   organizations: Organization[]
@@ -18,7 +19,7 @@ type InviteUserPanelProps = {
 
 export function InviteUserPanel({
   canCreateOrganization = false,
-  canInviteAdmin,
+  canSetPlatformRole,
   defaultOrganizationId,
   hideOrganizationSelector = false,
   organizations,
@@ -46,7 +47,7 @@ export function InviteUserPanel({
       </button>
 
       <SideDrawer
-        description="Send an activation email and add someone to an organization."
+        description="Send an activation email. Organization role controls what they can do inside that organization."
         onClose={() => setOpen(false)}
         open={open}
         title="Invite user"
@@ -108,29 +109,42 @@ export function InviteUserPanel({
             </label>
           ) : null}
           <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--us-muted)' }}>
-            Org role
+            Organization role
             <select
               className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
               defaultValue="moderator"
               name="roleInOrganization"
               style={{ borderColor: 'var(--us-border)' }}
             >
-              <option value="manager">Manager</option>
-              <option value="moderator">Moderator</option>
-              <option value="viewer">Viewer</option>
+              {INVITABLE_ORGANIZATION_ROLES.map((role) => (
+                <option key={role.value} value={role.value}>
+                  {role.label}
+                </option>
+              ))}
             </select>
+            <span className="mt-2 block text-xs font-normal normal-case tracking-normal" style={{ color: 'var(--us-muted)' }}>
+              {INVITABLE_ORGANIZATION_ROLES.map((role) => `${role.label}: ${role.description}`).join(' ')}
+            </span>
           </label>
-          <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--us-muted)' }}>
-            Platform role
-            <select
-              className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
-              name="role"
-              style={{ borderColor: 'var(--us-border)' }}
-            >
-              {canInviteAdmin ? <option value="admin">Admin</option> : null}
-              <option value="moderator">Moderator</option>
-            </select>
-          </label>
+          {canSetPlatformRole ? (
+            <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--us-muted)' }}>
+              Platform role
+              <select
+                className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                defaultValue="moderator"
+                name="role"
+                style={{ borderColor: 'var(--us-border)' }}
+              >
+                <option value="admin">Platform admin (cross-organization helper)</option>
+                <option value="moderator">Platform moderator (organization-scoped)</option>
+              </select>
+              <span className="mt-2 block text-xs font-normal normal-case tracking-normal" style={{ color: 'var(--us-muted)' }}>
+                Use platform admin only for trusted co-moderators who should help across organizations.
+              </span>
+            </label>
+          ) : (
+            <input name="role" type="hidden" value="moderator" />
+          )}
           <button className="us-button-primary w-full px-5 py-3 text-sm font-medium" type="submit">
             Send invite
           </button>

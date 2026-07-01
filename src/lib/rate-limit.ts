@@ -57,6 +57,31 @@ export function resetRateLimitBucketsForTests() {
   lastCleanupAt = 0
 }
 
+export function consumeRateLimit(
+  bucketKey: string,
+  options: {
+    limit: number
+    windowMs: number
+  },
+): boolean {
+  const now = Date.now()
+  maybeCleanupBuckets(now)
+
+  const bucket = buckets.get(bucketKey)
+
+  if (!bucket || bucket.resetAt <= now) {
+    buckets.set(bucketKey, {
+      count: 1,
+      resetAt: now + options.windowMs,
+    })
+    return true
+  }
+
+  bucket.count += 1
+
+  return bucket.count <= options.limit
+}
+
 export function rateLimitRequest(
   request: Request,
   key: string,

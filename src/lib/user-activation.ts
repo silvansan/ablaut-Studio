@@ -28,6 +28,48 @@ export async function completeUserActivation(
     },
     overrideAccess: true,
   })
+
+  const pendingInvitedMemberships = await payload.find({
+    collection: 'organization-memberships',
+    depth: 0,
+    limit: 100,
+    overrideAccess: true,
+    pagination: false,
+    where: {
+      and: [
+        {
+          user: {
+            equals: userID,
+          },
+        },
+        {
+          status: {
+            equals: 'pending',
+          },
+        },
+        {
+          invitedBy: {
+            exists: true,
+          },
+        },
+      ],
+    },
+  })
+
+  const approvedAt = new Date().toISOString()
+
+  for (const membership of pendingInvitedMemberships.docs) {
+    await payload.update({
+      collection: 'organization-memberships',
+      id: membership.id,
+      data: {
+        approvedAt,
+        approvedBy: membership.invitedBy ?? undefined,
+        status: 'active',
+      },
+      overrideAccess: true,
+    })
+  }
 }
 
 export type LoginFailureReason = 'invalid' | 'inactive' | 'unverified'

@@ -3,7 +3,6 @@ import { getPayload, type Where } from 'payload'
 
 import { requireAppUser } from '@/lib/app-auth'
 import { getManageableOrganizationIDs } from '@/lib/organizations'
-import { isSuperAdminUser } from '@/lib/permissions'
 import type { Organization } from '@/payload-types'
 
 export type OrganizationSummary = {
@@ -99,9 +98,7 @@ function manageableOrganizationWhere(
 export async function getManageableOrganizations(): Promise<Organization[]> {
   const currentUser = await requireAppUser()
   const payload = await getPayload({ config: configPromise })
-  const manageableOrganizationIDs = isSuperAdminUser(currentUser)
-    ? null
-    : await getManageableOrganizationIDs({ payload, user: currentUser } as never)
+  const manageableOrganizationIDs = await getManageableOrganizationIDs({ payload, user: currentUser } as never)
 
   const organizations = await payload.find({
     collection: 'organizations',
@@ -137,9 +134,7 @@ export async function getOrganizationSummaries(): Promise<OrganizationSummary[]>
 export async function getOrganizationBySlug(orgSlug: string): Promise<Organization | null> {
   const currentUser = await requireAppUser()
   const payload = await getPayload({ config: configPromise })
-  const manageableOrganizationIDs = isSuperAdminUser(currentUser)
-    ? null
-    : await getManageableOrganizationIDs({ payload, user: currentUser } as never)
+  const manageableOrganizationIDs = await getManageableOrganizationIDs({ payload, user: currentUser } as never)
 
   const organizations = await payload.find({
     collection: 'organizations',
