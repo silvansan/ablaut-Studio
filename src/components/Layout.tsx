@@ -10,6 +10,7 @@ import { Logo } from './Logo'
 import { getCurrentAppUser, requireAppUser } from '@/lib/app-auth'
 import { APP_PRONUNCIATION, APP_PRODUCT_NAME, APP_STUDIO_NAME } from '@/lib/branding'
 import { getFeatureNavItems } from '@/features/registry'
+import { getRequestBaseUrl } from '@/lib/links'
 import { loadPublicMobileAppRelease } from '@/lib/mobile-app-release'
 import { countActiveOrganizationsForUser, countPendingJoinRequestsForUser, hasOrganizationManagementAccess, shouldShowMultiOrganizationNav } from '@/lib/organizations'
 import { generateQrDataUrl } from '@/lib/qrcode'
@@ -40,7 +41,7 @@ export async function Layout({
 }: LayoutProps) {
   const payload = await getPayload({ config: configPromise })
   const user = requireAuth ? await requireAppUser() : await getCurrentAppUser()
-  const mobileRelease = await loadPublicMobileAppRelease(payload)
+  const mobileRelease = await loadPublicMobileAppRelease(payload, await getRequestBaseUrl())
   const mobileAppQrDataUrl =
     mobileRelease?.latestVersion && mobileRelease.downloadPageUrl
       ? await generateQrDataUrl(mobileRelease.downloadPageUrl)

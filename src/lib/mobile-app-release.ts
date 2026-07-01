@@ -1,6 +1,6 @@
 import type { Payload } from 'payload'
 
-import { getRequestBaseUrl } from '@/lib/links'
+import { getConfiguredBaseUrl } from '@/lib/links'
 import type { SiteSetting } from '@/payload-types'
 
 export type PublicMobileAppRelease = {
@@ -117,12 +117,14 @@ export function getMobileAppDownloadPath(): string {
   return '/api/public/mobile-app/download'
 }
 
-export async function getMobileAppDownloadPageUrl(baseUrl?: string): Promise<string> {
-  const origin = baseUrl ?? (await getRequestBaseUrl())
-  return `${origin.replace(/\/$/, '')}${getMobileAppDownloadPath()}`
+export function getMobileAppDownloadPageUrl(baseUrl = getConfiguredBaseUrl()): string {
+  return `${baseUrl.replace(/\/$/, '')}${getMobileAppDownloadPath()}`
 }
 
-export async function loadPublicMobileAppRelease(payload: Payload): Promise<PublicMobileAppRelease | null> {
+export async function loadPublicMobileAppRelease(
+  payload: Payload,
+  baseUrl = getConfiguredBaseUrl(),
+): Promise<PublicMobileAppRelease | null> {
   const settings = await payload.findGlobal({
     slug: 'site-settings',
     overrideAccess: true,
@@ -133,7 +135,7 @@ export async function loadPublicMobileAppRelease(payload: Payload): Promise<Publ
     return null
   }
 
-  const downloadPageUrl = await getMobileAppDownloadPageUrl()
+  const downloadPageUrl = getMobileAppDownloadPageUrl(baseUrl)
 
   if (!fields.latestVersion && !fields.downloadUrl) {
     return null

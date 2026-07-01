@@ -4,6 +4,10 @@ function configuredBaseUrl() {
   return process.env.PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 }
 
+export function getConfiguredBaseUrl(): string {
+  return configuredBaseUrl()
+}
+
 function isLocalNetworkHost(host: string): boolean {
   const hostname = host.split(':')[0] ?? host
 
