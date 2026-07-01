@@ -130,13 +130,15 @@ export default async function EventsPage({ searchParams }: PageProps) {
         ) : (
           <div className="us-panel px-6 py-6">
             <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              {organizations.length === 0 && canCreateEventsUser
-                ? 'No events yet. Create or join an organization first, then add an event.'
-                : 'No events exist yet.'}
+              {canCreateEventsUser
+                ? organizations.length === 0
+                  ? 'No events yet. Join an organization under Settings, then create your first event.'
+                  : 'No events yet. Create one to get started.'
+                : 'No events are available for your account yet.'}
             </p>
             {organizations.length === 0 && canCreateEventsUser ? (
-              <Link className="us-button-primary mt-4 inline-flex px-4 py-2.5 text-sm font-medium" href="/organizations">
-                Open organizations
+              <Link className="us-button-primary mt-4 inline-flex px-4 py-2.5 text-sm font-medium" href="/settings">
+                Open settings
               </Link>
             ) : canCreateEventsUser ? (
               <PanelDrawer description="Choose an organization and create a new event." title="Create event">

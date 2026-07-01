@@ -38,6 +38,13 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
     requireAppUser(),
   ])
   const payload = await getPayload({ config: configPromise })
+  const eventsWithManageAccess = await Promise.all(
+    events.map(async (event) => ({
+      ...event,
+      canManage: await canManageChannels(payload, user, event.id),
+    })),
+  )
+  const manageableEvents = eventsWithManageAccess.filter((event) => event.canManage)
   const filteredChannels = channels.filter((channel) => {
     const matchesEvent = !selectedEvent || channel.eventSlug === selectedEvent
     const matchesQuery =
@@ -124,47 +131,49 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
           </form>
         </article>
 
-        <PanelDrawer description="Create a channel without opening the event page first." title="Quick add channel">
-          <form action={createChannelAction} className="grid gap-3 lg:grid-cols-[220px_1fr_auto]">
-            <input name="enabled" type="hidden" value="on" />
-            <input name="listenerPageEnabled" type="hidden" value="on" />
-            <input name="listenerTokenMode" type="hidden" value="public" />
-            <input name="speakerPageEnabled" type="hidden" value="on" />
-            <input name="webrtcEnabled" type="hidden" value="on" />
-            <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-              Event
-              <select
-                className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
-                defaultValue={selectedEvent}
-                name="eventSlug"
-                required
-                style={{ borderColor: 'var(--us-border)' }}
-              >
-                <option value="">Choose event</option>
-                {events.map((event) => (
-                  <option key={event.slug} value={event.slug}>
-                    {event.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-              Channel name
-              <input
-                className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
-                name="name"
-                placeholder="English floor audio"
-                required
-                style={{ borderColor: 'var(--us-border)' }}
-              />
-            </label>
-            <div className="flex items-end">
-              <button className="us-button-primary px-5 py-3 text-sm font-medium" type="submit">
-                Add
-              </button>
-            </div>
-          </form>
-        </PanelDrawer>
+        {manageableEvents.length > 0 ? (
+          <PanelDrawer description="Create a channel without opening the event page first." title="Quick add channel">
+            <form action={createChannelAction} className="grid gap-3 lg:grid-cols-[220px_1fr_auto]">
+              <input name="enabled" type="hidden" value="on" />
+              <input name="listenerPageEnabled" type="hidden" value="on" />
+              <input name="listenerTokenMode" type="hidden" value="public" />
+              <input name="speakerPageEnabled" type="hidden" value="on" />
+              <input name="webrtcEnabled" type="hidden" value="on" />
+              <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
+                Event
+                <select
+                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                  defaultValue={selectedEvent}
+                  name="eventSlug"
+                  required
+                  style={{ borderColor: 'var(--us-border)' }}
+                >
+                  <option value="">Choose event</option>
+                  {manageableEvents.map((event) => (
+                    <option key={event.slug} value={event.slug}>
+                      {event.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
+                Channel name
+                <input
+                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                  name="name"
+                  placeholder="English floor audio"
+                  required
+                  style={{ borderColor: 'var(--us-border)' }}
+                />
+              </label>
+              <div className="flex items-end">
+                <button className="us-button-primary px-5 py-3 text-sm font-medium" type="submit">
+                  Add
+                </button>
+              </div>
+            </form>
+          </PanelDrawer>
+        ) : null}
 
         <article className="us-panel px-4 py-4">
           <div className="us-data-row us-data-row-header us-data-row--cols-3 px-4" style={{ color: 'var(--us-muted)' }}>

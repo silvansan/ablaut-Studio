@@ -7,7 +7,7 @@ import { getPayload, type Payload } from 'payload'
 
 import { requireAppUser } from '@/lib/app-auth'
 import { resolveChannelSlugForCreate, resolveChannelSlugForUpdate } from '@/lib/channel-identity'
-import { isModeratorUser, isSuperAdminUser } from '@/lib/permissions'
+import { canUserManageChannelsForEventByID } from '@/lib/permissions'
 import type { User } from '@/payload-types'
 
 function stringValue(formData: FormData, key: string): string | undefined {
@@ -34,63 +34,8 @@ function tokenModeValue(formData: FormData): 'password' | 'private' | 'public' {
   return value === 'password' || value === 'private' ? value : 'public'
 }
 
-function relationshipID(value: number | string | { id?: number | string } | null | undefined) {
-  if (typeof value === 'number' || typeof value === 'string') {
-    return value
-  }
-
-  return value?.id
-}
-
 export async function canManageChannels(payload: Payload, user: User, eventID: number | string) {
-  if (isSuperAdminUser(user)) {
-    return true
-  }
-
-  if (!isModeratorUser(user)) {
-    return false
-  }
-
-  const event = await payload.findByID({
-    collection: 'events',
-    id: eventID,
-    overrideAccess: true,
-    user,
-  })
-
-  if (relationshipID(event.createdBy) === user.id) {
-    return true
-  }
-
-  const assignments = await payload.find({
-    collection: 'event-assignments',
-    depth: 0,
-    limit: 1,
-    overrideAccess: true,
-    pagination: false,
-    user,
-    where: {
-      and: [
-        {
-          event: {
-            equals: eventID,
-          },
-        },
-        {
-          user: {
-            equals: user.id,
-          },
-        },
-        {
-          roleForEvent: {
-            in: ['admin', 'moderator'],
-          },
-        },
-      ],
-    },
-  })
-
-  return assignments.docs.length > 0
+  return canUserManageChannelsForEventByID({ payload, user } as never, eventID)
 }
 
 async function getEventID(eventSlug: string) {

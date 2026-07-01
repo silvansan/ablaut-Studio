@@ -109,6 +109,13 @@ export async function OrganizationEventsPanel({ organization, status }: Organiza
           <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
             No events in this organization yet.
           </p>
+          {canCreateEventsUser ? (
+            <div className="mt-4">
+              <PanelDrawer description="Create an event in this organization." title="Create event">
+                <EventForm action={createEventAction} organizationId={organization.id} submitLabel="Create event" variant="drawer" />
+              </PanelDrawer>
+            </div>
+          ) : null}
         </div>
       )}
     </div>

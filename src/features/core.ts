@@ -5,10 +5,11 @@ export const coreFeature: AblautFeature = {
   enabled: () => isFeatureEnabled('core'),
   id: 'core',
   label: 'Core',
-  navItems: ({ showMultiOrganizationNav }) => [
+  navItems: ({ isOrganizationManager, showMultiOrganizationNav }) => [
     { featureId: 'core', href: '/dashboard', label: 'Dashboard' },
     {
-      children: showMultiOrganizationNav ? [{ href: '/channels', label: 'Channels' }] : undefined,
+      children:
+        showMultiOrganizationNav || isOrganizationManager ? [{ href: '/channels', label: 'Channels' }] : undefined,
       featureId: 'core',
       href: '/events',
       label: 'Events',

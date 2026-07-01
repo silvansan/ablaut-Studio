@@ -5,12 +5,8 @@ export const organizationsFeature: AblautFeature = {
   enabled: () => isFeatureEnabled('organizations'),
   id: 'organizations',
   label: 'Organizations',
-  navItems: ({ isAdmin, isOrganizationManager, isSuperAdmin, pendingJoinRequestCount, showMultiOrganizationNav }) => {
+  navItems: ({ isAdmin, isOrganizationManager, pendingJoinRequestCount, showMultiOrganizationNav }) => {
     if (!isAdmin && !isOrganizationManager) {
-      return []
-    }
-
-    if (!showMultiOrganizationNav && !isSuperAdmin && !isOrganizationManager) {
       return []
     }
 

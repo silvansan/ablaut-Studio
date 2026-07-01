@@ -163,7 +163,7 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
     ? await getAssignableUsersForEvent(payload, user, event.organizationId)
     : []
   const publicBaseUrl = await getRequestBaseUrl()
-  const canDeleteChannels = await canManageChannels(payload, user, event.id)
+  const canManageChannelsUser = await canManageChannels(payload, user, event.id)
   const eventListenerUrl = getEventListenerUrl(eventSlug, publicBaseUrl)
   const eventListenerQrDataUrl =
     fullEvent.unifiedListenerQrEnabled === true ? await generateQrDataUrl(eventListenerUrl) : null
@@ -212,15 +212,17 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
           </p>
         ) : null}
 
-        <EventSettingsDrawer
-          assignments={assignments.docs}
-          assignableUsers={assignableUsers}
-          canManageAssignments={canManageAssignments}
-          canSetAdminRole={isSuperAdminUser(user)}
-          defaultOpen={settings === 'open'}
-          event={fullEvent}
-          organizations={organizations}
-        />
+        {canManageAssignments ? (
+          <EventSettingsDrawer
+            assignments={assignments.docs}
+            assignableUsers={assignableUsers}
+            canManageAssignments={canManageAssignments}
+            canSetAdminRole={isSuperAdminUser(user)}
+            defaultOpen={settings === 'open'}
+            event={fullEvent}
+            organizations={organizations}
+          />
+        ) : null}
 
         {fullEvent.unifiedListenerQrEnabled ? (
           <article className="us-panel px-5 py-5">
@@ -255,16 +257,18 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
             <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
               Channels
             </p>
-            <Link href={`/events/${eventSlug}/channels/new`} className="us-button-primary px-4 py-2.5 text-sm font-medium">
-              Add channel
-            </Link>
+            {canManageChannelsUser ? (
+              <Link href={`/events/${eventSlug}/channels/new`} className="us-button-primary px-4 py-2.5 text-sm font-medium">
+                Add channel
+              </Link>
+            ) : null}
           </div>
 
           {channelRows.length > 0 ? (
             <TruncatedList as="ul" className="mt-5" itemLabel="channels" listClassName="space-y-2">
               {channelRows.map((item) => (
                   <ChannelRow
-                    canDelete={canDeleteChannels}
+                    canDelete={canManageChannelsUser}
                     channelId={item.channel.id}
                     description={item.channel.description}
                     enabled={item.channel.enabled}
@@ -287,9 +291,15 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
               <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
                 No channels yet.
               </p>
-              <Link href={`/events/${eventSlug}/channels/new`} className="us-button-primary mt-4 inline-flex px-4 py-2.5 text-sm font-medium">
-                Add first channel
-              </Link>
+              {canManageChannelsUser ? (
+                <Link href={`/events/${eventSlug}/channels/new`} className="us-button-primary mt-4 inline-flex px-4 py-2.5 text-sm font-medium">
+                  Add first channel
+                </Link>
+              ) : (
+                <p className="mt-3 text-sm" style={{ color: 'var(--us-muted)' }}>
+                  Ask an organization manager to add channels for this event.
+                </p>
+              )}
             </div>
           )}
         </article>

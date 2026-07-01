@@ -2,7 +2,7 @@ import configPromise from '@payload-config'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { createChannelAction } from '@/app/events/[eventSlug]/channels/actions'
+import { canManageChannels, createChannelAction } from '@/app/events/[eventSlug]/channels/actions'
 import { ChannelForm } from '@/components/ChannelForm'
 import { Layout } from '@/components/Layout'
 import { requireAppUser } from '@/lib/app-auth'
@@ -40,6 +40,10 @@ export default async function NewChannelPage({ params }: PageProps) {
       },
     })
   ).docs[0]
+
+  if (!eventRecord || !(await canManageChannels(payload, user, eventRecord.id))) {
+    notFound()
+  }
 
   return (
     <Layout hideHeader title={`Add channel · ${event.title}`}>

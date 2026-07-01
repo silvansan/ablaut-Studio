@@ -319,6 +319,44 @@ async function eventBelongsToChannelManagedOrganization(req: PayloadRequest, eve
   return memberships.docs.length > 0
 }
 
+async function hasActiveOrganizationManagerMembership(req: PayloadRequest): Promise<boolean> {
+  const userId = toComparableID(req.user?.id)
+
+  if (!userId) {
+    return false
+  }
+
+  const memberships = await req.payload.find({
+    collection: 'organization-memberships',
+    depth: 0,
+    limit: 1,
+    overrideAccess: true,
+    pagination: false,
+    req,
+    where: {
+      and: [
+        {
+          user: {
+            equals: userId,
+          },
+        },
+        {
+          status: {
+            equals: 'active',
+          },
+        },
+        {
+          roleInOrganization: {
+            in: ['owner', 'manager'],
+          },
+        },
+      ],
+    },
+  })
+
+  return memberships.docs.length > 0
+}
+
 export async function canCreateEvents(req: PayloadRequest): Promise<boolean> {
   if (isSuperAdminUser(req.user)) {
     return true
@@ -328,9 +366,7 @@ export async function canCreateEvents(req: PayloadRequest): Promise<boolean> {
     return true
   }
 
-  const managedOrganizationEventIDs = await getManagedOrganizationEventIDs(req)
-
-  return managedOrganizationEventIDs.length > 0
+  return hasActiveOrganizationManagerMembership(req)
 }
 
 export async function getManageableEventIDs(req: PayloadRequest) {

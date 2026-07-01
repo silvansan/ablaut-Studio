@@ -76,7 +76,7 @@ export async function upsertEventAssignmentAction(formData: FormData) {
 
   if (!isSuperAdminUser(user)) {
     if (roleForEvent === 'admin' || targetUser.role !== 'moderator') {
-      throw new Error('Admins can only assign moderators to events.')
+      throw new Error('You can only assign platform moderators to events.')
     }
   }
 

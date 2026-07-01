@@ -4,10 +4,12 @@ import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 
 import { importConfigAction, updateSiteSettingsAction } from '@/app/settings/actions'
+import { requestOrganizationMembershipAction } from '@/app/organizations/actions'
 import { Layout } from '@/components/Layout'
 import { PanelDrawer } from '@/components/PanelDrawer'
 import { requireAppUser } from '@/lib/app-auth'
 import { pageMetadata } from '@/lib/branding'
+import { hasPlatformWideOrganizationAccess } from '@/lib/organizations'
 import { isAdminUser, isSuperAdminUser } from '@/lib/permissions'
 
 export const metadata: Metadata = pageMetadata('Settings')
@@ -18,6 +20,7 @@ export default async function SettingsPage() {
   const user = await requireAppUser()
   const canTransferConfig = isAdminUser(user)
   const showPayloadAdmin = isSuperAdminUser(user)
+  const showJoinOrganization = !hasPlatformWideOrganizationAccess(user)
   const payload = showPayloadAdmin ? await getPayload({ config: configPromise }) : null
   const settings = payload
     ? await payload.findGlobal({
@@ -152,8 +155,52 @@ export default async function SettingsPage() {
             <Link href="/dashboard" className="mt-6 inline-flex us-button-secondary px-4 py-2.5 text-sm font-medium">
               Back to dashboard
             </Link>
+            {showJoinOrganization ? (
+              <form action={requestOrganizationMembershipAction} className="mt-8 flex flex-col gap-3 border-t pt-6 sm:flex-row sm:items-end" style={{ borderColor: 'var(--us-border)' }}>
+                <label className="block flex-1 text-sm font-medium" style={{ color: 'var(--us-text)' }}>
+                  Join an organization
+                  <input
+                    className="mt-2 w-full rounded-2xl border bg-white px-4 py-2.5 text-base outline-none"
+                    name="organizationSlug"
+                    placeholder="organization-slug"
+                    required
+                    style={{ borderColor: 'var(--us-border)' }}
+                  />
+                </label>
+                <button className="us-button-primary px-4 py-2.5 text-sm font-medium" type="submit">
+                  Request access
+                </button>
+              </form>
+            ) : null}
           </article>
         )}
+
+        {showJoinOrganization && showPayloadAdmin ? (
+          <article className="us-panel px-6 py-6">
+            <span className="us-chip us-chip-muted">Organizations</span>
+            <h2 className="mt-4 text-2xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
+              Join another organization
+            </h2>
+            <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
+              Request access by slug. An organization manager must approve your request.
+            </p>
+            <form action={requestOrganizationMembershipAction} className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end">
+              <label className="block flex-1 text-sm font-medium" style={{ color: 'var(--us-text)' }}>
+                Organization slug
+                <input
+                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-2.5 text-base outline-none"
+                  name="organizationSlug"
+                  placeholder="organization-slug"
+                  required
+                  style={{ borderColor: 'var(--us-border)' }}
+                />
+              </label>
+              <button className="us-button-primary px-4 py-2.5 text-sm font-medium" type="submit">
+                Request access
+              </button>
+            </form>
+          </article>
+        ) : null}
 
         {showPayloadAdmin ? (
           <article className="us-panel px-6 py-6">
