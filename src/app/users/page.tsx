@@ -5,8 +5,7 @@ import { getPayload } from 'payload'
 
 import { InviteUserPanel } from '@/components/InviteUserPanel'
 import { Layout } from '@/components/Layout'
-import { TruncatedList } from '@/components/TruncatedList'
-import { UserHubRow } from '@/components/UserHubRow'
+import { UsersHubTable } from '@/components/UsersHubTable'
 import { pageMetadata } from '@/lib/branding'
 import { requireAppUser } from '@/lib/app-auth'
 import { assignZebraTints } from '@/lib/list-group-tints'
@@ -38,7 +37,6 @@ export default async function UsersPage({ searchParams }: PageProps) {
 
   const { entries, organizations, showOrganizationColumn } = await getUsersHubData()
   const tintedEntries = assignZebraTints(entries)
-  const gridClass = showOrganizationColumn ? 'us-data-row--cols-4' : 'us-data-row--cols-3'
 
   return (
     <Layout hideHeader title="Users">
@@ -58,29 +56,11 @@ export default async function UsersPage({ searchParams }: PageProps) {
         </div>
 
         {tintedEntries.length > 0 ? (
-          <div className="us-panel overflow-hidden px-4 py-4">
-            <div className={`us-data-row us-data-row-header ${gridClass} px-4`} style={{ color: 'var(--us-muted)' }}>
-              <span className="us-data-row__lead">User</span>
-              {showOrganizationColumn ? <span className="us-data-row__chips">Organization</span> : null}
-              <span className={showOrganizationColumn ? 'us-data-row__detail' : 'us-data-row__chips'}>Role</span>
-              <span className="us-data-row__actions">Action</span>
-            </div>
-            <TruncatedList as="ul" itemLabel="users" listClassName="space-y-2">
-              {tintedEntries.map((entry) => (
-                <UserHubRow
-                  globalRole={entry.globalRole}
-                  key={`${entry.userId}-${entry.organizationId ?? 'none'}`}
-                  organizationName={entry.organizationName}
-                  organizationSlug={entry.organizationSlug}
-                  roleInOrganization={entry.roleInOrganization}
-                  rowTint={entry.rowTint}
-                  showOrganizationColumn={showOrganizationColumn}
-                  userEmail={entry.userEmail}
-                  userName={entry.userName}
-                />
-              ))}
-            </TruncatedList>
-          </div>
+          <UsersHubTable
+            entries={tintedEntries}
+            organizations={organizations}
+            showOrganizationColumn={showOrganizationColumn}
+          />
         ) : (
           <div className="us-panel px-6 py-6">
             <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>

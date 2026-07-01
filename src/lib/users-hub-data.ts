@@ -3,7 +3,8 @@ import { getPayload } from 'payload'
 
 import { requireAppUser } from '@/lib/app-auth'
 import { getManageableOrganizations } from '@/lib/organization-data'
-import { isSuperAdminUser } from '@/lib/permissions'
+import { hasOrganizationManagementAccess, hasPlatformWideOrganizationAccess } from '@/lib/organizations'
+import { getGloballyUnassignedUserIDs } from '@/lib/user-hub-access'
 import type { Organization, OrganizationMembership, User } from '@/payload-types'
 
 export type UserHubEntry = {
@@ -69,7 +70,7 @@ export async function getUsersHubData(): Promise<UsersHubData> {
   const payload = await getPayload({ config: configPromise })
   const organizations = await getManageableOrganizations()
   const organizationIDs = organizations.map((organization) => organization.id)
-  const showOrganizationColumn = isSuperAdminUser(currentUser) || organizations.length > 1
+  const showOrganizationColumn = hasPlatformWideOrganizationAccess(currentUser) || organizations.length > 1
 
   if (organizationIDs.length === 0) {
     return {
@@ -118,33 +119,61 @@ export async function getUsersHubData(): Promise<UsersHubData> {
     }
   }
 
-  if (isSuperAdminUser(currentUser)) {
+  if (await hasOrganizationManagementAccess({ payload, user: currentUser } as never)) {
     const memberUserIDs = new Set(entries.map((entry) => entry.userId))
-    const unassignedUsers = await payload.find({
-      collection: 'users',
-      depth: 0,
-      limit: 500,
-      overrideAccess: false,
-      pagination: false,
-      sort: 'name',
-      user: currentUser,
-    })
 
-    for (const user of unassignedUsers.docs) {
-      if (memberUserIDs.has(user.id)) {
-        continue
-      }
-
-      entries.push({
-        globalRole: user.role ?? 'moderator',
-        organizationId: null,
-        organizationName: null,
-        organizationSlug: null,
-        roleInOrganization: null,
-        userEmail: user.email,
-        userId: user.id,
-        userName: user.name,
+    if (hasPlatformWideOrganizationAccess(currentUser)) {
+      const unassignedUsers = await payload.find({
+        collection: 'users',
+        depth: 0,
+        limit: 500,
+        overrideAccess: false,
+        pagination: false,
+        sort: 'name',
+        user: currentUser,
       })
+
+      for (const user of unassignedUsers.docs) {
+        if (memberUserIDs.has(user.id)) {
+          continue
+        }
+
+        entries.push({
+          globalRole: user.role ?? 'moderator',
+          organizationId: null,
+          organizationName: null,
+          organizationSlug: null,
+          roleInOrganization: null,
+          userEmail: user.email,
+          userId: user.id,
+          userName: user.name,
+        })
+      }
+    } else {
+      const unassignedUserIDs = await getGloballyUnassignedUserIDs({ payload, user: currentUser } as never)
+
+      for (const userID of unassignedUserIDs) {
+        if (memberUserIDs.has(userID)) {
+          continue
+        }
+
+        const user = await payload.findByID({
+          collection: 'users',
+          id: userID,
+          overrideAccess: true,
+        })
+
+        entries.push({
+          globalRole: user.role ?? 'moderator',
+          organizationId: null,
+          organizationName: null,
+          organizationSlug: null,
+          roleInOrganization: null,
+          userEmail: user.email,
+          userId: user.id,
+          userName: user.name,
+        })
+      }
     }
   }
 

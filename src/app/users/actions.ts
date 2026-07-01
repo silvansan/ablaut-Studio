@@ -3,6 +3,7 @@
 import configPromise from '@payload-config'
 import { randomBytes } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { canManageAssignment } from '@/app/events/[eventSlug]/settings/actions'
@@ -24,6 +25,7 @@ import {
 import { revalidateOrganizationPaths } from '@/lib/revalidate-organization-paths'
 import { sendUserActivationInviteEmail, sendUserPasswordResetEmail } from '@/lib/user-management'
 import { completeUserActivation } from '@/lib/user-activation'
+import { canViewUserInUsersHub } from '@/lib/user-hub-access'
 
 function stringValue(formData: FormData, key: string): string | undefined {
   const value = formData.get(key)
@@ -258,6 +260,7 @@ export async function updateUserAction(formData: FormData) {
   })
 
   revalidatePath('/users')
+  revalidatePath(`/users/${id}`)
 }
 
 export async function sendPasswordResetForUserAction(formData: FormData) {
@@ -477,26 +480,21 @@ export async function removeMembershipAction(formData: FormData) {
   await revalidateOrganizationById(payload, organizationID)
 }
 
-export async function upsertUserOrganizationMembershipAction(formData: FormData) {
-  const currentUser = await requireAppUser()
-  const payload = await getPayload({ config: configPromise })
-
-  await assertCanManageOrganizationUsers(payload, currentUser)
-
-  const organizationID = numericValue(formData, 'organizationId')
-  const targetUserID = numericValue(formData, 'userID')
-
-  if (!organizationID || !targetUserID) {
-    throw new Error('User and organization are required.')
+async function upsertOrganizationMembershipRecord(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  currentUser: Awaited<ReturnType<typeof requireAppUser>>,
+  organizationID: number,
+  targetUserID: number,
+  roleInOrganization: 'owner' | 'manager' | 'moderator',
+) {
+  if (!(await canViewUserInUsersHub({ payload, user: currentUser } as never, targetUserID))) {
+    throw new Error('You do not have permission to manage this user.')
   }
-
-  await assertCanManageOrganization(payload, currentUser, organizationID)
 
   await payload.findByID({
     id: targetUserID,
     collection: 'users',
-    overrideAccess: false,
-    user: currentUser,
+    overrideAccess: true,
   })
 
   const existing = await payload.find({
@@ -525,7 +523,7 @@ export async function upsertUserOrganizationMembershipAction(formData: FormData)
   const data = {
     approvedBy: currentUser.id,
     organization: organizationID,
-    roleInOrganization: membershipRoleValue(formData),
+    roleInOrganization,
     status: 'active' as const,
     user: targetUserID,
   }
@@ -549,8 +547,78 @@ export async function upsertUserOrganizationMembershipAction(formData: FormData)
       user: currentUser,
     })
   }
+}
+
+export async function upsertUserOrganizationMembershipAction(formData: FormData) {
+  const currentUser = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
+
+  await assertCanManageOrganizationUsers(payload, currentUser)
+
+  const organizationID = numericValue(formData, 'organizationId')
+  const targetUserID = numericValue(formData, 'userID')
+
+  if (!organizationID || !targetUserID) {
+    throw new Error('User and organization are required.')
+  }
+
+  await assertCanManageOrganization(payload, currentUser, organizationID)
+
+  await upsertOrganizationMembershipRecord(
+    payload,
+    currentUser,
+    organizationID,
+    targetUserID,
+    membershipRoleValue(formData),
+  )
 
   await revalidateOrganizationById(payload, organizationID)
+  revalidatePath('/users')
+  revalidatePath(`/users/${targetUserID}`)
+}
+
+export async function bulkAssignUsersToOrganizationAction(formData: FormData) {
+  const currentUser = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
+
+  await assertCanManageOrganizationUsers(payload, currentUser)
+
+  const organizationID = numericValue(formData, 'organizationId')
+  const userIDs = formData
+    .getAll('userIDs')
+    .map((value) => (typeof value === 'string' ? Number(value) : NaN))
+    .filter((value): value is number => Number.isFinite(value))
+
+  if (!organizationID) {
+    throw new Error('Organization is required.')
+  }
+
+  if (userIDs.length === 0) {
+    throw new Error('Select at least one user.')
+  }
+
+  await assertCanManageOrganization(payload, currentUser, organizationID)
+
+  const roleInOrganization = membershipRoleValue(formData)
+
+  for (const targetUserID of userIDs) {
+    await upsertOrganizationMembershipRecord(
+      payload,
+      currentUser,
+      organizationID,
+      targetUserID,
+      roleInOrganization,
+    )
+  }
+
+  await revalidateOrganizationById(payload, organizationID)
+  revalidatePath('/users')
+
+  for (const targetUserID of userIDs) {
+    revalidatePath(`/users/${targetUserID}`)
+  }
+
+  redirect('/users')
 }
 
 export async function deleteUserAction(formData: FormData) {
