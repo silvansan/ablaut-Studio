@@ -6,7 +6,16 @@
 # 3. Set environment variables in Portainer (see .env.example / PORTAINER_EASY_STACK_DEPLOYMENT.md).
 # 4. Redeploy — keep volumes ablaut_db and ablaut_uploads (do NOT delete them).
 #
-# Safe production defaults (set in Portainer env):
+# Database migrations (automatic — no manual SQL step):
+# - On each app start, Payload runs any NEW migrations from src/migrations/ against Postgres.
+# - The stack waits for Postgres (PAYLOAD_WAIT_FOR_DB + db healthcheck) before starting app.
+# - Production schema is migration-only: PAYLOAD_DB_PUSH must stay false (never use schema push).
+# - After redeploy, confirm in app logs:
+#     INFO: Registered N production migration(s).
+#     INFO: Database migrations are up to date through "<latest_migration_name>".
+# - Before major upgrades: back up ablaut_db (pg_dump). Roll back code + restore DB only if a migration fails.
+#
+# Safe production defaults (enforced below on the app service):
 #   PAYLOAD_DB_PUSH=false
 #   PAYLOAD_RUN_MIGRATIONS=true
 #   PAYLOAD_WAIT_FOR_DB=true
@@ -28,9 +37,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-      PAYLOAD_DB_PUSH: ${PAYLOAD_DB_PUSH:-false}
-      PAYLOAD_RUN_MIGRATIONS: ${PAYLOAD_RUN_MIGRATIONS:-true}
-      PAYLOAD_WAIT_FOR_DB: ${PAYLOAD_WAIT_FOR_DB:-true}
+      PAYLOAD_DB_PUSH: 'false'
+      PAYLOAD_RUN_MIGRATIONS: 'true'
+      PAYLOAD_WAIT_FOR_DB: 'true'
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL}
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
@@ -69,7 +78,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 60s
+      start_period: 120s
     restart: unless-stopped
 
   livekit:

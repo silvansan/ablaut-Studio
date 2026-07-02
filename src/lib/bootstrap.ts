@@ -93,8 +93,21 @@ export async function runStartupBootstrap(payload: Payload) {
     payload.logger.warn('LiveKit is not fully configured. Speaker/listener WebRTC routes will fail until LIVEKIT_* env vars are set.')
   }
 
-  await ensureInitialSuperAdmin(payload)
-  await ensureDefaultOrganization(payload)
-  await syncMobileAppReleaseIfStale(payload)
+  // Migrations finished before onInit; mark ready so Docker health checks pass while
+  // non-critical bootstrap work continues asynchronously.
   markPayloadReady()
+
+  void runDeferredBootstrap(payload)
+}
+
+async function runDeferredBootstrap(payload: Payload) {
+  try {
+    await ensureInitialSuperAdmin(payload)
+    await ensureDefaultOrganization(payload)
+    await syncMobileAppReleaseIfStale(payload)
+  } catch (error) {
+    payload.logger.error(
+      `Post-startup bootstrap failed after app became ready: ${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
 }

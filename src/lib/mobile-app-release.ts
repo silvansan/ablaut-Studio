@@ -69,6 +69,7 @@ export async function fetchLatestGithubMobileAppRelease(
       'User-Agent': 'ablaut-studio-mobile-app-sync',
     },
     next: { revalidate: 0 },
+    signal: AbortSignal.timeout(8000),
   })
 
   if (!response.ok) {

@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import configPromise from '@payload-config'
+import { getPayload } from 'payload'
 
 import { isPayloadReady } from '@/lib/app-readiness'
 import { checkLiveKitReachable, getStreamHealthSnapshot } from '@/lib/stream-health'
@@ -6,6 +8,11 @@ import { checkLiveKitReachable, getStreamHealthSnapshot } from '@/lib/stream-hea
 export async function GET(request: Request) {
   const url = new URL(request.url)
   const deep = url.searchParams.get('deep') === '1'
+
+  if (deep) {
+    await getPayload({ config: configPromise })
+  }
+
   const dbReady = isPayloadReady()
   const stream = await getStreamHealthSnapshot()
   const livekitReachable = deep ? await checkLiveKitReachable() : undefined
