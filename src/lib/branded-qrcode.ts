@@ -156,12 +156,32 @@ function buildCardSvg(input: BrandedQrCardInput, qrBase64: string): string {
 </svg>`
 }
 
-export async function generateBrandedQrCardDataUrl(input: BrandedQrCardInput): Promise<string> {
-  const qrWithLogo = await createQrWithLogo(input.url, QR_SIZE)
-  const svg = buildCardSvg(input, qrWithLogo.toString('base64'))
-  const png = await sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toBuffer()
+async function createSimpleQrDataUrl(url: string): Promise<string> {
+  return QRCode.toDataURL(url, {
+    color: {
+      dark: ABLAUT_QR_COLORS.greenDark,
+      light: ABLAUT_QR_COLORS.white,
+    },
+    margin: 2,
+    width: 512,
+  })
+}
 
-  return `data:image/png;base64,${png.toString('base64')}`
+export async function generateBrandedQrCardDataUrl(input: BrandedQrCardInput): Promise<string> {
+  try {
+    const qrWithLogo = await createQrWithLogo(input.url, QR_SIZE)
+    const svg = buildCardSvg(input, qrWithLogo.toString('base64'))
+    const png = await sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toBuffer()
+
+    return `data:image/png;base64,${png.toString('base64')}`
+  } catch (error) {
+    console.warn(
+      'Branded QR card generation failed, using simple QR fallback.',
+      error instanceof Error ? error.message : error,
+    )
+
+    return createSimpleQrDataUrl(input.url)
+  }
 }
 
 export async function generateBrandedRouteQrDataUrl(input: {

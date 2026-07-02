@@ -111,6 +111,18 @@ QR codes use the host name/IP used to open the app.
 - For local Docker Desktop testing, open the app from another-device-safe LAN URL such as `http://192.168.1.50:3000`, not `http://localhost:3000`.
 - In cloud, open the app through the public domain. QR codes will use that public domain.
 - If using a reverse proxy, forward `Host` and `X-Forwarded-Proto`.
+- For OpenResty/Nginx in front of Next.js, disable response buffering on the app upstream so React Server Component (`?_rsc=`) streams do not fail with HTTP/2 protocol errors:
+
+```nginx
+proxy_http_version 1.1;
+proxy_set_header Host $host;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header Connection "";
+proxy_buffering off;
+proxy_request_buffering off;
+chunked_transfer_encoding on;
+```
 
 ## Auth Rate Limits
 
