@@ -105,7 +105,7 @@ export async function getPublicChannelContext(
 
   const events = await payload.find({
     collection: 'events',
-    depth: 0,
+    depth: 1,
     limit: 1,
     overrideAccess: true,
     pagination: false,

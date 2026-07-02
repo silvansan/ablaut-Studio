@@ -1,8 +1,14 @@
 import QRCode from 'qrcode'
 
+export {
+  generateBrandedDownloadQrDataUrl,
+  generateBrandedQrCardDataUrl,
+  generateBrandedRouteQrDataUrl,
+} from '@/lib/branded-qrcode'
+
 const defaultOptions = {
   color: {
-    dark: '#1a3d2e',
+    dark: '#163f35',
     light: '#ffffff',
   },
   margin: 2,

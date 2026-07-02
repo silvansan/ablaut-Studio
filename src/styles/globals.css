@@ -13,6 +13,7 @@
   --us-danger: #c74848;
   --us-warning: #e8b84d;
   --us-border: rgba(22, 63, 53, 0.14);
+  --us-shell-max: 1720px;
   --us-shadow: 0 18px 40px rgba(18, 107, 182, 0.08);
   --us-shadow-soft: 0 10px 24px rgba(22, 63, 53, 0.08);
 }
@@ -60,6 +61,12 @@ button:focus-visible,
 a:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--us-blue) 70%, white 30%);
   outline-offset: 2px;
+}
+
+.us-shell {
+  margin-inline: auto;
+  max-width: min(100%, var(--us-shell-max));
+  width: 100%;
 }
 
 .us-panel {
@@ -110,6 +117,18 @@ a:focus-visible {
 .us-chip-warning {
   background: rgba(232, 184, 77, 0.18);
   color: #7d5900;
+}
+
+.us-chip-active {
+  background: rgba(47, 143, 99, 0.16);
+  color: var(--us-green-dark);
+  border: 1px solid rgba(47, 143, 99, 0.28);
+}
+
+.us-chip-inactive {
+  background: rgba(199, 72, 72, 0.12);
+  color: var(--us-danger);
+  border: 1px solid rgba(199, 72, 72, 0.24);
 }
 
 .us-hls-player__shell {

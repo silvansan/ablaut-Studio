@@ -41,7 +41,7 @@ export function AppDownloadFooterLink({
             role="dialog"
           >
             <div
-              className="w-full max-w-[360px] rounded-3xl border bg-white p-5 shadow-2xl"
+              className="w-full max-w-[380px] rounded-3xl border bg-white p-5 shadow-2xl"
               onClick={(event) => event.stopPropagation()}
               style={{ borderColor: 'var(--us-border)' }}
             >
@@ -62,24 +62,32 @@ export function AppDownloadFooterLink({
                 </span>
               </div>
 
-              <div className="mt-4 flex justify-center rounded-2xl border bg-[#f8fcf9] p-4" style={{ borderColor: 'var(--us-border)' }}>
+              <div className="mt-4 flex justify-center rounded-2xl border p-3" style={{ borderColor: 'var(--us-border)', background: 'linear-gradient(180deg, #fcfffd, #eef5f4)' }}>
                 <Image
                   alt={`QR code to download ablaut Android app v${latestVersion}`}
-                  className="h-auto w-[220px] max-w-full"
-                  height={220}
+                  className="h-auto w-full max-w-[280px] rounded-2xl"
+                  height={350}
                   src={qrDataUrl}
                   unoptimized
-                  width={220}
+                  width={280}
                 />
               </div>
 
               <p className="mt-4 text-sm leading-6" style={{ color: 'var(--us-muted)' }}>
-                Scan this QR code on your phone to download the latest ablaut Android listener app from this server.
+                Scan the card on your phone to download the latest ablaut Android listener app from this server.
               </p>
 
-              <div className="mt-4 flex flex-col gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <a
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-white"
+                  className="us-button-secondary inline-flex items-center gap-2 px-3 py-2 text-sm font-medium"
+                  download={`ablaut-android-v${latestVersion}.png`}
+                  href={qrDataUrl}
+                >
+                  <DownloadIcon />
+                  PNG card
+                </a>
+                <a
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-white"
                   href={downloadPageUrl}
                   style={{ backgroundColor: 'var(--us-green-dark)' }}
                 >

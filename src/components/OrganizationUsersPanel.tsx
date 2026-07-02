@@ -1,21 +1,18 @@
+import Link from 'next/link'
+
 import {
   approveMembershipAction,
-  deleteUserAction,
   rejectMembershipAction,
-  removeMembershipAction,
   resendInviteForUserAction,
-  sendPasswordResetForUserAction,
-  updateUserAction,
   upsertUserOrganizationMembershipAction,
 } from '@/app/users/actions'
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
 import { InviteUserPanel } from '@/components/InviteUserPanel'
 import { ListGroupRow } from '@/components/ListGroupRow'
+import { OrganizationMembersTable } from '@/components/OrganizationMembersTable'
 import { TruncatedList } from '@/components/TruncatedList'
-import { UserEventAssignmentsSection } from '@/components/UserEventAssignmentsSection'
-import { UserOrganizationMembershipsSection } from '@/components/UserOrganizationMembershipsSection'
-import { assignGroupTints, assignZebraTints, rowTintClass } from '@/lib/list-group-tints'
-import { getUserEventSummary, userID, userLabel } from '@/lib/organization-user-utils'
+import { assignGroupTints, assignZebraTints } from '@/lib/list-group-tints'
+import { userID, userLabel } from '@/lib/organization-user-utils'
 import type { OrganizationUsersData } from '@/lib/organization-users-data'
 import { INVITABLE_ORGANIZATION_ROLES } from '@/lib/organizations'
 import { isSuperAdminUser } from '@/lib/permissions'
@@ -71,9 +68,18 @@ export function OrganizationUsersPanel({
   return (
     <div className="space-y-4">
       <div className="us-panel flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-        <p className="text-sm" style={{ color: 'var(--us-muted)' }}>
-          Members, invites, and join requests for {organization.name}.
-        </p>
+        <div>
+          <p className="text-sm" style={{ color: 'var(--us-muted)' }}>
+            Members, invites, and join requests for {organization.name}.
+          </p>
+          <Link
+            className="mt-2 inline-block text-sm font-medium hover:underline"
+            href={`/users?organization=${encodeURIComponent(organization.slug)}`}
+            style={{ color: 'var(--us-blue-dark)' }}
+          >
+            Open in users hub
+          </Link>
+        </div>
         <InviteUserPanel
           canCreateOrganization={false}
           canSetPlatformRole={isSuperAdminUser(currentUser)}
@@ -210,161 +216,18 @@ export function OrganizationUsersPanel({
         </article>
       ) : null}
 
-      <article className="us-panel overflow-hidden px-4 py-4">
-        <h3 className="px-3 text-lg font-semibold" style={{ color: 'var(--us-green-dark)' }}>
-          Members
-        </h3>
-        <div className="us-data-row us-data-row-header us-data-row--cols-5 px-4 pt-4" style={{ color: 'var(--us-muted)' }}>
-          <span className="us-data-row__lead">Username</span>
-          <span className="us-data-row__detail">Email</span>
-          <span className="us-data-row__detail">Events</span>
-          <span className="us-data-row__detail">Active?</span>
-          <span className="us-data-row__actions" />
-        </div>
-
-        {tintedUsers.length === 0 ? (
-          <p className="px-3 py-4 text-sm" style={{ color: 'var(--us-muted)' }}>
-            No members yet. Invite someone to get started.
-          </p>
-        ) : (
-          <TruncatedList itemLabel="members" listClassName="space-y-3">
-            {tintedUsers.map((user) => {
-              const membership = membershipByUserID.get(user.id)
-              const formPrefix = `user-${user.id}`
-
-              return (
-                <details key={user.id} className={`group rounded-3xl border px-4 py-4 lg:px-3 lg:py-3 ${rowTintClass(user.rowTint)}`} style={{ borderColor: 'var(--us-border)' }}>
-                  <summary className="us-data-row us-data-row--cols-5 cursor-pointer list-none">
-                    <div className="us-data-row__lead">
-                      <span className="font-semibold" style={{ color: 'var(--us-green-dark)' }}>
-                        {user.name}
-                      </span>
-                      <span className="ml-2 us-chip us-chip-muted min-[960px]:hidden">
-                        {user.role?.replace('_', ' ') ?? 'user'}
-                      </span>
-                    </div>
-                    <div className="us-data-row__detail break-all text-sm" style={{ color: 'var(--us-muted)' }}>
-                      {user.email}
-                    </div>
-                    <div className="us-data-row__detail text-sm" style={{ color: 'var(--us-muted)' }}>
-                      {getUserEventSummary(user.id, userEvents)}
-                    </div>
-                    <div className="us-data-row__detail flex items-center gap-2">
-                      <span className={`inline-flex h-6 w-6 items-center justify-center rounded-lg border text-sm ${user.active === false ? 'opacity-35' : ''}`} style={{ borderColor: 'var(--us-green)', color: 'var(--us-green-dark)' }}>
-                        {user.active === false ? '' : '✓'}
-                      </span>
-                    </div>
-                    <span className="us-data-row__actions text-2xl leading-none transition group-open:rotate-180" style={{ color: 'var(--us-blue-dark)' }}>
-                      ˅
-                    </span>
-                  </summary>
-
-                  <div className="mt-4 border-t pt-4" style={{ borderColor: 'var(--us-border)' }}>
-                    <form action={updateUserAction} className="grid gap-3 md:grid-cols-2">
-                      <input name="id" type="hidden" value={user.id} />
-                      <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-                        Name
-                        <input className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none" defaultValue={user.name} name="name" required style={{ borderColor: 'var(--us-border)' }} />
-                      </label>
-                      <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-                        Language
-                        <input className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none" defaultValue={user.preferredLanguage ?? 'en'} name="preferredLanguage" style={{ borderColor: 'var(--us-border)' }} />
-                      </label>
-                      {isSuperAdminUser(currentUser) ? (
-                        <>
-                          <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-                            Role
-                            <select className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none" defaultValue={user.role} name="role" style={{ borderColor: 'var(--us-border)' }}>
-                              <option value="super_admin">Super admin</option>
-                              <option value="admin">Admin</option>
-                              <option value="moderator">Moderator</option>
-                            </select>
-                          </label>
-                          <label className="flex items-center gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
-                            <input defaultChecked={user.active !== false} name="active" type="checkbox" />
-                            <span>Active</span>
-                          </label>
-                        </>
-                      ) : null}
-                      <div className="flex flex-wrap gap-2 md:col-span-2">
-                        <button type="submit" className="us-button-secondary px-4 py-2.5 text-sm font-medium">
-                          Save user
-                        </button>
-                      </div>
-                    </form>
-
-                    <UserOrganizationMembershipsSection
-                      canManageMemberships={canManageOrgUsers}
-                      memberships={organizationMembershipsByUserID.get(user.id) ?? []}
-                      organizations={manageableOrganizations}
-                      targetUserID={user.id}
-                    />
-
-                    {user.role === 'moderator' || isSuperAdminUser(currentUser) ? (
-                      <UserEventAssignmentsSection
-                        assignments={assignmentsByUserID.get(user.id) ?? []}
-                        assignableEvents={assignableEvents}
-                        canManageAssignments={canManageOrgUsers}
-                        canSetAdminRole={isSuperAdminUser(currentUser)}
-                        targetUserID={user.id}
-                      />
-                    ) : null}
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <form action={sendPasswordResetForUserAction} id={`${formPrefix}-reset`}>
-                        <input name="id" type="hidden" value={user.id} />
-                        <input name="organizationId" type="hidden" value={organization.id} />
-                        <button className="us-button-secondary px-4 py-2.5 text-sm font-medium" type="submit">
-                          Send password reset
-                        </button>
-                      </form>
-                      {user.invitationStatus === 'pending' ? (
-                        <form action={resendInviteForUserAction} id={`${formPrefix}-resend`}>
-                          <input name="id" type="hidden" value={user.id} />
-                          <input name="organizationId" type="hidden" value={organization.id} />
-                          <button className="us-button-secondary px-4 py-2.5 text-sm font-medium" type="submit">
-                            Resend invite
-                          </button>
-                        </form>
-                      ) : null}
-                    </div>
-
-                    {membership ? (
-                      <form action={removeMembershipAction} className="mt-4" id={`${formPrefix}-remove-membership`}>
-                        <input name="membershipId" type="hidden" value={membership.id} />
-                        <input name="organizationId" type="hidden" value={organization.id} />
-                        <ConfirmSubmitButton
-                          action={removeMembershipAction}
-                          confirmMessage={`Remove ${user.name} from ${organization.name}? Their global account will remain.`}
-                          formId={`${formPrefix}-remove-membership`}
-                          title="Remove from organization"
-                        >
-                          Remove from organization
-                        </ConfirmSubmitButton>
-                      </form>
-                    ) : null}
-
-                    {String(user.id) !== String(currentUser.id) ? (
-                      <form action={deleteUserAction} className="mt-4" id={`${formPrefix}-delete`}>
-                        <input name="id" type="hidden" value={user.id} />
-                        <input name="organizationId" type="hidden" value={organization.id} />
-                        <ConfirmSubmitButton
-                          action={deleteUserAction}
-                          confirmMessage={`Delete ${user.name} permanently? This cannot be undone.`}
-                          formId={`${formPrefix}-delete`}
-                          title="Delete user"
-                        >
-                          Delete user
-                        </ConfirmSubmitButton>
-                      </form>
-                    ) : null}
-                  </div>
-                </details>
-              )
-            })}
-          </TruncatedList>
-        )}
-      </article>
+      <OrganizationMembersTable
+        assignableEvents={assignableEvents}
+        assignmentsByUserID={assignmentsByUserID}
+        canManageOrgUsers={canManageOrgUsers}
+        currentUser={currentUser}
+        manageableOrganizations={manageableOrganizations}
+        membershipByUserID={membershipByUserID}
+        organization={organization}
+        organizationMembershipsByUserID={organizationMembershipsByUserID}
+        userEvents={userEvents}
+        users={tintedUsers}
+      />
     </div>
   )
 }

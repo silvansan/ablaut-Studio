@@ -1,10 +1,16 @@
 'use client'
 
-import { useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-import { bulkAssignUsersToOrganizationAction } from '@/app/users/actions'
+import { bulkUsersAction } from '@/app/users/actions'
+import {
+  BulkActionSelect,
+  ListBulkActionsPanel,
+  useBulkSelection,
+  useVisibleBulkKeys,
+} from '@/components/ListBulkActionsPanel'
 import { TruncatedList } from '@/components/TruncatedList'
 import { formatGlobalRole, formatOrganizationRole } from '@/lib/organization-user-utils'
 import { INVITABLE_ORGANIZATION_ROLES } from '@/lib/organizations'
@@ -14,50 +20,77 @@ import type { Organization } from '@/payload-types'
 
 type UsersHubTableProps = {
   entries: Array<UserHubEntry & { rowTint?: ListRowTint }>
+  filterOrganizationId?: number | null
+  isSuperAdmin: boolean
   organizations: Organization[]
+  returnPath: string
   showOrganizationColumn: boolean
 }
 
-export function UsersHubTable({ entries, organizations, showOrganizationColumn }: UsersHubTableProps) {
+function entryKey(entry: UserHubEntry): string {
+  return `${entry.userId}:${entry.membershipId ?? 'none'}`
+}
+
+export function UsersHubTable({
+  entries,
+  filterOrganizationId = null,
+  isSuperAdmin,
+  organizations,
+  returnPath,
+  showOrganizationColumn,
+}: UsersHubTableProps) {
   const router = useRouter()
-  const [selectedUserIDs, setSelectedUserIDs] = useState<Set<number>>(new Set())
-  const selectableUserIDs = useMemo(
-    () => entries.filter((entry) => !entry.organizationId).map((entry) => entry.userId),
+  const { selectedCount, selectedKeys, toggleAll, toggleKey } = useBulkSelection<string>()
+  const [bulkAction, setBulkAction] = useState(
+    filterOrganizationId ? 'set-org-role' : 'assign',
+  )
+
+  const selectableItems = useMemo(
+    () => entries.map((entry) => ({ key: entryKey(entry), selectable: true })),
     [entries],
   )
-  const allSelectableSelected =
-    selectableUserIDs.length > 0 && selectableUserIDs.every((userID) => selectedUserIDs.has(userID))
+  const visibleKeys = useVisibleBulkKeys(selectableItems)
+  const allVisibleSelected =
+    visibleKeys.length > 0 && visibleKeys.every((key) => selectedKeys.has(key))
   const gridClass = showOrganizationColumn ? 'us-data-row--cols-5' : 'us-data-row--cols-4'
 
-  function toggleUser(userID: number) {
-    setSelectedUserIDs((current) => {
-      const next = new Set(current)
+  const selectedEntries = entries.filter((entry) => selectedKeys.has(entryKey(entry)))
+  const selectedUserIDs = [...new Set(selectedEntries.map((entry) => entry.userId))]
+  const selectedMembershipIDs = selectedEntries
+    .map((entry) => entry.membershipId)
+    .filter((value): value is number => typeof value === 'number')
 
-      if (next.has(userID)) {
-        next.delete(userID)
-      } else {
-        next.add(userID)
-      }
+  const bulkOptions = useMemo(() => {
+    const options = [{ label: 'Add to organization', value: 'assign' }]
 
-      return next
-    })
-  }
+    if (filterOrganizationId) {
+      options.push(
+        { label: 'Change organization role', value: 'set-org-role' },
+        { label: 'Remove from organization', value: 'remove-from-org' },
+        { label: 'Resend invite', value: 'resend-invite' },
+      )
+    }
 
-  function toggleAllSelectable() {
-    setSelectedUserIDs((current) => {
-      if (allSelectableSelected) {
-        const next = new Set(current)
+    options.push({ label: 'Send password reset', value: 'password-reset' })
 
-        for (const userID of selectableUserIDs) {
-          next.delete(userID)
-        }
+    if (isSuperAdmin) {
+      options.push(
+        { label: 'Activate accounts', value: 'activate' },
+        { label: 'Deactivate accounts', value: 'deactivate' },
+        { label: 'Delete users', value: 'delete' },
+      )
+    }
 
-        return next
-      }
+    return options
+  }, [filterOrganizationId, isSuperAdmin])
 
-      return new Set([...current, ...selectableUserIDs])
-    })
-  }
+  const needsOrganization =
+    bulkAction === 'assign' ||
+    bulkAction === 'set-org-role' ||
+    bulkAction === 'remove-from-org' ||
+    bulkAction === 'resend-invite'
+  const needsRole = bulkAction === 'assign' || bulkAction === 'set-org-role'
+  const isDestructive = bulkAction === 'delete' || bulkAction === 'remove-from-org'
 
   function openUser(userID: number) {
     router.push(`/users/${userID}`)
@@ -65,28 +98,35 @@ export function UsersHubTable({ entries, organizations, showOrganizationColumn }
 
   return (
     <div className="space-y-4">
-      {organizations.length > 0 && selectableUserIDs.length > 0 ? (
-        <div className="us-panel px-6 py-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-            Bulk assign
-          </p>
-          <p className="mt-2 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-            Select unassigned users, then add them to one of your organizations.
-          </p>
-          <form action={bulkAssignUsersToOrganizationAction} className="mt-4 grid gap-3 lg:grid-cols-[1fr_220px_auto] lg:items-end">
-            {[...selectedUserIDs].map((userID) => (
-              <input key={userID} name="userIDs" type="hidden" value={userID} />
-            ))}
+      <ListBulkActionsPanel
+        description="Choose an action, then apply it to the selected users."
+        selectedCount={selectedCount}
+      >
+        <form action={bulkUsersAction} className="grid gap-3 xl:grid-cols-[220px_220px_220px_auto] xl:items-end">
+          <input name="returnPath" type="hidden" value={returnPath} />
+          <input name="bulkAction" type="hidden" value={bulkAction} />
+          {selectedUserIDs.map((userID) => (
+            <input key={`user-${userID}`} name="userIDs" type="hidden" value={userID} />
+          ))}
+          {selectedMembershipIDs.map((membershipID) => (
+            <input key={`membership-${membershipID}`} name="membershipIDs" type="hidden" value={membershipID} />
+          ))}
+
+          <BulkActionSelect action={bulkAction} onActionChange={setBulkAction} options={bulkOptions} />
+
+          {needsOrganization ? (
             <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
               Organization
               <select
                 className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
-                defaultValue={organizations.length === 1 ? organizations[0]?.id : ''}
+                defaultValue={filterOrganizationId ?? (organizations.length === 1 ? organizations[0]?.id : '')}
                 name="organizationId"
                 required
                 style={{ borderColor: 'var(--us-border)' }}
               >
-                {organizations.length > 1 ? <option value="">Choose organization</option> : null}
+                {organizations.length > 1 && !filterOrganizationId ? (
+                  <option value="">Choose organization</option>
+                ) : null}
                 {organizations.map((organization) => (
                   <option key={organization.id} value={organization.id}>
                     {organization.name}
@@ -94,6 +134,11 @@ export function UsersHubTable({ entries, organizations, showOrganizationColumn }
                 ))}
               </select>
             </label>
+          ) : (
+            <div />
+          )}
+
+          {needsRole ? (
             <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
               Org role
               <select
@@ -109,28 +154,31 @@ export function UsersHubTable({ entries, organizations, showOrganizationColumn }
                 ))}
               </select>
             </label>
-            <button
-              className="us-button-primary px-5 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={selectedUserIDs.size === 0}
-              type="submit"
-            >
-              Add {selectedUserIDs.size > 0 ? selectedUserIDs.size : ''} user{selectedUserIDs.size === 1 ? '' : 's'}
-            </button>
-          </form>
-        </div>
-      ) : null}
+          ) : (
+            <div />
+          )}
+
+          <button
+            className={`px-5 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
+              isDestructive ? 'us-button-secondary' : 'us-button-primary'
+            }`}
+            disabled={selectedCount === 0}
+            type="submit"
+          >
+            Apply to {selectedCount} selected
+          </button>
+        </form>
+      </ListBulkActionsPanel>
 
       <div className="us-panel overflow-hidden px-4 py-4">
         <div className={`us-data-row us-data-row-header ${gridClass} px-4`} style={{ color: 'var(--us-muted)' }}>
           <span className="us-data-row__lead flex items-center gap-3">
-            {selectableUserIDs.length > 0 ? (
-              <input
-                aria-label="Select all unassigned users"
-                checked={allSelectableSelected}
-                onChange={toggleAllSelectable}
-                type="checkbox"
-              />
-            ) : null}
+            <input
+              aria-label="Select all visible users"
+              checked={allVisibleSelected}
+              onChange={() => toggleAll(visibleKeys)}
+              type="checkbox"
+            />
             <span>User</span>
           </span>
           {showOrganizationColumn ? <span className="us-data-row__chips">Organization</span> : null}
@@ -140,12 +188,12 @@ export function UsersHubTable({ entries, organizations, showOrganizationColumn }
         <TruncatedList as="ul" itemLabel="users" listClassName="space-y-2">
           {entries.map((entry) => {
             const href = `/users/${entry.userId}`
-            const isSelectable = !entry.organizationId
-            const isSelected = selectedUserIDs.has(entry.userId)
+            const key = entryKey(entry)
+            const isSelected = selectedKeys.has(key)
 
             return (
               <li
-                key={`${entry.userId}-${entry.organizationId ?? 'none'}`}
+                key={key}
                 className={`us-data-row ${gridClass} cursor-pointer rounded-2xl border px-4 py-4 transition hover:-translate-y-0.5 hover:shadow-md ${rowTintClass(entry.rowTint ?? 'white')}`}
                 onClick={() => openUser(entry.userId)}
                 onKeyDown={(event) => {
@@ -159,17 +207,13 @@ export function UsersHubTable({ entries, organizations, showOrganizationColumn }
                 tabIndex={0}
               >
                 <div className="us-data-row__lead flex items-start gap-3">
-                  {isSelectable ? (
-                    <input
-                      aria-label={`Select ${entry.userName}`}
-                      checked={isSelected}
-                      onClick={(event) => event.stopPropagation()}
-                      onChange={() => toggleUser(entry.userId)}
-                      type="checkbox"
-                    />
-                  ) : (
-                    <span className="inline-block w-4" />
-                  )}
+                  <input
+                    aria-label={`Select ${entry.userName}`}
+                    checked={isSelected}
+                    onChange={() => toggleKey(key)}
+                    onClick={(event) => event.stopPropagation()}
+                    type="checkbox"
+                  />
                   <div>
                     <span className="font-semibold" style={{ color: 'var(--us-green-dark)' }}>
                       {entry.userName}
@@ -177,15 +221,33 @@ export function UsersHubTable({ entries, organizations, showOrganizationColumn }
                     <p className="mt-1 text-sm" style={{ color: 'var(--us-muted)' }}>
                       {entry.userEmail}
                     </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {entry.invitationStatus === 'pending' ? (
+                        <span className="us-chip us-chip-warning">Invite pending</span>
+                      ) : null}
+                      {entry.active === false ? <span className="us-chip us-chip-warning">Inactive</span> : null}
+                    </div>
                   </div>
                 </div>
 
                 {showOrganizationColumn ? (
                   <div className="us-data-row__chips">
-                    {entry.organizationName ? (
-                      <span className="us-chip us-chip-blue">{entry.organizationName}</span>
+                    {entry.organizationName && entry.organizationSlug ? (
+                      <Link
+                        className="us-chip us-chip-blue hover:-translate-y-0.5"
+                        href={`/users?organization=${encodeURIComponent(entry.organizationSlug)}`}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        {entry.organizationName}
+                      </Link>
                     ) : (
-                      <span className="us-chip us-chip-muted">No organization</span>
+                      <Link
+                        className="us-chip us-chip-muted hover:-translate-y-0.5"
+                        href="/users?organization=none"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        No organization
+                      </Link>
                     )}
                   </div>
                 ) : null}
@@ -208,7 +270,7 @@ export function UsersHubTable({ entries, organizations, showOrganizationColumn }
                     onClick={(event) => event.stopPropagation()}
                     style={{ color: 'var(--us-blue-dark)' }}
                   >
-                    {entry.organizationSlug ? 'View user' : 'Assign user'}
+                    View user
                   </Link>
                 </div>
               </li>

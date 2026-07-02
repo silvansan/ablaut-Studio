@@ -51,7 +51,7 @@ export const Events: CollectionConfig = {
             {
               name: 'status',
               type: 'select',
-              defaultValue: 'draft',
+              defaultValue: 'active',
               options: [
                 { label: 'Draft', value: 'draft' },
                 { label: 'Active', value: 'active' },

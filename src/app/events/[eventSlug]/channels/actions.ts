@@ -255,3 +255,138 @@ export async function deleteChannelAction(formData: FormData) {
 
   redirect(`/events/${eventSlug}/channels`)
 }
+
+function channelKeys(formData: FormData): Array<{ channelID: number; eventSlug: string }> {
+  return formData
+    .getAll('channelKeys')
+    .map((value) => {
+      if (typeof value !== 'string') {
+        return null
+      }
+
+      const [eventSlug, channelIDValue] = value.split(':')
+      const channelID = Number(channelIDValue)
+
+      if (!eventSlug || !Number.isFinite(channelID)) {
+        return null
+      }
+
+      return { channelID, eventSlug }
+    })
+    .filter((value): value is { channelID: number; eventSlug: string } => value !== null)
+}
+
+async function deleteChannelRecord(
+  payload: Payload,
+  user: User,
+  eventSlug: string,
+  channelID: number,
+) {
+  const existingChannel = await payload.findByID({
+    collection: 'channels',
+    id: channelID,
+    overrideAccess: true,
+    user,
+  })
+  const eventID = typeof existingChannel.event === 'object' ? existingChannel.event.id : existingChannel.event
+
+  if (!(await canManageChannels(payload, user, eventID))) {
+    throw new Error('You do not have permission to delete this channel.')
+  }
+
+  await payload.delete({
+    id: channelID,
+    collection: 'channels',
+    overrideAccess: true,
+    user,
+  })
+
+  revalidatePath(`/events/${eventSlug}`)
+  revalidatePath(`/events/${eventSlug}/channels`)
+}
+
+async function updateChannelFlags(
+  payload: Payload,
+  user: User,
+  channelID: number,
+  data: Partial<{
+    enabled: boolean
+    listenerPageEnabled: boolean
+    speakerPageEnabled: boolean
+  }>,
+) {
+  const existingChannel = await payload.findByID({
+    collection: 'channels',
+    id: channelID,
+    overrideAccess: true,
+    user,
+  })
+  const eventID = typeof existingChannel.event === 'object' ? existingChannel.event.id : existingChannel.event
+
+  if (!(await canManageChannels(payload, user, eventID))) {
+    throw new Error('You do not have permission to update this channel.')
+  }
+
+  await payload.update({
+    id: channelID,
+    collection: 'channels',
+    data,
+    overrideAccess: true,
+    user,
+  })
+}
+
+export async function bulkChannelsAction(formData: FormData) {
+  const user = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
+  const bulkAction = stringValue(formData, 'bulkAction')
+  const returnPath = stringValue(formData, 'returnPath') ?? '/channels'
+  const keys = channelKeys(formData)
+
+  if (!bulkAction) {
+    throw new Error('Choose a bulk action.')
+  }
+
+  if (keys.length === 0) {
+    throw new Error('Select at least one channel.')
+  }
+
+  for (const { channelID, eventSlug } of keys) {
+    switch (bulkAction) {
+      case 'enable':
+        await updateChannelFlags(payload, user, channelID, { enabled: true })
+        break
+      case 'disable':
+        await updateChannelFlags(payload, user, channelID, { enabled: false })
+        break
+      case 'enable-listener':
+        await updateChannelFlags(payload, user, channelID, { listenerPageEnabled: true })
+        break
+      case 'disable-listener':
+        await updateChannelFlags(payload, user, channelID, { listenerPageEnabled: false })
+        break
+      case 'enable-speaker':
+        await updateChannelFlags(payload, user, channelID, { speakerPageEnabled: true })
+        break
+      case 'disable-speaker':
+        await updateChannelFlags(payload, user, channelID, { speakerPageEnabled: false })
+        break
+      case 'delete':
+        await deleteChannelRecord(payload, user, eventSlug, channelID)
+        break
+      default:
+        throw new Error('Unsupported bulk action.')
+    }
+  }
+
+  revalidatePath('/dashboard')
+  revalidatePath('/events')
+  revalidatePath('/channels')
+
+  for (const { eventSlug } of keys) {
+    revalidatePath(`/events/${eventSlug}`)
+    revalidatePath(`/events/${eventSlug}/channels`)
+  }
+
+  redirect(returnPath)
+}

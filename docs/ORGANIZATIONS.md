@@ -52,7 +52,11 @@ Event assignments must reference users who are **active members** of the event's
 ## App routes
 
 - `/users` — organization-aware user management
-- `/users?organization={slug}` — filter by organization
+- `/users` — global users hub with search, status, and organization filters
+- `/users?organization={slug}` — filter by organization (stays on the hub)
+- `/users?organization=none` — users without an organization
+- `/users?q={text}` — search by name or email
+- `/users?status=pending|active|inactive|unassigned` — filter by account status
 
 ## API routes
 

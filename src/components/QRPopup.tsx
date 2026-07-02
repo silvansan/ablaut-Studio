@@ -71,7 +71,7 @@ export function QRPopup({
           onClick={() => setOpen(false)}
         >
           <div
-            className="w-full max-w-[360px] rounded-3xl border bg-white p-5 shadow-2xl"
+            className="w-full max-w-[380px] rounded-3xl border bg-white p-5 shadow-2xl"
             onClick={(event) => event.stopPropagation()}
             style={{ borderColor: 'var(--us-border)' }}
           >
@@ -94,14 +94,14 @@ export function QRPopup({
               </button>
             </div>
 
-            <div className="mt-5 flex aspect-square items-center justify-center rounded-3xl border p-5" style={{ borderColor: 'rgba(38, 167, 242, 0.28)' }}>
+            <div className="mt-5 flex justify-center rounded-3xl border p-3" style={{ borderColor: 'rgba(38, 167, 242, 0.22)', background: 'linear-gradient(180deg, #fcfffd, #eef5f4)' }}>
               <Image
                 alt={`${label} QR code for ${url}`}
-                className="h-full w-full rounded-2xl bg-white p-2"
-                height={260}
+                className="h-auto w-full max-w-[300px] rounded-2xl"
+                height={375}
                 src={qrDataUrl}
                 unoptimized
-                width={260}
+                width={300}
               />
             </div>
 

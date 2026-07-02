@@ -32,7 +32,11 @@ function booleanValue(formData: FormData, key: string): boolean {
 function statusValue(formData: FormData): 'active' | 'archived' | 'draft' {
   const value = stringValue(formData, 'status')
 
-  return value === 'active' || value === 'archived' ? value : 'draft'
+  if (value === 'active' || value === 'archived' || value === 'draft') {
+    return value
+  }
+
+  return 'active'
 }
 
 function dateValue(formData: FormData, key: string): string | undefined {
@@ -328,4 +332,133 @@ export async function deleteEventAction(formData: FormData) {
   }
 
   redirect('/events')
+}
+
+function numericValues(formData: FormData, key: string): number[] {
+  return formData
+    .getAll(key)
+    .map((value) => (typeof value === 'string' ? Number(value) : NaN))
+    .filter((value): value is number => Number.isFinite(value))
+}
+
+function uniqueNumbers(values: number[]): number[] {
+  return [...new Set(values)]
+}
+
+async function deleteEventRecord(
+  payload: Payload,
+  user: User,
+  eventID: number,
+) {
+  const event = await payload.findByID({
+    id: eventID,
+    collection: 'events',
+    overrideAccess: true,
+    user,
+  })
+
+  if (!(await canDeleteEvent(payload, user, event))) {
+    throw new Error(`You do not have permission to delete ${event.title}.`)
+  }
+
+  const [channels, assignments] = await Promise.all([
+    payload.find({
+      collection: 'channels',
+      depth: 0,
+      limit: 1000,
+      overrideAccess: true,
+      pagination: false,
+      user,
+      where: {
+        event: {
+          equals: eventID,
+        },
+      },
+    }),
+    payload.find({
+      collection: 'event-assignments',
+      depth: 0,
+      limit: 1000,
+      overrideAccess: true,
+      pagination: false,
+      user,
+      where: {
+        event: {
+          equals: eventID,
+        },
+      },
+    }),
+  ])
+
+  for (const channel of channels.docs) {
+    await payload.delete({
+      id: channel.id,
+      collection: 'channels',
+      overrideAccess: true,
+      user,
+    })
+  }
+
+  for (const assignment of assignments.docs) {
+    await payload.delete({
+      id: assignment.id,
+      collection: 'event-assignments',
+      overrideAccess: true,
+      user,
+    })
+  }
+
+  await payload.delete({
+    id: eventID,
+    collection: 'events',
+    overrideAccess: true,
+    user,
+  })
+}
+
+export async function bulkEventsAction(formData: FormData) {
+  const user = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
+  const bulkAction = stringValue(formData, 'bulkAction')
+  const returnPath = stringValue(formData, 'returnPath') ?? '/events'
+  const eventIDs = uniqueNumbers(numericValues(formData, 'eventIDs'))
+  const bulkStatus = stringValue(formData, 'bulkStatus')
+
+  if (!bulkAction) {
+    throw new Error('Choose a bulk action.')
+  }
+
+  if (eventIDs.length === 0) {
+    throw new Error('Select at least one event.')
+  }
+
+  if (bulkAction === 'set-status') {
+    if (bulkStatus !== 'active' && bulkStatus !== 'draft' && bulkStatus !== 'archived') {
+      throw new Error('Choose a valid status.')
+    }
+
+    for (const eventID of eventIDs) {
+      await payload.update({
+        id: eventID,
+        collection: 'events',
+        data: {
+          status: bulkStatus,
+        },
+        overrideAccess: false,
+        user,
+      })
+    }
+  } else if (bulkAction === 'delete') {
+    for (const eventID of eventIDs) {
+      await deleteEventRecord(payload, user, eventID)
+    }
+  } else {
+    throw new Error('Unsupported bulk action.')
+  }
+
+  revalidatePath('/dashboard')
+  revalidatePath('/events')
+  revalidatePath('/channels')
+  revalidateOrganizationPaths()
+  redirect(returnPath)
 }

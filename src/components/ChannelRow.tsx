@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { deleteChannelAction } from '@/app/events/[eventSlug]/channels/actions'
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
 import { RouteActionCluster } from '@/components/RouteActionCluster'
+import { channelEnabledChip } from '@/lib/active-status'
 import { rowTintClass, type ListRowTint } from '@/lib/list-group-tints'
 
 type ChannelRowProps = {
@@ -43,6 +44,7 @@ export function ChannelRow({
   const router = useRouter()
   const href = `/events/${eventSlug}/channels/${slug}`
   const deleteFormId = `delete-channel-${channelId}`
+  const statusChip = channelEnabledChip(enabled)
 
   function openRow() {
     router.push(href)
@@ -74,9 +76,7 @@ export function ChannelRow({
       </div>
 
       <div className="us-data-row__chips">
-        <span className={`us-chip ${enabled === false ? 'us-chip-warning' : 'us-chip-blue'}`}>
-          {enabled === false ? 'Disabled' : 'Enabled'}
-        </span>
+        <span className={`us-chip ${statusChip.className}`}>{statusChip.label}</span>
       </div>
 
       <div className="us-data-row__actions" onClick={(event) => event.stopPropagation()}>

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 
 import { deleteEventAction } from '@/app/events/actions'
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
+import { eventStatusChip } from '@/lib/active-status'
 import { rowTintClass, type ListRowTint } from '@/lib/list-group-tints'
 
 type EventRowProps = {
@@ -48,6 +49,7 @@ export function EventRow({
   const router = useRouter()
   const href = `/events/${slug}`
   const deleteFormId = `delete-event-${eventId}`
+  const statusChip = eventStatusChip(status)
 
   function openRow() {
     router.push(href)
@@ -84,7 +86,7 @@ export function EventRow({
       </div>
 
       <div className="us-data-row__chips">
-        {status ? <span className="us-chip us-chip-muted capitalize">{status}</span> : null}
+        <span className={`us-chip ${statusChip.className}`}>{statusChip.label}</span>
         <span className="us-chip us-chip-blue">
           {channelCount} {channelCount === 1 ? 'channel' : 'channels'}
         </span>

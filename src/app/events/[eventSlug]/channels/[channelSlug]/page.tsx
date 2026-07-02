@@ -10,9 +10,14 @@ import { Layout } from '@/components/Layout'
 import { RouteActionCluster } from '@/components/RouteActionCluster'
 import { requireAppUser } from '@/lib/app-auth'
 import { formatEventChannelTitle } from '@/lib/branding'
+import { channelEnabledChip } from '@/lib/active-status'
 import { getDashboardChannel, getDashboardEvent } from '@/lib/dashboard-data'
 import { getListenerUrl, getRequestBaseUrl, getSpeakerUrl } from '@/lib/links'
-import { generateQrDataUrl } from '@/lib/qrcode'
+import { generateBrandedRouteQrDataUrl } from '@/lib/qrcode'
+import {
+  resolveBrandedQrChannelTitle,
+  resolveBrandedQrOrganizationTitle,
+} from '@/lib/branded-qrcode-labels'
 import { resolveChannelStreamInfo } from '@/lib/streaming/resolve-channel-stream'
 import { updateChannelSummaryAction } from '@/app/events/[eventSlug]/channels/actions'
 import { eventListenerPasswordConfigured } from '@/lib/listener-password'
@@ -112,18 +117,30 @@ export default async function ChannelDetailPage({ params, searchParams }: PagePr
   const publicBaseUrl = await getRequestBaseUrl()
   const listenerUrl = getListenerUrl(eventSlug, channelSlug, publicBaseUrl)
   const speakerUrl = getSpeakerUrl(eventSlug, channelSlug, publicBaseUrl)
+  const organizationName = resolveBrandedQrOrganizationTitle(event?.organizationTitle)
+  const channelName = resolveBrandedQrChannelTitle(channel.name, channelSlug)
   const [listenerQrDataUrl, speakerQrDataUrl] = await Promise.all([
-    generateQrDataUrl(listenerUrl),
-    generateQrDataUrl(speakerUrl),
+    generateBrandedRouteQrDataUrl({
+      channelName,
+      organizationName,
+      url: listenerUrl,
+      variant: 'listener',
+    }),
+    generateBrandedRouteQrDataUrl({
+      channelName,
+      organizationName,
+      url: speakerUrl,
+      variant: 'speaker',
+    }),
   ])
+
+  const channelStatus = channelEnabledChip(channel.enabled)
 
   return (
     <Layout hideHeader title={channel.name}>
       <section className="mx-auto max-w-6xl space-y-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className={`us-chip ${channel.enabled === false ? 'us-chip-warning' : 'us-chip-blue'}`}>
-            {channel.enabled === false ? 'Disabled' : 'Enabled'}
-          </span>
+          <span className={`us-chip ${channelStatus.className}`}>{channelStatus.label}</span>
           <Link className="us-button-secondary ml-auto px-3 py-2 text-sm font-medium" href={`/events/${eventSlug}`}>
             Back to event
           </Link>

@@ -5,15 +5,18 @@ import { getPayload } from 'payload'
 
 import { canManageChannels, createChannelAction } from '@/app/events/[eventSlug]/channels/actions'
 import { requireAppUser } from '@/lib/app-auth'
-import { ChannelRow } from '@/components/ChannelRow'
-import { TruncatedList } from '@/components/TruncatedList'
+import { ChannelsHubTable } from '@/components/ChannelsHubTable'
 import { Layout } from '@/components/Layout'
 import { PanelDrawer } from '@/components/PanelDrawer'
 import { getDashboardAllChannels, getDashboardEvents } from '@/lib/dashboard-data'
 import { assignGroupTints } from '@/lib/list-group-tints'
 import { getListenerUrl, getRequestBaseUrl, getSpeakerUrl } from '@/lib/links'
 import { pageMetadata } from '@/lib/branding'
-import { generateQrDataUrl } from '@/lib/qrcode'
+import { generateBrandedRouteQrDataUrl } from '@/lib/qrcode'
+import {
+  resolveBrandedQrChannelTitle,
+  resolveBrandedQrOrganizationTitle,
+} from '@/lib/branded-qrcode-labels'
 
 export const metadata: Metadata = pageMetadata('Channels')
 
@@ -69,9 +72,21 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
     tintedChannels.map(async (channel) => {
       const listenerUrl = getListenerUrl(channel.eventSlug, channel.slug, publicBaseUrl)
       const speakerUrl = getSpeakerUrl(channel.eventSlug, channel.slug, publicBaseUrl)
+      const organizationName = resolveBrandedQrOrganizationTitle(channel.organizationTitle)
+      const channelName = resolveBrandedQrChannelTitle(channel.name, channel.slug)
       const [listenerQrDataUrl, speakerQrDataUrl, canDelete] = await Promise.all([
-        generateQrDataUrl(listenerUrl),
-        generateQrDataUrl(speakerUrl),
+        generateBrandedRouteQrDataUrl({
+          channelName,
+          organizationName,
+          url: listenerUrl,
+          variant: 'listener',
+        }),
+        generateBrandedRouteQrDataUrl({
+          channelName,
+          organizationName,
+          url: speakerUrl,
+          variant: 'speaker',
+        }),
         canManageChannels(payload, user, channel.eventID),
       ])
 
@@ -85,6 +100,18 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
       }
     }),
   )
+
+  const returnParams = new URLSearchParams()
+
+  if (selectedEvent) {
+    returnParams.set('event', selectedEvent)
+  }
+
+  if (searchQuery) {
+    returnParams.set('q', searchQuery)
+  }
+
+  const returnPath = returnParams.toString() ? `/channels?${returnParams.toString()}` : '/channels'
 
   return (
     <Layout hideHeader title="Channels">
@@ -175,41 +202,25 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
           </PanelDrawer>
         ) : null}
 
-        <article className="us-panel px-4 py-4">
-          <div className="us-data-row us-data-row-header us-data-row--cols-3 px-4" style={{ color: 'var(--us-muted)' }}>
-            <span className="us-data-row__lead">Channel</span>
-            <span className="us-data-row__chips">Status</span>
-            <span className="us-data-row__actions">Speaker / listener links</span>
-          </div>
-
-          {channelRows.length === 0 ? (
-            <p className="px-2 py-4 text-sm leading-6" style={{ color: 'var(--us-muted)' }}>
-              No channels are available.
-            </p>
-          ) : (
-            <TruncatedList itemLabel="channels" listClassName="space-y-3">
-              {channelRows.map((channel) => (
-                <ChannelRow
-                  canDelete={channel.canDelete}
-                  channelId={channel.id}
-                  description={channel.eventTitle}
-                  enabled={channel.enabled}
-                  eventSlug={channel.eventSlug}
-                  key={`${channel.eventSlug}-${channel.slug}`}
-                  listenerPageEnabled={channel.listenerPageEnabled}
-                  listenerQrDataUrl={channel.listenerQrDataUrl}
-                  listenerUrl={channel.listenerUrl}
-                  name={channel.name}
-                  rowTint={channel.rowTint}
-                  slug={channel.slug}
-                  speakerPageEnabled={channel.speakerPageEnabled}
-                  speakerQrDataUrl={channel.speakerQrDataUrl}
-                  speakerUrl={channel.speakerUrl}
-                />
-              ))}
-            </TruncatedList>
-          )}
-        </article>
+        <ChannelsHubTable
+          channels={channelRows.map((channel) => ({
+            canDelete: channel.canDelete,
+            channelId: channel.id,
+            description: channel.eventTitle,
+            enabled: channel.enabled,
+            eventSlug: channel.eventSlug,
+            listenerPageEnabled: channel.listenerPageEnabled,
+            listenerQrDataUrl: channel.listenerQrDataUrl,
+            listenerUrl: channel.listenerUrl,
+            name: channel.name,
+            rowTint: channel.rowTint,
+            slug: channel.slug,
+            speakerPageEnabled: channel.speakerPageEnabled,
+            speakerQrDataUrl: channel.speakerQrDataUrl,
+            speakerUrl: channel.speakerUrl,
+          }))}
+          returnPath={returnPath}
+        />
       </section>
     </Layout>
   )

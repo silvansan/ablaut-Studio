@@ -8,7 +8,11 @@ import { SpeakerChannelMonitor } from '@/components/SpeakerChannelMonitor'
 import { formatEventChannelTitle } from '@/lib/branding'
 import { getListenerUrl, getRequestBaseUrl } from '@/lib/links'
 import { getMonitorableChannelsForEvent, getPublicChannelContext, isSpeakerPubliclyAvailable } from '@/lib/public-channel'
-import { generateQrDataUrl } from '@/lib/qrcode'
+import { generateBrandedRouteQrDataUrl } from '@/lib/qrcode'
+import {
+  resolveBrandedQrChannelTitle,
+  resolveBrandedQrOrganizationTitle,
+} from '@/lib/branded-qrcode-labels'
 import {
   getSpeakerSessionCookieName,
   speakerPasswordRequired,
@@ -40,10 +44,19 @@ export default async function SpeakPage({ params }: PageProps) {
   const hasSpeakerSession =
     !passwordRequired || verifySpeakerSessionToken(eventSlug, channelSlug, sessionCookie)
   const eventTitle = context?.event.title ?? eventSlug
-  const channelName = context?.channel.name ?? channelSlug
+  const channelDisplayName = context?.channel.name ?? channelSlug
   const publicBaseUrl = await getRequestBaseUrl()
   const listenerUrl = getListenerUrl(eventSlug, channelSlug, publicBaseUrl)
-  const listenerQrDataUrl = await generateQrDataUrl(listenerUrl)
+  const organization =
+    context && typeof context.event.organization === 'object' ? context.event.organization : null
+  const organizationName = resolveBrandedQrOrganizationTitle(organization?.name)
+  const channelName = resolveBrandedQrChannelTitle(channelDisplayName, channelSlug)
+  const listenerQrDataUrl = await generateBrandedRouteQrDataUrl({
+    channelName,
+    organizationName,
+    url: listenerUrl,
+    variant: 'listener',
+  })
   const monitorChannels = context ? await getMonitorableChannelsForEvent(eventSlug, channelSlug) : []
 
   return (
@@ -59,7 +72,7 @@ export default async function SpeakPage({ params }: PageProps) {
                 {eventTitle}
               </p>
               <h2 className="mt-2 text-4xl font-semibold tracking-tight md:text-5xl" style={{ color: 'var(--us-green-dark)' }}>
-                {channelName}
+                {channelDisplayName}
               </h2>
             </div>
             <h3 className="mt-4 text-2xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
@@ -74,7 +87,7 @@ export default async function SpeakPage({ params }: PageProps) {
                   <SpeakerChannelMonitor
                     currentChannel={{
                       languageLabel: context.channel.languageLabel,
-                      name: channelName,
+                      name: channelDisplayName,
                       slug: channelSlug,
                       webrtcEnabled: context.channel.webrtcEnabled,
                     }}

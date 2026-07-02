@@ -13,7 +13,7 @@ import { getFeatureNavItems } from '@/features/registry'
 import { getRequestBaseUrl } from '@/lib/links'
 import { loadPublicMobileAppRelease } from '@/lib/mobile-app-release'
 import { countActiveOrganizationsForUser, countPendingJoinRequestsForUser, hasOrganizationManagementAccess, shouldShowMultiOrganizationNav } from '@/lib/organizations'
-import { generateQrDataUrl } from '@/lib/qrcode'
+import { generateBrandedDownloadQrDataUrl } from '@/lib/qrcode'
 import { isAdminUser, isSuperAdminUser } from '@/lib/permissions'
 
 type LayoutProps = {
@@ -44,7 +44,10 @@ export async function Layout({
   const mobileRelease = await loadPublicMobileAppRelease(payload, await getRequestBaseUrl())
   const mobileAppQrDataUrl =
     mobileRelease?.latestVersion && mobileRelease.downloadPageUrl
-      ? await generateQrDataUrl(mobileRelease.downloadPageUrl)
+      ? await generateBrandedDownloadQrDataUrl({
+          url: mobileRelease.downloadPageUrl,
+          version: mobileRelease.latestVersion,
+        })
       : null
   const showAppMenu = Boolean(user)
   const showPayloadAdmin = user ? isSuperAdminUser(user) : false
@@ -71,8 +74,9 @@ export async function Layout({
   ].filter((item) => item.show)
 
   return (
-    <div className="min-h-screen px-4 py-4 md:px-6 md:py-6">
-      <div className="mx-auto flex min-h-[calc(100vh-2rem)] max-w-7xl flex-col gap-4 xl:flex-row">
+    <div className="min-h-screen">
+      <div className="us-shell px-3 py-3 md:px-4 md:py-4 xl:px-5 xl:py-5">
+        <div className="flex min-h-[calc(100vh-1.5rem)] flex-col gap-4 xl:min-h-[calc(100vh-2rem)] xl:flex-row">
         {showAppMenu ? (
           <aside className="us-panel overflow-visible xl:w-[290px] xl:flex-none">
             <div
@@ -192,6 +196,7 @@ export async function Layout({
               </div>
             </div>
           </footer>
+        </div>
         </div>
       </div>
     </div>

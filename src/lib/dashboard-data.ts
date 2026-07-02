@@ -210,13 +210,20 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
 
 export async function getDashboardAllChannels(
   limit = 100,
-): Promise<(DashboardChannel & { eventID: number; eventSlug: string; eventTitle: string })[]> {
+): Promise<
+  (DashboardChannel & {
+    eventID: number
+    eventSlug: string
+    eventTitle: string
+    organizationTitle?: string | null
+  })[]
+> {
   const user = await requireAppUser()
   const payload = await getPayload({ config: configPromise })
   const channels = await payload
     .find({
       collection: 'channels',
-      depth: 1,
+      depth: 2,
       limit,
       overrideAccess: false,
       pagination: false,
@@ -234,12 +241,14 @@ export async function getDashboardAllChannels(
   return channels.docs.map((channel) => {
     const event = typeof channel.event === 'object' ? channel.event : null
     const eventID = event?.id ?? (typeof channel.event === 'number' ? channel.event : 0)
+    const organization = event && typeof event.organization === 'object' ? event.organization : null
 
     return {
       ...normalizeChannel(channel),
       eventID,
       eventSlug: event?.slug ?? String(channel.event),
       eventTitle: event?.title ?? String(channel.event),
+      organizationTitle: organization?.name ?? null,
     }
   })
 }
@@ -252,7 +261,7 @@ export async function getDashboardEvent(eventSlug: string): Promise<DashboardEve
   try {
     events = await payload.find({
       collection: 'events',
-      depth: 0,
+      depth: 1,
       limit: 1,
       overrideAccess: false,
       pagination: false,

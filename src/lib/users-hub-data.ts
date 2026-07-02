@@ -8,7 +8,10 @@ import { getGloballyUnassignedUserIDs } from '@/lib/user-hub-access'
 import type { Organization, OrganizationMembership, User } from '@/payload-types'
 
 export type UserHubEntry = {
+  active: boolean
   globalRole: string
+  invitationStatus: string | null
+  membershipId: number | null
   organizationId: number | null
   organizationName: string | null
   organizationSlug: string | null
@@ -54,7 +57,10 @@ function buildEntryFromMembership(membership: OrganizationMembership, user: User
   }
 
   return {
+    active: user.active !== false,
     globalRole: user.role ?? 'moderator',
+    invitationStatus: user.invitationStatus ?? null,
+    membershipId: membership.id,
     organizationId: organization.id,
     organizationName: organization.name,
     organizationSlug: organization.slug,
@@ -139,7 +145,10 @@ export async function getUsersHubData(): Promise<UsersHubData> {
         }
 
         entries.push({
+          active: user.active !== false,
           globalRole: user.role ?? 'moderator',
+          invitationStatus: user.invitationStatus ?? null,
+          membershipId: null,
           organizationId: null,
           organizationName: null,
           organizationSlug: null,
@@ -164,7 +173,10 @@ export async function getUsersHubData(): Promise<UsersHubData> {
         })
 
         entries.push({
+          active: user.active !== false,
           globalRole: user.role ?? 'moderator',
+          invitationStatus: user.invitationStatus ?? null,
+          membershipId: null,
           organizationId: null,
           organizationName: null,
           organizationSlug: null,

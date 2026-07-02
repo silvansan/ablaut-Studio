@@ -13,12 +13,17 @@ import { TruncatedList } from '@/components/TruncatedList'
 import { EventSettingsDrawer } from '@/components/EventSettingsDrawer'
 import { Layout } from '@/components/Layout'
 import { requireAppUser } from '@/lib/app-auth'
+import { eventStatusChip } from '@/lib/active-status'
 import { getDashboardChannels, getDashboardEvent } from '@/lib/dashboard-data'
 import { assignGroupTints } from '@/lib/list-group-tints'
 import { getEventListenerUrl, getListenerUrl, getRequestBaseUrl, getSpeakerUrl } from '@/lib/links'
 import { getManageableOrganizations } from '@/lib/organization-data'
 import { isSuperAdminUser } from '@/lib/permissions'
-import { generateQrDataUrl } from '@/lib/qrcode'
+import { generateBrandedRouteQrDataUrl } from '@/lib/qrcode'
+import {
+  resolveBrandedQrChannelTitle,
+  resolveBrandedQrOrganizationTitle,
+} from '@/lib/branded-qrcode-labels'
 import type { OrganizationMembership, User } from '@/payload-types'
 
 type PageProps = {
@@ -165,17 +170,36 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
   const publicBaseUrl = await getRequestBaseUrl()
   const canManageChannelsUser = await canManageChannels(payload, user, event.id)
   const eventListenerUrl = getEventListenerUrl(eventSlug, publicBaseUrl)
+  const organizationName = resolveBrandedQrOrganizationTitle(event.organizationTitle)
   const eventListenerQrDataUrl =
-    fullEvent.unifiedListenerQrEnabled === true ? await generateQrDataUrl(eventListenerUrl) : null
+    fullEvent.unifiedListenerQrEnabled === true
+      ? await generateBrandedRouteQrDataUrl({
+          channelName: resolveBrandedQrChannelTitle(event.title, eventSlug),
+          organizationName,
+          url: eventListenerUrl,
+          variant: 'listener',
+        })
+      : null
   const sortedChannels = [...channels].sort((a, b) => a.name.localeCompare(b.name))
   const tintedChannels = assignGroupTints(sortedChannels, () => eventSlug)
   const channelRows = await Promise.all(
     tintedChannels.map(async (channel) => {
       const listenerUrl = getListenerUrl(eventSlug, channel.slug, publicBaseUrl)
       const speakerUrl = getSpeakerUrl(eventSlug, channel.slug, publicBaseUrl)
+      const channelName = resolveBrandedQrChannelTitle(channel.name, channel.slug)
       const [listenerQrDataUrl, speakerQrDataUrl] = await Promise.all([
-        generateQrDataUrl(listenerUrl),
-        generateQrDataUrl(speakerUrl),
+        generateBrandedRouteQrDataUrl({
+          channelName,
+          organizationName,
+          url: listenerUrl,
+          variant: 'listener',
+        }),
+        generateBrandedRouteQrDataUrl({
+          channelName,
+          organizationName,
+          url: speakerUrl,
+          variant: 'speaker',
+        }),
       ])
 
       return {
@@ -188,12 +212,13 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
       }
     }),
   )
+  const eventStatus = eventStatusChip(event.status)
 
   return (
     <Layout hideHeader title={event.title}>
       <section className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="us-chip us-chip-muted capitalize">{event.status ?? 'draft'}</span>
+          <span className={`us-chip ${eventStatus.className}`}>{eventStatus.label}</span>
           <span className="us-chip us-chip-blue">
             {event.channelCount} {event.channelCount === 1 ? 'channel' : 'channels'}
           </span>

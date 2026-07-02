@@ -5,10 +5,9 @@ import { getPayload } from 'payload'
 
 import { canDeleteEvent, createEventAction } from '@/app/events/actions'
 import { EventForm } from '@/components/EventForm'
-import { EventRow } from '@/components/EventRow'
+import { EventsHubTable } from '@/components/EventsHubTable'
 import { Layout } from '@/components/Layout'
 import { PanelDrawer } from '@/components/PanelDrawer'
-import { TruncatedList } from '@/components/TruncatedList'
 import { getDashboardEvents } from '@/lib/dashboard-data'
 import { assignGroupTints } from '@/lib/list-group-tints'
 import { getManageableOrganizations } from '@/lib/organization-data'
@@ -54,6 +53,7 @@ export default async function EventsPage({ searchParams }: PageProps) {
     })),
   )
   const tintedEvents = assignGroupTints(eventsWithDelete, (event) => String(event.organizationId ?? '__none__'))
+  const returnPath = status ? `/events?status=${status}` : '/events'
 
   return (
     <Layout hideHeader title="Events">
@@ -101,32 +101,22 @@ export default async function EventsPage({ searchParams }: PageProps) {
         </div>
 
         {tintedEvents.length > 0 ? (
-          <div className="us-panel overflow-hidden px-4 py-4">
-            <div className="us-data-row us-data-row-header us-data-row--cols-4 px-4" style={{ color: 'var(--us-muted)' }}>
-              <span className="us-data-row__lead">Event</span>
-              <span className="us-data-row__chips">Status</span>
-              <span className="us-data-row__detail">When / where</span>
-              <span className="us-data-row__actions">{tintedEvents.some((event) => event.canDelete) ? 'Delete' : ''}</span>
-            </div>
-            <TruncatedList as="ul" itemLabel="events" listClassName="space-y-2">
-              {tintedEvents.map((event) => (
-                <EventRow
-                  canDelete={event.canDelete}
-                  channelCount={event.channelCount}
-                  dateStart={event.dateStart}
-                  description={event.description}
-                  eventId={event.id}
-                  key={event.slug}
-                  location={event.location}
-                  organizationTitle={event.organizationTitle}
-                  rowTint={event.rowTint}
-                  slug={event.slug}
-                  status={event.status ?? 'draft'}
-                  title={event.title}
-                />
-              ))}
-            </TruncatedList>
-          </div>
+          <EventsHubTable
+            events={tintedEvents.map((event) => ({
+              canDelete: event.canDelete,
+              channelCount: event.channelCount,
+              dateStart: event.dateStart,
+              description: event.description,
+              eventId: event.id,
+              location: event.location,
+              organizationTitle: event.organizationTitle,
+              rowTint: event.rowTint,
+              slug: event.slug,
+              status: event.status ?? 'active',
+              title: event.title,
+            }))}
+            returnPath={returnPath}
+          />
         ) : (
           <div className="us-panel px-6 py-6">
             <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>

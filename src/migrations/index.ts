@@ -10,6 +10,7 @@ import * as migration_20260523_120000_ll_hls_defaults from './20260523_120000_ll
 import * as migration_20260524_120000_ll_hls_live_cap from './20260524_120000_ll_hls_live_cap';
 import * as migration_20260525_120000_ll_hls_1s_cap from './20260525_120000_ll_hls_1s_cap';
 import * as migration_20260526_120000_mobile_app_release from './20260526_120000_mobile_app_release';
+import * as migration_20260527_120000_events_active_default from './20260527_120000_events_active_default';
 
 export const migrations = [
   {
@@ -71,5 +72,10 @@ export const migrations = [
     up: migration_20260526_120000_mobile_app_release.up,
     down: migration_20260526_120000_mobile_app_release.down,
     name: '20260526_120000_mobile_app_release'
+  },
+  {
+    up: migration_20260527_120000_events_active_default.up,
+    down: migration_20260527_120000_events_active_default.down,
+    name: '20260527_120000_events_active_default'
   },
 ];

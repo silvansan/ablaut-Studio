@@ -621,6 +621,291 @@ export async function bulkAssignUsersToOrganizationAction(formData: FormData) {
   redirect('/users')
 }
 
+function numericValues(formData: FormData, key: string): number[] {
+  return formData
+    .getAll(key)
+    .map((value) => (typeof value === 'string' ? Number(value) : NaN))
+    .filter((value): value is number => Number.isFinite(value))
+}
+
+function uniqueNumbers(values: number[]): number[] {
+  return [...new Set(values)]
+}
+
+async function deleteUserRecord(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  currentUser: Awaited<ReturnType<typeof requireAppUser>>,
+  userID: number,
+  organizationID?: number,
+) {
+  if (String(currentUser.id) === String(userID)) {
+    throw new Error('You cannot delete your own account.')
+  }
+
+  const targetUser = await payload.findByID({
+    id: userID,
+    collection: 'users',
+    overrideAccess: false,
+    user: currentUser,
+  })
+
+  if (!isSuperAdminUser(currentUser) && targetUser.role !== 'moderator' && targetUser.role !== 'admin') {
+    throw new Error('You can only delete admin or moderator accounts in your organizations.')
+  }
+
+  if (organizationID) {
+    const allowed = await canManageUserInOrganization(
+      { payload, user: currentUser } as never,
+      String(userID),
+      organizationID,
+    )
+
+    if (!allowed) {
+      throw new Error('You do not have permission to delete this user.')
+    }
+  }
+
+  const assignments = await payload.find({
+    collection: 'event-assignments',
+    depth: 0,
+    limit: 1000,
+    overrideAccess: true,
+    pagination: false,
+    user: currentUser,
+    where: {
+      user: {
+        equals: userID,
+      },
+    },
+  })
+
+  for (const assignment of assignments.docs) {
+    await payload.delete({
+      id: assignment.id,
+      collection: 'event-assignments',
+      overrideAccess: true,
+      user: currentUser,
+    })
+  }
+
+  const memberships = await payload.find({
+    collection: 'organization-memberships',
+    depth: 0,
+    limit: 1000,
+    overrideAccess: true,
+    pagination: false,
+    where: {
+      user: {
+        equals: userID,
+      },
+    },
+  })
+
+  for (const membership of memberships.docs) {
+    await payload.delete({
+      id: membership.id,
+      collection: 'organization-memberships',
+      overrideAccess: true,
+      user: currentUser,
+    })
+  }
+
+  await payload.delete({
+    id: userID,
+    collection: 'users',
+    overrideAccess: true,
+    user: currentUser,
+  })
+}
+
+export async function bulkUsersAction(formData: FormData) {
+  const currentUser = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
+
+  await assertCanManageOrganizationUsers(payload, currentUser)
+
+  const bulkAction = stringValue(formData, 'bulkAction')
+  const returnPath = stringValue(formData, 'returnPath') ?? '/users'
+  const organizationID = numericValue(formData, 'organizationId')
+  const userIDs = uniqueNumbers(numericValues(formData, 'userIDs'))
+  const membershipIDs = uniqueNumbers(numericValues(formData, 'membershipIDs'))
+
+  if (!bulkAction) {
+    throw new Error('Choose a bulk action.')
+  }
+
+  if (userIDs.length === 0 && membershipIDs.length === 0) {
+    throw new Error('Select at least one user.')
+  }
+
+  switch (bulkAction) {
+    case 'assign': {
+      if (!organizationID) {
+        throw new Error('Organization is required.')
+      }
+
+      await assertCanManageOrganization(payload, currentUser, organizationID)
+      const roleInOrganization = membershipRoleValue(formData)
+
+      for (const targetUserID of userIDs) {
+        await upsertOrganizationMembershipRecord(
+          payload,
+          currentUser,
+          organizationID,
+          targetUserID,
+          roleInOrganization,
+        )
+      }
+
+      break
+    }
+    case 'set-org-role': {
+      if (!organizationID) {
+        throw new Error('Organization is required.')
+      }
+
+      await assertCanManageOrganization(payload, currentUser, organizationID)
+      const roleInOrganization = membershipRoleValue(formData)
+
+      for (const membershipID of membershipIDs) {
+        await payload.update({
+          id: membershipID,
+          collection: 'organization-memberships',
+          data: {
+            roleInOrganization,
+          },
+          overrideAccess: true,
+          user: currentUser,
+        })
+      }
+
+      break
+    }
+    case 'activate':
+    case 'deactivate': {
+      if (!isSuperAdminUser(currentUser)) {
+        throw new Error('Only super admins can activate or deactivate accounts in bulk.')
+      }
+
+      for (const targetUserID of userIDs) {
+        await payload.update({
+          id: targetUserID,
+          collection: 'users',
+          data: {
+            active: bulkAction === 'activate',
+          },
+          overrideAccess: false,
+          user: currentUser,
+        })
+      }
+
+      break
+    }
+    case 'password-reset': {
+      for (const targetUserID of userIDs) {
+        const targetUser = await payload.findByID({
+          id: targetUserID,
+          collection: 'users',
+          overrideAccess: false,
+          user: currentUser,
+        })
+
+        if (organizationID) {
+          const allowed = await canManageUserInOrganization(
+            { payload, user: currentUser } as never,
+            String(targetUserID),
+            organizationID,
+          )
+
+          if (!allowed) {
+            continue
+          }
+        }
+
+        await sendUserPasswordResetEmail(payload, targetUser.email)
+      }
+
+      break
+    }
+    case 'resend-invite': {
+      if (!organizationID) {
+        throw new Error('Organization is required to resend invites.')
+      }
+
+      await assertCanManageOrganization(payload, currentUser, organizationID)
+
+      for (const targetUserID of userIDs) {
+        const targetUser = await payload.findByID({
+          id: targetUserID,
+          collection: 'users',
+          overrideAccess: false,
+          user: currentUser,
+        })
+
+        if (targetUser.invitationStatus !== 'pending') {
+          continue
+        }
+
+        const allowed = await canManageUserInOrganization(
+          { payload, user: currentUser } as never,
+          String(targetUserID),
+          organizationID,
+        )
+
+        if (!allowed) {
+          continue
+        }
+
+        await sendUserActivationInviteEmail(payload, targetUser.email)
+      }
+
+      break
+    }
+    case 'remove-from-org': {
+      if (!organizationID) {
+        throw new Error('Organization is required.')
+      }
+
+      await assertCanManageOrganization(payload, currentUser, organizationID)
+
+      for (const membershipID of membershipIDs) {
+        await payload.update({
+          id: membershipID,
+          collection: 'organization-memberships',
+          data: {
+            status: 'revoked',
+          },
+          overrideAccess: true,
+          user: currentUser,
+        })
+      }
+
+      break
+    }
+    case 'delete': {
+      for (const targetUserID of userIDs) {
+        await deleteUserRecord(payload, currentUser, targetUserID, organizationID)
+      }
+
+      break
+    }
+    default:
+      throw new Error('Unsupported bulk action.')
+  }
+
+  if (organizationID) {
+    await revalidateOrganizationById(payload, organizationID)
+  }
+
+  revalidatePath('/users')
+
+  for (const targetUserID of userIDs) {
+    revalidatePath(`/users/${targetUserID}`)
+  }
+
+  redirect(returnPath)
+}
+
 export async function deleteUserAction(formData: FormData) {
   const currentUser = await requireAppUser()
   const payload = await getPayload({ config: configPromise })

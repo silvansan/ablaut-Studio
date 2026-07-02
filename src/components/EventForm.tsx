@@ -92,12 +92,12 @@ export function EventForm({
           Status
           <select
             className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
-            defaultValue={event?.status ?? 'draft'}
+            defaultValue={event?.status ?? 'active'}
             name="status"
             style={{ borderColor: 'var(--us-border)' }}
           >
-            <option value="draft">Draft</option>
             <option value="active">Active</option>
+            <option value="draft">Draft (inactive)</option>
             <option value="archived">Archived</option>
           </select>
         </label>
