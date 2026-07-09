@@ -23,7 +23,7 @@
 #
 # Upgrade: change only the Git tag in build.context below, then redeploy.
 # Rollback: change the tag back to the previous known-good release and redeploy.
-# Current pin: main (latest) — tag example: ablaut-v0.3.1 for rollback-friendly deploys.
+# Current pin: ablaut-v0.3.2 (stable checkpoint — rollback here if a later deploy misbehaves).
 #
 # LL-HLS compatibility fallback is enabled by default (redis + livekit-egress included).
 # Disable with FEATURE_HLS_EGRESS=false in Portainer env if you do not want egress.
@@ -33,7 +33,7 @@ name: ablaut-studio
 services:
   app:
     build:
-      context: https://github.com/silvansan/ablaut-Studio.git#main
+      context: https://github.com/silvansan/ablaut-Studio.git#ablaut-v0.3.2
       dockerfile: Dockerfile
     environment:
       NODE_ENV: production

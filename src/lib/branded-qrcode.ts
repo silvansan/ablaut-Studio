@@ -148,9 +148,7 @@ function buildCardSvg(input: BrandedQrCardInput, qrBase64: string): string {
   <rect x="150" y="196" width="${QR_SIZE}" height="${QR_SIZE}" rx="28" fill="white" stroke="${ABLAUT_QR_COLORS.blue}" stroke-opacity="0.22" stroke-width="2"/>
   <image href="data:image/png;base64,${qrBase64}" x="150" y="196" width="${QR_SIZE}" height="${QR_SIZE}" preserveAspectRatio="xMidYMid meet"/>
   <rect x="150" y="648" width="${QR_SIZE}" height="56" rx="14" fill="${ABLAUT_QR_COLORS.greenDark}"/>
-  <text x="286" y="684" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="22" font-weight="700" letter-spacing="0.08em" fill="white">SCAN ME</text>
-  <path d="M418 668 L452 684 L418 700" fill="none" stroke="${ABLAUT_QR_COLORS.blue}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <line x1="458" y1="684" x2="498" y2="684" stroke="${ABLAUT_QR_COLORS.blue}" stroke-width="4.5" stroke-linecap="round"/>
+  <text x="360" y="684" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="22" font-weight="700" letter-spacing="0.08em" fill="white">SCAN ME</text>
   <text x="360" y="748" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="14" font-weight="600" letter-spacing="0.16em" fill="${ABLAUT_QR_COLORS.muted}">${footer}</text>
   <text x="360" y="818" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="${ABLAUT_QR_COLORS.green}" opacity="0.85">ablaut</text>
 </svg>`

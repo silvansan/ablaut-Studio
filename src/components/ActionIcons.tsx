@@ -103,6 +103,34 @@ export function MinusIcon({ className = 'h-4 w-4' }: IconProps) {
   )
 }
 
+export function ExpandImageIcon({ className = 'h-4 w-4' }: IconProps) {
+  return (
+    <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
+      <path
+        d="M9 3H5a2 2 0 0 0-2 2v4m16-16v4a2 2 0 0 0-2 2h-4m0 12h4a2 2 0 0 0 2-2v-4M3 15v4a2 2 0 0 0 2 2h4"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  )
+}
+
+export function CollapseImageIcon({ className = 'h-4 w-4' }: IconProps) {
+  return (
+    <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
+      <path
+        d="M9 9H5V5m14 4h-4V5M9 15H5v4m14-4h-4v4"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  )
+}
+
 export function IconActionLink({
   appearance = 'default',
   children,

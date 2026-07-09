@@ -1,10 +1,10 @@
 'use client'
 
-import Image from 'next/image'
 import { useState } from 'react'
 
 import { DownloadIcon, OpenLinkIcon, QRCodeIcon } from '@/components/ActionIcons'
 import { ModalPortal } from '@/components/ModalPortal'
+import { QrCardPreview } from '@/components/QrCardPreview'
 
 type QRPopupProps = {
   appearance?: 'cluster-inner' | 'default'
@@ -71,7 +71,7 @@ export function QRPopup({
           onClick={() => setOpen(false)}
         >
           <div
-            className="w-full max-w-[380px] rounded-3xl border bg-white p-5 shadow-2xl"
+            className="w-full max-w-[min(96vw,560px)] rounded-3xl border bg-white p-5 shadow-2xl transition-all duration-200"
             onClick={(event) => event.stopPropagation()}
             style={{ borderColor: 'var(--us-border)' }}
           >
@@ -94,15 +94,8 @@ export function QRPopup({
               </button>
             </div>
 
-            <div className="mt-5 flex justify-center rounded-3xl border p-3" style={{ borderColor: 'rgba(38, 167, 242, 0.22)', background: 'linear-gradient(180deg, #fcfffd, #eef5f4)' }}>
-              <Image
-                alt={`${label} QR code for ${url}`}
-                className="h-auto w-full max-w-[300px] rounded-2xl"
-                height={375}
-                src={qrDataUrl}
-                unoptimized
-                width={300}
-              />
+            <div className="mt-5">
+              <QrCardPreview alt={`${label} QR code for ${url}`} qrDataUrl={qrDataUrl} />
             </div>
 
             <p className="mt-4 break-all text-xs leading-5" style={{ color: 'var(--us-muted)' }}>

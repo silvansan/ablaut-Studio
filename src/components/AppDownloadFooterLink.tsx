@@ -1,10 +1,10 @@
 'use client'
 
-import Image from 'next/image'
 import { useState } from 'react'
 
 import { AndroidIcon, DownloadIcon, QRCodeIcon } from '@/components/ActionIcons'
 import { ModalPortal } from '@/components/ModalPortal'
+import { QrCardPreview } from '@/components/QrCardPreview'
 
 type AppDownloadFooterLinkProps = {
   downloadPageUrl: string
@@ -41,7 +41,7 @@ export function AppDownloadFooterLink({
             role="dialog"
           >
             <div
-              className="w-full max-w-[380px] rounded-3xl border bg-white p-5 shadow-2xl"
+              className="w-full max-w-[min(96vw,560px)] rounded-3xl border bg-white p-5 shadow-2xl"
               onClick={(event) => event.stopPropagation()}
               style={{ borderColor: 'var(--us-border)' }}
             >
@@ -62,14 +62,10 @@ export function AppDownloadFooterLink({
                 </span>
               </div>
 
-              <div className="mt-4 flex justify-center rounded-2xl border p-3" style={{ borderColor: 'var(--us-border)', background: 'linear-gradient(180deg, #fcfffd, #eef5f4)' }}>
-                <Image
+              <div className="mt-4">
+                <QrCardPreview
                   alt={`QR code to download ablaut Android app v${latestVersion}`}
-                  className="h-auto w-full max-w-[280px] rounded-2xl"
-                  height={350}
-                  src={qrDataUrl}
-                  unoptimized
-                  width={280}
+                  qrDataUrl={qrDataUrl}
                 />
               </div>
 
