@@ -210,6 +210,7 @@ export interface Organization {
   slug: string;
   description?: string | null;
   active?: boolean | null;
+  productionMode?: boolean | null;
   supportEmail?: string | null;
   createdBy?: (number | null) | User;
   updatedAt: string;
@@ -562,6 +563,7 @@ export interface OrganizationsSelect<T extends boolean = true> {
   slug?: T;
   description?: T;
   active?: T;
+  productionMode?: T;
   supportEmail?: T;
   createdBy?: T;
   updatedAt?: T;

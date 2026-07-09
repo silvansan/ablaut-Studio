@@ -157,6 +157,7 @@ export async function updateOrganizationAction(formData: FormData) {
       active: formData.get('active') === 'on',
       description: stringValue(formData, 'description'),
       name,
+      productionMode: formData.get('productionMode') === 'on',
       slug: slugifyOrganizationName(stringValue(formData, 'slug') ?? name),
     },
     overrideAccess: false,

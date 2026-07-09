@@ -773,3 +773,117 @@ a:focus-visible {
 .us-neu-toggle-input:disabled + .us-neu-toggle-track {
   filter: grayscale(0.15);
 }
+
+.us-toast-stack {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 10050;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: min(24rem, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+.us-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid var(--us-border);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 12px 32px rgba(22, 63, 53, 0.14);
+  pointer-events: auto;
+}
+
+.us-toast--ok {
+  border-color: color-mix(in srgb, var(--us-green) 35%, var(--us-border) 65%);
+}
+
+.us-toast--error {
+  border-color: color-mix(in srgb, var(--us-danger) 45%, var(--us-border) 55%);
+}
+
+.us-toast__message {
+  flex: 1;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--us-text);
+}
+
+.us-toast__dismiss {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--us-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.us-toast__dismiss:hover {
+  background: rgba(22, 63, 53, 0.06);
+  color: var(--us-text);
+}
+
+.us-share-hub__channel {
+  border-top: 1px solid var(--us-border);
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+
+.us-share-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.us-mobile-tabbar__link--active {
+  background: color-mix(in srgb, var(--us-blue) 10%, white 90%);
+}
+
+.us-mobile-tabbar__badge {
+  display: inline-flex;
+  min-width: 1rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #f59e0b;
+  padding: 0 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+@media print {
+  .us-shell {
+    padding: 0 !important;
+  }
+
+  .us-print-share__toolbar,
+  aside,
+  footer,
+  .us-toast-stack,
+  .us-mobile-tabbar,
+  .us-chip {
+    display: none !important;
+  }
+
+  .us-print-share__grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 1rem !important;
+  }
+
+  .us-print-share__card {
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+}

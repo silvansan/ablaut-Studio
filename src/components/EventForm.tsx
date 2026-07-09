@@ -6,7 +6,8 @@ import {
 import type { Event } from '@/payload-types'
 
 type EventFormProps = {
-  action: (formData: FormData) => Promise<void>
+  action?: (formData: FormData) => Promise<void>
+  embedded?: boolean
   event?: Event
   organizationId?: number
   organizations?: OrganizationOption[]
@@ -24,6 +25,7 @@ function dateTimeValue(value?: string | null): string {
 
 export function EventForm({
   action,
+  embedded = false,
   event,
   organizationId,
   organizations = [],
@@ -34,9 +36,15 @@ export function EventForm({
   const fixedOrganizationId = organizationId ?? organizationIdFromEvent(event)
   const showOrganizationSelector = !organizationId && organizations.length > 0
   const canSubmit = Boolean(event) || Boolean(organizationId) || organizations.length > 0
+  const useEmbedded = embedded || (isDrawer && !action)
+  const Wrapper = useEmbedded ? 'div' : 'form'
+  const wrapperClassName = isDrawer ? 'space-y-5' : 'us-panel space-y-5 px-6 py-6'
 
   return (
-    <form action={action} className={isDrawer ? 'space-y-5' : 'us-panel space-y-5 px-6 py-6'}>
+    <Wrapper
+      {...(useEmbedded ? {} : { action })}
+      className={wrapperClassName}
+    >
       {event ? (
         <>
           <input name="id" type="hidden" value={event.id} />
@@ -67,13 +75,16 @@ export function EventForm({
         </label>
 
         <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-          Slug
+          URL name
           <input
             className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
             defaultValue={event?.slug ?? ''}
             name="slug"
             style={{ borderColor: 'var(--us-border)' }}
           />
+          <span className="mt-2 block text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
+            Used in listen and speak links. Changing it breaks existing QR codes and bookmarks.
+          </span>
         </label>
       </div>
 
@@ -147,17 +158,23 @@ export function EventForm({
         </label>
       </div>
 
+      <label className="flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
+        <input className="mt-1" defaultChecked={event?.publicListenerEnabled ?? true} name="publicListenerEnabled" type="checkbox" />
+        <span>Public listener pages enabled</span>
+      </label>
+
+      <details className="rounded-2xl border px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
+        <summary className="cursor-pointer text-sm font-semibold" style={{ color: 'var(--us-green-dark)' }}>
+          Sharing and access options
+        </summary>
+        <div className="mt-4 space-y-4">
       <div className="rounded-2xl border px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
         <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
           Listener access
         </p>
         <label className="mt-4 flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
-          <input className="mt-1" defaultChecked={event?.publicListenerEnabled ?? true} name="publicListenerEnabled" type="checkbox" />
-          <span>Public listener pages enabled</span>
-        </label>
-        <label className="mt-3 flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
           <input className="mt-1" defaultChecked={event?.unifiedListenerQrEnabled ?? false} name="unifiedListenerQrEnabled" type="checkbox" />
-          <span>Allow one listener QR for the whole event (channel picker)</span>
+          <span>One QR for all languages (listeners choose a channel after scanning)</span>
         </label>
         <label className="mt-3 flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
           <input className="mt-1" defaultChecked={event?.listenerPasswordEnabled ?? false} name="listenerPasswordEnabled" type="checkbox" />
@@ -196,6 +213,8 @@ export function EventForm({
           />
         </label>
       </div>
+        </div>
+      </details>
 
       <button
         className="us-button-primary px-5 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
@@ -204,6 +223,6 @@ export function EventForm({
       >
         {submitLabel}
       </button>
-    </form>
+    </Wrapper>
   )
 }

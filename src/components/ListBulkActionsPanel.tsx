@@ -16,7 +16,14 @@ export function ListBulkActionsPanel({
   title = 'Bulk actions',
 }: ListBulkActionsPanelProps) {
   if (selectedCount === 0) {
-    return null
+    return (
+      <div
+        className="rounded-3xl border border-dashed px-4 py-3 text-sm leading-6"
+        style={{ borderColor: 'var(--us-border)', color: 'var(--us-muted)' }}
+      >
+        Select rows to enable bulk actions.
+      </div>
+    )
   }
 
   return (

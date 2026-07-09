@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 
 import { HashRouteRedirect } from '@/components/HashRouteRedirect'
+import { AppToastProvider } from '@/components/AppToastProvider'
 import { APP_STUDIO_NAME } from '@/lib/branding'
 
 export const metadata: Metadata = {
@@ -36,8 +37,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <HashRouteRedirect />
-        {children}
+        <AppToastProvider>
+          <HashRouteRedirect />
+          {children}
+        </AppToastProvider>
       </body>
     </html>
   )

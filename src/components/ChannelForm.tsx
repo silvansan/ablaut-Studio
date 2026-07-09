@@ -3,8 +3,9 @@ import { ListenerAccessFields } from '@/components/ListenerAccessFields'
 import type { Channel } from '@/payload-types'
 
 type ChannelFormProps = {
-  action: (formData: FormData) => Promise<void>
+  action?: (formData: FormData) => Promise<void>
   channel?: Channel
+  embedded?: boolean
   eventListenerPasswordConfigured?: boolean
   eventSlug: string
   submitLabel: string
@@ -14,15 +15,22 @@ type ChannelFormProps = {
 export function ChannelForm({
   action,
   channel,
+  embedded = false,
   eventListenerPasswordConfigured = false,
   eventSlug,
   submitLabel,
   variant = 'full',
 }: ChannelFormProps) {
   const isAdvanced = variant === 'advanced'
+  const useEmbedded = embedded || (isAdvanced && !action)
+  const Wrapper = useEmbedded ? 'div' : 'form'
+  const wrapperClassName = isAdvanced ? 'space-y-5' : 'us-panel space-y-5 px-6 py-6'
 
   return (
-    <form action={action} className={isAdvanced ? 'space-y-5' : 'us-panel space-y-5 px-6 py-6'}>
+    <Wrapper
+      {...(useEmbedded ? {} : { action })}
+      className={wrapperClassName}
+    >
       <input name="eventSlug" type="hidden" value={eventSlug} />
       {channel ? (
         <>
@@ -38,7 +46,7 @@ export function ChannelForm({
             Channel name
             <input className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none" defaultValue={channel?.name ?? ''} name="name" required style={{ borderColor: 'var(--us-border)' }} />
             <span className="mt-2 block text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
-              The URL slug is created from the name when the channel is first saved.
+              The URL name is created from the channel name when it is first saved.
             </span>
           </label>
 
@@ -59,15 +67,33 @@ export function ChannelForm({
           <input name="description" type="hidden" value={channel?.description ?? ''} />
           <input name="sortOrder" type="hidden" value={channel?.sortOrder ?? 0} />
           <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-            URL slug
+            URL name
             <input className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none" defaultValue={channel?.slug ?? ''} name="slug" style={{ borderColor: 'var(--us-border)' }} />
             <span className="mt-2 block text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
-              Changing the slug breaks existing QR codes, bookmarks, and listener sessions.
+              Changing the URL name breaks existing QR codes, bookmarks, and listener sessions.
             </span>
           </label>
         </>
       )}
 
+      <div className="grid gap-3 md:grid-cols-2">
+        {[
+          ['enabled', 'Channel enabled', channel?.enabled ?? true],
+          ['listenerPageEnabled', 'Listener page on', channel?.listenerPageEnabled ?? true],
+          ['speakerPageEnabled', 'Speaker page on', channel?.speakerPageEnabled ?? true],
+        ].map(([name, label, checked]) => (
+          <label key={String(name)} className="flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
+            <input className="mt-1" defaultChecked={Boolean(checked)} name={String(name)} type="checkbox" />
+            <span>{label}</span>
+          </label>
+        ))}
+      </div>
+
+      <details className="rounded-2xl border px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
+        <summary className="cursor-pointer text-sm font-semibold" style={{ color: 'var(--us-green-dark)' }}>
+          Expert options
+        </summary>
+        <div className="mt-4 space-y-5">
       <ListenerAccessFields
         defaultMode={channel?.listenerTokenMode ?? 'public'}
         eventListenerPasswordConfigured={eventListenerPasswordConfigured}
@@ -105,11 +131,8 @@ export function ChannelForm({
 
       <div className="grid gap-3 md:grid-cols-2">
         {[
-          ['enabled', 'Channel enabled', channel?.enabled ?? true],
-          ['listenerPageEnabled', 'Listener page enabled', channel?.listenerPageEnabled ?? true],
-          ['speakerPageEnabled', 'Speaker page enabled', channel?.speakerPageEnabled ?? true],
-          ['webrtcEnabled', 'WebRTC enabled', channel?.webrtcEnabled ?? true],
-          ['hlsEnabled', 'LL-HLS enabled', channel?.hlsEnabled ?? true],
+          ['webrtcEnabled', 'Low-latency listening (WebRTC)', channel?.webrtcEnabled ?? true],
+          ['hlsEnabled', 'Compatibility listening (LL-HLS)', channel?.hlsEnabled ?? true],
         ].map(([name, label, checked]) => (
           <label key={String(name)} className="flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
             <input className="mt-1" defaultChecked={Boolean(checked)} name={String(name)} type="checkbox" />
@@ -149,10 +172,12 @@ export function ChannelForm({
           />
         </div>
       </div>
+        </div>
+      </details>
 
       <button type="submit" className="us-button-primary px-5 py-3 text-sm font-medium">
         {submitLabel}
       </button>
-    </form>
+    </Wrapper>
   )
 }

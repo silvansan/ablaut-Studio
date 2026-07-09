@@ -10,13 +10,7 @@ import { Layout } from '@/components/Layout'
 import { PanelDrawer } from '@/components/PanelDrawer'
 import { getDashboardAllChannels, getDashboardEvents } from '@/lib/dashboard-data'
 import { assignGroupTints } from '@/lib/list-group-tints'
-import { getListenerUrl, getRequestBaseUrl, getSpeakerUrl } from '@/lib/links'
 import { pageMetadata } from '@/lib/branding'
-import { generateBrandedRouteQrDataUrl } from '@/lib/qrcode'
-import {
-  resolveBrandedQrChannelTitle,
-  resolveBrandedQrOrganizationTitle,
-} from '@/lib/branded-qrcode-labels'
 
 export const metadata: Metadata = pageMetadata('Channels')
 
@@ -34,10 +28,9 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
   const selectedEvent = params?.event ?? ''
   const searchQuery = params?.q?.trim() ?? ''
   const normalizedQuery = searchQuery.toLowerCase()
-  const [channels, events, publicBaseUrl, user] = await Promise.all([
+  const [channels, events, user] = await Promise.all([
     getDashboardAllChannels(1000),
     getDashboardEvents(1000),
-    getRequestBaseUrl(),
     requireAppUser(),
   ])
   const payload = await getPayload({ config: configPromise })
@@ -69,36 +62,10 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
   })
   const tintedChannels = assignGroupTints(sortedChannels, (channel) => channel.eventSlug)
   const channelRows = await Promise.all(
-    tintedChannels.map(async (channel) => {
-      const listenerUrl = getListenerUrl(channel.eventSlug, channel.slug, publicBaseUrl)
-      const speakerUrl = getSpeakerUrl(channel.eventSlug, channel.slug, publicBaseUrl)
-      const organizationName = resolveBrandedQrOrganizationTitle(channel.organizationTitle)
-      const channelName = resolveBrandedQrChannelTitle(channel.name, channel.slug)
-      const [listenerQrDataUrl, speakerQrDataUrl, canDelete] = await Promise.all([
-        generateBrandedRouteQrDataUrl({
-          channelName,
-          organizationName,
-          url: listenerUrl,
-          variant: 'listener',
-        }),
-        generateBrandedRouteQrDataUrl({
-          channelName,
-          organizationName,
-          url: speakerUrl,
-          variant: 'speaker',
-        }),
-        canManageChannels(payload, user, channel.eventID),
-      ])
-
-      return {
-        ...channel,
-        canDelete,
-        listenerQrDataUrl,
-        listenerUrl,
-        speakerQrDataUrl,
-        speakerUrl,
-      }
-    }),
+    tintedChannels.map(async (channel) => ({
+      ...channel,
+      canDelete: await canManageChannels(payload, user, channel.eventID),
+    })),
   )
 
   const returnParams = new URLSearchParams()
@@ -209,15 +176,9 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
             description: channel.eventTitle,
             enabled: channel.enabled,
             eventSlug: channel.eventSlug,
-            listenerPageEnabled: channel.listenerPageEnabled,
-            listenerQrDataUrl: channel.listenerQrDataUrl,
-            listenerUrl: channel.listenerUrl,
             name: channel.name,
             rowTint: channel.rowTint,
             slug: channel.slug,
-            speakerPageEnabled: channel.speakerPageEnabled,
-            speakerQrDataUrl: channel.speakerQrDataUrl,
-            speakerUrl: channel.speakerUrl,
           }))}
           returnPath={returnPath}
         />

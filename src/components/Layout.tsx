@@ -7,13 +7,15 @@ import { GitHubIcon, LicenseIcon, UserCircleIcon } from './ActionIcons'
 import { AppDownloadFooterLink } from './AppDownloadFooterLink'
 import { AppNav } from './AppNav'
 import { Logo } from './Logo'
+import { MobileAppChrome } from './MobileAppChrome'
 import { getCurrentAppUser, requireAppUser } from '@/lib/app-auth'
 import { APP_PRONUNCIATION, APP_PRODUCT_NAME, APP_STUDIO_NAME } from '@/lib/branding'
 import { getFeatureNavItems } from '@/features/registry'
 import { getRequestBaseUrl } from '@/lib/links'
 import { loadPublicMobileAppRelease } from '@/lib/mobile-app-release'
-import { countActiveOrganizationsForUser, countPendingJoinRequestsForUser, hasOrganizationManagementAccess, shouldShowMultiOrganizationNav } from '@/lib/organizations'
+import { countActiveOrganizationsForUser, countPendingJoinRequestsForUser, hasOrganizationManagementAccess, shouldHideBetaBannerForUser, shouldShowMultiOrganizationNav } from '@/lib/organizations'
 import { generateBrandedDownloadQrDataUrl } from '@/lib/qrcode'
+import { getDefaultQrStyle } from '@/lib/qr-settings'
 import { isAdminUser, isSuperAdminUser } from '@/lib/permissions'
 
 type LayoutProps = {
@@ -42,9 +44,11 @@ export async function Layout({
   const payload = await getPayload({ config: configPromise })
   const user = requireAuth ? await requireAppUser() : await getCurrentAppUser()
   const mobileRelease = await loadPublicMobileAppRelease(payload, await getRequestBaseUrl())
+  const qrStyle = await getDefaultQrStyle()
   const mobileAppQrDataUrl =
     mobileRelease?.latestVersion && mobileRelease.downloadPageUrl
       ? await generateBrandedDownloadQrDataUrl({
+          style: qrStyle,
           url: mobileRelease.downloadPageUrl,
           version: mobileRelease.latestVersion,
         })
@@ -61,6 +65,8 @@ export async function Layout({
     : false
   const pendingJoinRequestCount =
     user && isOrganizationManager ? await countPendingJoinRequestsForUser(payload, user) : 0
+  const suppressBetaBanner = user ? await shouldHideBetaBannerForUser(payload, user) : false
+  const showBetaBanner = Boolean(user && !hideBetaBanner && !suppressBetaBanner)
   const currentYear = new Date().getFullYear()
   const navItems: NavItem[] = [
     ...getFeatureNavItems({
@@ -78,7 +84,7 @@ export async function Layout({
       <div className="us-shell px-3 py-3 md:px-4 md:py-4 xl:px-5 xl:py-5">
         <div className="flex min-h-[calc(100vh-1.5rem)] flex-col gap-4 xl:min-h-[calc(100vh-2rem)] xl:flex-row">
         {showAppMenu ? (
-          <aside className="us-panel overflow-visible xl:w-[290px] xl:flex-none">
+          <aside className="us-panel hidden overflow-visible xl:block xl:w-[290px] xl:flex-none">
             <div
               className="us-hero-glow relative flex h-full flex-col gap-5 px-5 py-5 xl:gap-8 xl:py-6"
               style={{
@@ -117,6 +123,7 @@ export async function Layout({
           </aside>
         ) : null}
 
+        <MobileAppChrome email={user?.email ?? ''} items={navItems} showSidebar={showAppMenu}>
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           {hideHeader ? null : (
             <header className="us-panel px-5 py-4 md:px-6">
@@ -140,7 +147,7 @@ export async function Layout({
           )}
 
           <main className="min-w-0 flex-1">
-            {user && !hideBetaBanner ? (
+            {showBetaBanner ? (
               <div
                 className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-3xl border px-4 py-3 text-sm"
                 style={{ backgroundColor: 'var(--us-card)', borderColor: 'var(--us-border)', color: 'var(--us-muted)' }}
@@ -197,6 +204,7 @@ export async function Layout({
             </div>
           </footer>
         </div>
+        </MobileAppChrome>
         </div>
       </div>
     </div>

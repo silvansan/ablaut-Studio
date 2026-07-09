@@ -5,6 +5,7 @@ import { getPayload } from 'payload'
 
 import { InviteUserPanel } from '@/components/InviteUserPanel'
 import { Layout } from '@/components/Layout'
+import { PendingJoinRequestsPanel } from '@/components/PendingJoinRequestsPanel'
 import { UsersHubFilters } from '@/components/UsersHubFilters'
 import { UsersHubTable } from '@/components/UsersHubTable'
 import { pageMetadata } from '@/lib/branding'
@@ -12,7 +13,7 @@ import { requireAppUser } from '@/lib/app-auth'
 import { assignZebraTints } from '@/lib/list-group-tints'
 import { hasOrganizationManagementAccess } from '@/lib/organizations'
 import { isSuperAdminUser } from '@/lib/permissions'
-import { getUsersHubData } from '@/lib/users-hub-data'
+import { getPendingJoinRequestsForHub, getUsersHubData } from '@/lib/users-hub-data'
 import { filterUserHubEntries, type UserHubStatusFilter } from '@/lib/users-hub-filters'
 
 export const metadata = pageMetadata('Users')
@@ -49,6 +50,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
   const status = parseStatusFilter(params.status)
 
   const { entries, organizations, showOrganizationColumn } = await getUsersHubData()
+  const pendingJoinRequests = await getPendingJoinRequestsForHub()
   const filteredEntries = filterUserHubEntries(entries, { organization, q, status })
   const tintedEntries = assignZebraTints(filteredEntries)
   const selectedOrganization = organization
@@ -93,6 +95,8 @@ export default async function UsersPage({ searchParams }: PageProps) {
             organizations={organizations}
           />
         </div>
+
+        <PendingJoinRequestsPanel memberships={pendingJoinRequests} returnPath={returnPath} />
 
         {entries.length > 0 ? (
           <>

@@ -4,16 +4,19 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { AppBreadcrumbs } from '@/components/AppBreadcrumbs'
 import { ChannelAdvancedSettings } from '@/components/ChannelAdvancedSettings'
+import { IconActionLink } from '@/components/ActionIcons'
 import { InlineEditField } from '@/components/InlineEditField'
 import { Layout } from '@/components/Layout'
-import { RouteActionCluster } from '@/components/RouteActionCluster'
+import { SharePanel } from '@/components/SharePanel'
 import { requireAppUser } from '@/lib/app-auth'
 import { formatEventChannelTitle } from '@/lib/branding'
 import { channelEnabledChip } from '@/lib/active-status'
 import { getDashboardChannel, getDashboardEvent } from '@/lib/dashboard-data'
 import { getListenerUrl, getRequestBaseUrl, getSpeakerUrl } from '@/lib/links'
 import { generateBrandedRouteQrDataUrl } from '@/lib/qrcode'
+import { getDefaultQrStyle } from '@/lib/qr-settings'
 import {
   resolveBrandedQrChannelTitle,
   resolveBrandedQrOrganizationTitle,
@@ -119,16 +122,19 @@ export default async function ChannelDetailPage({ params, searchParams }: PagePr
   const speakerUrl = getSpeakerUrl(eventSlug, channelSlug, publicBaseUrl)
   const organizationName = resolveBrandedQrOrganizationTitle(event?.organizationTitle)
   const channelName = resolveBrandedQrChannelTitle(channel.name, channelSlug)
+  const qrStyle = await getDefaultQrStyle()
   const [listenerQrDataUrl, speakerQrDataUrl] = await Promise.all([
     generateBrandedRouteQrDataUrl({
       channelName,
       organizationName,
+      style: qrStyle,
       url: listenerUrl,
       variant: 'listener',
     }),
     generateBrandedRouteQrDataUrl({
       channelName,
       organizationName,
+      style: qrStyle,
       url: speakerUrl,
       variant: 'speaker',
     }),
@@ -139,6 +145,16 @@ export default async function ChannelDetailPage({ params, searchParams }: PagePr
   return (
     <Layout hideHeader title={channel.name}>
       <section className="mx-auto max-w-6xl space-y-4">
+        <AppBreadcrumbs
+          segments={[
+            ...(event?.organizationSlug
+              ? [{ href: `/organizations/${event.organizationSlug}`, label: event.organizationTitle ?? 'Organization' }]
+              : []),
+            { href: `/events/${eventSlug}`, label: event?.title ?? eventSlug },
+            { label: channel.name },
+          ]}
+        />
+
         <div className="flex flex-wrap items-center gap-2">
           <span className={`us-chip ${channelStatus.className}`}>{channelStatus.label}</span>
           <Link className="us-button-secondary ml-auto px-3 py-2 text-sm font-medium" href={`/events/${eventSlug}`}>
@@ -146,26 +162,26 @@ export default async function ChannelDetailPage({ params, searchParams }: PagePr
           </Link>
         </div>
 
-        <article className="us-panel flex flex-wrap items-center gap-3 px-4 py-4">
-          <RouteActionCluster
-            openLabel="Open speaker page"
-            qrDataUrl={speakerQrDataUrl}
-            qrFileName={`${eventSlug}-${channelSlug}-speaker.png`}
-            qrLabel={`${channel.name} speaker`}
-            qrTriggerLabel="Speaker QR"
-            url={speakerUrl}
-            variant="speaker"
-          />
-          <RouteActionCluster
-            openLabel="Open listener page"
-            qrDataUrl={listenerQrDataUrl}
-            qrFileName={`${eventSlug}-${channelSlug}-listener.png`}
-            qrLabel={`${channel.name} listener`}
-            qrTriggerLabel="Listener QR"
-            url={listenerUrl}
-            variant="listener"
-          />
-        </article>
+        <SharePanel
+          canManage
+          channels={[
+            {
+              channelId: channel.id,
+              channelSlug,
+              enabled: channel.enabled,
+              listenerPageEnabled: channelSettings.listenerPageEnabled,
+              listenerQrDataUrl,
+              listenerUrl,
+              name: channel.name,
+              speakerPageEnabled: channelSettings.speakerPageEnabled,
+              speakerQrDataUrl,
+              speakerUrl,
+            },
+          ]}
+          compact
+          eventSlug={eventSlug}
+          eventTitle={event?.title ?? eventSlug}
+        />
 
         <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <article className="us-panel px-6 py-6">
@@ -216,7 +232,7 @@ export default async function ChannelDetailPage({ params, searchParams }: PagePr
             </p>
             <dl className="mt-4 space-y-3 text-sm leading-6" style={{ color: 'var(--us-text)' }}>
               <div>
-                <dt className="font-semibold">URL slug</dt>
+                <dt className="font-semibold">URL name</dt>
                 <dd className="break-all font-mono text-xs" style={{ color: 'var(--us-muted)' }}>
                   {channelSlug}
                 </dd>
@@ -229,8 +245,12 @@ export default async function ChannelDetailPage({ params, searchParams }: PagePr
               </div>
             </dl>
             <div className="mt-4 flex flex-wrap gap-2">
-              <RouteActionCluster openLabel="Open speaker page" url={speakerUrl} variant="speaker" qrLabel={`${channel.name} speaker`} />
-              <RouteActionCluster openLabel="Open listener page" url={listenerUrl} variant="listener" qrLabel={`${channel.name} listener`} />
+              <IconActionLink href={listenerUrl} icon="open" target="_blank">
+                Open listener page
+              </IconActionLink>
+              <IconActionLink href={speakerUrl} icon="open" target="_blank">
+                Open speaker page
+              </IconActionLink>
             </div>
           </article>
 

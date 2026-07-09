@@ -3,13 +3,17 @@ import type { Metadata } from 'next'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 
+import { DashboardActionCards } from '@/components/DashboardActionCards'
 import { Layout } from '@/components/Layout'
 import { ListGroupRow } from '@/components/ListGroupRow'
+import { PendingJoinRequestsPanel } from '@/components/PendingJoinRequestsPanel'
 import { requireAppUser } from '@/lib/app-auth'
-import { getDashboardSummary } from '@/lib/dashboard-data'
+import { getDashboardActionItems, getDashboardSummary } from '@/lib/dashboard-data'
 import { assignGroupTints } from '@/lib/list-group-tints'
+import { hasOrganizationManagementAccess } from '@/lib/organizations'
 import { canCreateEvents } from '@/lib/permissions'
 import { pageMetadata } from '@/lib/branding'
+import { getPendingJoinRequestsForHub } from '@/lib/users-hub-data'
 
 export const metadata: Metadata = pageMetadata('Dashboard')
 
@@ -18,9 +22,12 @@ export const dynamic = 'force-dynamic'
 export default async function DashboardPage() {
   const user = await requireAppUser()
   const payload = await getPayload({ config: configPromise })
-  const [summary, canCreateEventsUser] = await Promise.all([
+  const [summary, actionItems, canCreateEventsUser, canManageUsers, pendingJoinRequests] = await Promise.all([
     getDashboardSummary(),
+    getDashboardActionItems(),
     canCreateEvents({ payload, user } as never),
+    hasOrganizationManagementAccess({ payload, user } as never),
+    getPendingJoinRequestsForHub(),
   ])
   const channelItems = summary.recentChannels.slice(0, 4).map((channel) => ({
     eventSlug: channel.eventSlug,
@@ -47,6 +54,9 @@ export default async function DashboardPage() {
   return (
     <Layout hideHeader title="Dashboard">
       <section className="space-y-4">
+        <DashboardActionCards actionItems={actionItems} canManageUsers={canManageUsers} />
+        <PendingJoinRequestsPanel memberships={pendingJoinRequests} returnPath="/dashboard" />
+
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {[
             ['Active events', String(summary.activeEvents), '/events?status=active'],

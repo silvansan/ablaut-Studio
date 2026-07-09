@@ -48,6 +48,10 @@ export function OrganizationSettingsPanel({ canDelete, organization }: Organizat
           <input defaultChecked={organization.active !== false} name="active" type="checkbox" />
           <span>Active</span>
         </label>
+        <label className="flex items-center gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm md:col-span-2" style={{ color: 'var(--us-text)' }}>
+          <input defaultChecked={organization.productionMode === true} name="productionMode" type="checkbox" />
+          <span>Production mode (hide beta banner for members)</span>
+        </label>
         <label className="block text-sm font-medium md:col-span-2" style={{ color: 'var(--us-text)' }}>
           Description
           <textarea

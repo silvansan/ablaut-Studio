@@ -70,6 +70,14 @@ export const Organizations: CollectionConfig = {
       defaultValue: true,
     },
     {
+      name: 'productionMode',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description: 'When enabled, members of this organization do not see the beta banner.',
+      },
+    },
+    {
       name: 'supportEmail',
       type: 'email',
     },

@@ -2,6 +2,7 @@ import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 
 import { requireAppUser } from '@/lib/app-auth'
+import { countPendingJoinRequestsForUser } from '@/lib/organizations'
 import type { Channel, Event } from '@/payload-types'
 
 export type DashboardChannel = Pick<
@@ -42,6 +43,7 @@ export type DashboardEvent = Pick<
 > & {
   channelCount: number
   organizationId?: number | null
+  organizationSlug?: string | null
   organizationTitle?: string | null
 }
 
@@ -52,6 +54,19 @@ export type DashboardSummary = {
   recentChannels: (DashboardChannel & { eventSlug: string; eventTitle: string })[]
   recentEvents: DashboardEvent[]
   totalChannels: number
+}
+
+export type DashboardActionItems = {
+  channelsNeedingSetup: Array<{
+    eventSlug: string
+    eventTitle: string
+    href: string
+    name: string
+    reason: string
+  }>
+  nextEvent: DashboardEvent | null
+  pendingInviteCount: number
+  pendingJoinRequestCount: number
 }
 
 function normalizeEvent(event: Event, channelCount = 0): DashboardEvent {
@@ -68,6 +83,7 @@ function normalizeEvent(event: Event, channelCount = 0): DashboardEvent {
     location: event.location,
     organization: event.organization,
     organizationId: organization?.id ?? (typeof event.organization === 'number' ? event.organization : null),
+    organizationSlug: organization?.slug ?? null,
     organizationTitle: organization?.name ?? null,
     publicListenerEnabled: event.publicListenerEnabled,
     slug: event.slug,
@@ -368,5 +384,87 @@ export async function getDashboardChannel(
   return {
     ...channel,
     event,
+  }
+}
+
+export async function getDashboardActionItems(): Promise<DashboardActionItems> {
+  const user = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
+  const [allEvents, allChannels, pendingJoinRequestCount] = await Promise.all([
+    getDashboardEvents(1000),
+    getDashboardAllChannels(1000),
+    countPendingJoinRequestsForUser(payload, user),
+  ])
+
+  const now = Date.now()
+  const upcomingActiveEvents = allEvents
+    .filter((event) => event.status === 'active')
+    .filter((event) => {
+      if (!event.dateStart) {
+        return true
+      }
+
+      const start = new Date(event.dateStart).getTime()
+
+      return Number.isNaN(start) || start >= now - 24 * 60 * 60 * 1000
+    })
+    .sort((a, b) => {
+      const aStart = a.dateStart ? new Date(a.dateStart).getTime() : Number.MAX_SAFE_INTEGER
+      const bStart = b.dateStart ? new Date(b.dateStart).getTime() : Number.MAX_SAFE_INTEGER
+
+      return aStart - bStart
+    })
+
+  const pendingInviteCount = await payload.count({
+    collection: 'organization-memberships',
+    overrideAccess: false,
+    user,
+    where: {
+      and: [
+        { status: { equals: 'pending' } },
+        { invitedBy: { exists: true } },
+        { requestedBy: { exists: false } },
+      ],
+    },
+  })
+
+  const channelsNeedingSetup = allChannels
+    .filter((channel) => {
+      return (
+        channel.enabled === false ||
+        channel.listenerPageEnabled === false ||
+        channel.speakerPageEnabled === false
+      )
+    })
+    .slice(0, 6)
+    .map((channel) => {
+      const reasons: string[] = []
+
+      if (channel.enabled === false) {
+        reasons.push('channel off')
+      }
+
+      if (channel.listenerPageEnabled === false) {
+        reasons.push('listener page off')
+      }
+
+      if (channel.speakerPageEnabled === false) {
+        reasons.push('speaker page off')
+      }
+
+      return {
+        eventSlug: channel.eventSlug,
+        eventTitle: channel.eventTitle,
+        href: `/events/${channel.eventSlug}/channels/${channel.slug}`,
+        name: channel.name,
+        reason: reasons.join(', '),
+      }
+    })
+
+  return {
+    channelsNeedingSetup,
+    nextEvent: upcomingActiveEvents[0] ?? null,
+    pendingInviteCount: pendingInviteCount.totalDocs,
+    pendingJoinRequestCount,
   }
 }

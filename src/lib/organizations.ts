@@ -379,3 +379,102 @@ export async function userHasActiveOrganizationMembership(
 
   return memberships.docs.length > 0
 }
+
+export async function shouldHideBetaBannerForUser(payload: Payload, user: User): Promise<boolean> {
+  if (hasPlatformWideOrganizationAccess(user)) {
+    return false
+  }
+
+  const memberships = await payload.find({
+    collection: 'organization-memberships',
+    depth: 1,
+    limit: 200,
+    overrideAccess: true,
+    pagination: false,
+    where: {
+      and: [
+        {
+          status: {
+            equals: 'active',
+          },
+        },
+        {
+          user: {
+            equals: user.id,
+          },
+        },
+      ],
+    },
+  })
+
+  if (memberships.docs.length === 0) {
+    return false
+  }
+
+  return memberships.docs.every((membership) => {
+    const organization = membership.organization
+
+    if (typeof organization === 'number' || !organization) {
+      return false
+    }
+
+    return organization.productionMode === true
+  })
+}
+
+export async function getJoinableOrganizations(payload: Payload, user: User) {
+  const memberships = await payload.find({
+    collection: 'organization-memberships',
+    depth: 0,
+    limit: 500,
+    overrideAccess: true,
+    pagination: false,
+    where: {
+      and: [
+        {
+          user: {
+            equals: user.id,
+          },
+        },
+        {
+          status: {
+            in: ['active', 'pending'],
+          },
+        },
+      ],
+    },
+  })
+
+  const memberOrganizationIDs = memberships.docs
+    .map((membership) => normalizeRelationshipID(membership.organization))
+    .filter((value): value is number | string => value !== null)
+
+  const organizations = await payload.find({
+    collection: 'organizations',
+    depth: 0,
+    limit: 200,
+    overrideAccess: true,
+    pagination: false,
+    sort: 'name',
+    where: {
+      and: [
+        {
+          active: {
+            equals: true,
+          },
+        },
+        ...(memberOrganizationIDs.length > 0
+          ? [
+              {
+                id: {
+                  not_in: memberOrganizationIDs,
+                },
+              },
+            ]
+          : []),
+      ],
+    },
+  })
+
+  return organizations.docs
+}

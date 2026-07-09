@@ -4,12 +4,12 @@ import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 
 import { importConfigAction, updateSiteSettingsAction } from '@/app/settings/actions'
-import { requestOrganizationMembershipAction } from '@/app/organizations/actions'
+import { JoinOrganizationForm } from '@/components/JoinOrganizationForm'
 import { Layout } from '@/components/Layout'
 import { PanelDrawer } from '@/components/PanelDrawer'
 import { requireAppUser } from '@/lib/app-auth'
 import { pageMetadata } from '@/lib/branding'
-import { hasPlatformWideOrganizationAccess } from '@/lib/organizations'
+import { hasOrganizationManagementAccess, hasPlatformWideOrganizationAccess, getJoinableOrganizations } from '@/lib/organizations'
 import { isAdminUser, isSuperAdminUser } from '@/lib/permissions'
 
 export const metadata: Metadata = pageMetadata('Settings')
@@ -21,8 +21,10 @@ export default async function SettingsPage() {
   const canTransferConfig = isAdminUser(user)
   const showPayloadAdmin = isSuperAdminUser(user)
   const showJoinOrganization = !hasPlatformWideOrganizationAccess(user)
-  const payload = showPayloadAdmin ? await getPayload({ config: configPromise }) : null
-  const settings = payload
+  const payload = await getPayload({ config: configPromise })
+  const isOrganizationManager = await hasOrganizationManagementAccess({ payload, user } as never)
+  const joinableOrganizations = showJoinOrganization ? await getJoinableOrganizations(payload, user) : []
+  const settings = showPayloadAdmin
     ? await payload.findGlobal({
         slug: 'site-settings',
         overrideAccess: true,
@@ -144,33 +146,36 @@ export default async function SettingsPage() {
           </form>
         ) : (
           <article className="us-panel px-6 py-6">
-            <span className="us-chip us-chip-muted">Site settings</span>
+            <span className="us-chip us-chip-muted">Your workspace</span>
             <h2 className="mt-4 text-2xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
-              Settings access
+              {isOrganizationManager ? 'Manager settings' : 'Settings'}
             </h2>
             <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              Global site settings are managed by super admins. Admins can still use config import/export for the
-              events and channels they can manage.
+              {isOrganizationManager
+                ? 'Manage your organization, team, and events. Server deployment settings are limited to super admins.'
+                : 'Global site settings are managed by super admins. You can still request access to an organization below.'}
             </p>
-            <Link href="/dashboard" className="mt-6 inline-flex us-button-secondary px-4 py-2.5 text-sm font-medium">
-              Back to dashboard
-            </Link>
+            {isOrganizationManager ? (
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Link className="us-button-primary px-4 py-2.5 text-sm font-medium" href="/organizations">
+                  Organizations
+                </Link>
+                <Link className="us-button-secondary px-4 py-2.5 text-sm font-medium" href="/users">
+                  Users
+                </Link>
+                <Link className="us-button-secondary px-4 py-2.5 text-sm font-medium" href="/events">
+                  Events
+                </Link>
+              </div>
+            ) : (
+              <Link href="/dashboard" className="mt-6 inline-flex us-button-secondary px-4 py-2.5 text-sm font-medium">
+                Back to dashboard
+              </Link>
+            )}
             {showJoinOrganization ? (
-              <form action={requestOrganizationMembershipAction} className="mt-8 flex flex-col gap-3 border-t pt-6 sm:flex-row sm:items-end" style={{ borderColor: 'var(--us-border)' }}>
-                <label className="block flex-1 text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-                  Join an organization
-                  <input
-                    className="mt-2 w-full rounded-2xl border bg-white px-4 py-2.5 text-base outline-none"
-                    name="organizationSlug"
-                    placeholder="organization-slug"
-                    required
-                    style={{ borderColor: 'var(--us-border)' }}
-                  />
-                </label>
-                <button className="us-button-primary px-4 py-2.5 text-sm font-medium" type="submit">
-                  Request access
-                </button>
-              </form>
+              <div className="mt-8 border-t pt-6" style={{ borderColor: 'var(--us-border)' }}>
+                <JoinOrganizationForm organizations={joinableOrganizations} />
+              </div>
             ) : null}
           </article>
         )}
@@ -182,23 +187,11 @@ export default async function SettingsPage() {
               Join another organization
             </h2>
             <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              Request access by slug. An organization manager must approve your request.
+              Request access to another organization. A manager must approve your request.
             </p>
-            <form action={requestOrganizationMembershipAction} className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end">
-              <label className="block flex-1 text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-                Organization slug
-                <input
-                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-2.5 text-base outline-none"
-                  name="organizationSlug"
-                  placeholder="organization-slug"
-                  required
-                  style={{ borderColor: 'var(--us-border)' }}
-                />
-              </label>
-              <button className="us-button-primary px-4 py-2.5 text-sm font-medium" type="submit">
-                Request access
-              </button>
-            </form>
+            <div className="mt-5">
+              <JoinOrganizationForm organizations={joinableOrganizations} />
+            </div>
           </article>
         ) : null}
 

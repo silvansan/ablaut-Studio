@@ -1,10 +1,10 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 import { deleteChannelAction } from '@/app/events/[eventSlug]/channels/actions'
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
-import { RouteActionCluster } from '@/components/RouteActionCluster'
 import { channelEnabledChip } from '@/lib/active-status'
 import { rowTintClass, type ListRowTint } from '@/lib/list-group-tints'
 
@@ -14,15 +14,9 @@ type ChannelRowProps = {
   description?: string | null
   enabled?: boolean | null
   eventSlug: string
-  listenerPageEnabled?: boolean | null
-  listenerQrDataUrl?: string
-  listenerUrl: string
   name: string
   rowTint?: ListRowTint
   slug: string
-  speakerPageEnabled?: boolean | null
-  speakerQrDataUrl?: string
-  speakerUrl: string
 }
 
 export function ChannelRow({
@@ -31,15 +25,9 @@ export function ChannelRow({
   description,
   enabled,
   eventSlug,
-  listenerPageEnabled,
-  listenerQrDataUrl,
-  listenerUrl,
   name,
   rowTint = 'white',
   slug,
-  speakerPageEnabled,
-  speakerQrDataUrl,
-  speakerUrl,
 }: ChannelRowProps) {
   const router = useRouter()
   const href = `/events/${eventSlug}/channels/${slug}`
@@ -80,26 +68,12 @@ export function ChannelRow({
       </div>
 
       <div className="us-data-row__actions" onClick={(event) => event.stopPropagation()}>
-        <RouteActionCluster
-          disabled={speakerPageEnabled === false}
-          openLabel="Open speaker page"
-          qrDataUrl={speakerQrDataUrl}
-          qrFileName={`${eventSlug}-${slug}-speaker.png`}
-          qrLabel={`${name} speaker`}
-          qrTriggerLabel="Show speaker QR"
-          url={speakerUrl}
-          variant="speaker"
-        />
-        <RouteActionCluster
-          disabled={listenerPageEnabled === false}
-          openLabel="Open listener page"
-          qrDataUrl={listenerQrDataUrl}
-          qrFileName={`${eventSlug}-${slug}-listener.png`}
-          qrLabel={`${name} listener`}
-          qrTriggerLabel="Show listener QR"
-          url={listenerUrl}
-          variant="listener"
-        />
+        <Link className="us-button-secondary px-3 py-2 text-sm font-medium" href={`/events/${eventSlug}/channels/${slug}`}>
+          Open
+        </Link>
+        <Link className="us-button-secondary px-3 py-2 text-sm font-medium" href={`/events/${eventSlug}/share`}>
+          Share
+        </Link>
         {canDelete ? (
           <form action={deleteChannelAction} id={deleteFormId}>
             <input name="eventSlug" type="hidden" value={eventSlug} />

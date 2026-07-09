@@ -662,20 +662,16 @@ export function ListenerConnectPanel({
     }
   }
 
-  const buttonLabel =
-    state === 'connecting'
-      ? 'Connecting...'
-      : state === 'connected' && activeTransport === 'webrtc'
-        ? 'Reconnect WebRTC'
-        : activeTransport === 'hls'
-          ? 'Switch to WebRTC'
-          : 'Connect with WebRTC'
+  async function listenNow() {
+    await connectWebRtc()
+  }
 
-  const compatibilityButtonLabel = hlsRestarting
-    ? 'Preparing LL-HLS...'
-    : activeTransport === 'hls'
-      ? 'Listening via LL-HLS'
-      : 'Switch to compatibility mode (LL-HLS)'
+  const listenNowLabel =
+    state === 'connecting'
+      ? 'Connecting…'
+      : state === 'connected' && activeTransport === 'webrtc'
+        ? 'Listening'
+        : 'Listen now'
 
   if (needsPassword && !hasAccess) {
     return (
@@ -709,56 +705,16 @@ export function ListenerConnectPanel({
 
   return (
     <div className="mt-6">
-      <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
-        <span className={`us-chip ${activeTransport === 'webrtc' ? 'us-chip-blue' : 'us-chip-muted'}`}>
-          {activeTransport === 'webrtc' ? 'Live: WebRTC' : 'Primary: WebRTC'}
-        </span>
-        {compatibilityUrl ? (
-          <span className={`us-chip ${activeTransport === 'hls' ? 'us-chip-blue' : 'us-chip-muted'}`}>
-            {activeTransport === 'hls' ? 'Live: LL-HLS' : 'Fallback: LL-HLS'}
-          </span>
-        ) : (
-          <span className="us-chip us-chip-muted">No LL-HLS fallback</span>
-        )}
-      </div>
-
-      {showSafariHint ? (
-        <p className="mb-4 rounded-2xl border px-4 py-3 text-sm leading-6" style={{ borderColor: 'var(--us-border)', color: 'var(--us-muted)' }}>
-          On iPhone Safari, WebRTC is fastest when it works. If connection fails, use compatibility mode below.
-        </p>
-      ) : null}
-
       <button
         type="button"
         className="us-button-primary w-full px-6 py-4 text-lg font-semibold"
-        disabled={state === 'connecting' || hlsRestarting}
-        onClick={connectWebRtc}
+        disabled={state === 'connecting' || hlsRestarting || (state === 'connected' && activeTransport === 'webrtc')}
+        onClick={() => {
+          void listenNow()
+        }}
       >
-        {buttonLabel}
+        {listenNowLabel}
       </button>
-
-      {compatibilityUrl ? (
-        <button
-          type="button"
-          className={`${activeTransport === 'hls' ? 'us-button-primary' : 'us-button-secondary'} mt-3 w-full px-6 py-3 text-sm font-medium`}
-          disabled={activeTransport === 'hls' || hlsRestarting}
-          onClick={connectCompatibilityMode}
-        >
-          {compatibilityButtonLabel}
-        </button>
-      ) : null}
-
-      {hlsEnabled && !compatibilityUrl && hlsEgressStatus === 'error' ? (
-        <p className="mt-3 rounded-2xl border px-4 py-3 text-sm leading-6" style={{ borderColor: 'var(--us-border)', color: 'var(--us-danger)' }}>
-          LL-HLS egress failed to start. Ensure redis and livekit-egress are running, or set `FEATURE_HLS_EGRESS=false` to disable the fallback.
-        </p>
-      ) : null}
-
-      {hlsEnabled && !compatibilityUrl && hlsEgressStatus !== 'error' ? (
-        <p className="mt-3 rounded-2xl border px-4 py-3 text-sm leading-6" style={{ borderColor: 'var(--us-border)', color: 'var(--us-muted)' }}>
-          LL-HLS is enabled for this channel. Connect a speaker first — compatibility mode is typically ~2–4 seconds behind live.
-        </p>
-      ) : null}
 
       {message && activeTransport !== 'hls' ? (
         <p className="mt-4 text-sm leading-6" style={{ color: state === 'error' ? 'var(--us-danger)' : 'var(--us-muted)' }}>
@@ -780,7 +736,7 @@ export function ListenerConnectPanel({
 
       {state === 'connected' && activeTransport === 'webrtc' && !hasAudioElement ? (
         <p className="mt-3 rounded-2xl border px-4 py-3 text-sm leading-6" style={{ borderColor: 'var(--us-border)', color: 'var(--us-muted)' }}>
-          Connected. Start publishing on the speaker page for this channel, then audio will appear here.
+          Connected. Start speaking on the speaker page for this channel, then audio will play here.
         </p>
       ) : null}
 
@@ -799,7 +755,7 @@ export function ListenerConnectPanel({
           isMuted={isMuted}
           isPlaying={isPlaying}
           label="Live"
-          mode="WebRTC"
+          mode="Live"
           onToggleMute={toggleWebRtcMute}
           onTogglePlayback={() => {
             void toggleWebRtcPlayback()
@@ -817,16 +773,80 @@ export function ListenerConnectPanel({
         />
       ) : null}
 
-      {activeTransport !== 'hls' && fallbackUrl && !hlsUrl ? (
-        <a
-          href={fallbackUrl}
-          className="us-button-secondary mt-4 inline-flex w-full justify-center px-6 py-3 text-sm font-medium"
-          rel="noreferrer"
-          target="_blank"
-        >
-          Open external fallback stream
-        </a>
-      ) : null}
+      <details className="mt-5 rounded-2xl border px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
+        <summary className="cursor-pointer text-sm font-semibold" style={{ color: 'var(--us-green-dark)' }}>
+          Having trouble?
+        </summary>
+        <div className="mt-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <span className={`us-chip ${activeTransport === 'webrtc' ? 'us-chip-blue' : 'us-chip-muted'}`}>
+              {activeTransport === 'webrtc' ? 'Live: low-latency' : 'Primary: low-latency'}
+            </span>
+            {compatibilityUrl ? (
+              <span className={`us-chip ${activeTransport === 'hls' ? 'us-chip-blue' : 'us-chip-muted'}`}>
+                {activeTransport === 'hls' ? 'Live: compatibility mode' : 'Fallback: compatibility mode'}
+              </span>
+            ) : (
+              <span className="us-chip us-chip-muted">No compatibility fallback</span>
+            )}
+          </div>
+
+          {showSafariHint ? (
+            <p className="rounded-2xl border px-4 py-3 text-sm leading-6" style={{ borderColor: 'var(--us-border)', color: 'var(--us-muted)' }}>
+              On iPhone Safari, listening usually works right away. If not, try compatibility mode below.
+            </p>
+          ) : null}
+
+          {compatibilityUrl ? (
+            <button
+              type="button"
+              className={`${activeTransport === 'hls' ? 'us-button-primary' : 'us-button-secondary'} w-full px-6 py-3 text-sm font-medium`}
+              disabled={activeTransport === 'hls' || hlsRestarting}
+              onClick={connectCompatibilityMode}
+            >
+              {hlsRestarting
+                ? 'Preparing compatibility stream…'
+                : activeTransport === 'hls'
+                  ? 'Listening via compatibility mode'
+                  : 'Try compatibility mode (slower, more reliable)'}
+            </button>
+          ) : null}
+
+          {state === 'connected' && activeTransport === 'webrtc' ? (
+            <button
+              type="button"
+              className="us-button-secondary w-full px-6 py-3 text-sm font-medium"
+              disabled={hlsRestarting}
+              onClick={connectWebRtc}
+            >
+              Reconnect
+            </button>
+          ) : null}
+
+          {hlsEnabled && !compatibilityUrl && hlsEgressStatus === 'error' ? (
+            <p className="rounded-2xl border px-4 py-3 text-sm leading-6" style={{ borderColor: 'var(--us-border)', color: 'var(--us-danger)' }}>
+              Compatibility streaming is unavailable right now. Contact the event organizer.
+            </p>
+          ) : null}
+
+          {hlsEnabled && !compatibilityUrl && hlsEgressStatus !== 'error' ? (
+            <p className="rounded-2xl border px-4 py-3 text-sm leading-6" style={{ borderColor: 'var(--us-border)', color: 'var(--us-muted)' }}>
+              Compatibility mode appears after a speaker connects. It is typically a few seconds behind live.
+            </p>
+          ) : null}
+
+          {activeTransport !== 'hls' && fallbackUrl && !hlsUrl ? (
+            <a
+              href={fallbackUrl}
+              className="us-button-secondary inline-flex w-full justify-center px-6 py-3 text-sm font-medium"
+              rel="noreferrer"
+              target="_blank"
+            >
+              Open external fallback stream
+            </a>
+          ) : null}
+        </div>
+      </details>
     </div>
   )
 }

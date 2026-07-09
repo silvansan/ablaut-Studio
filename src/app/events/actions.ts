@@ -9,6 +9,12 @@ import { requireAppUser } from '@/lib/app-auth'
 import { getManageableOrganizationIDs } from '@/lib/organizations'
 import { revalidateOrganizationPaths } from '@/lib/revalidate-organization-paths'
 import { canCreateEvents, isSuperAdminUser } from '@/lib/permissions'
+import {
+  errorFeedback,
+  successFeedback,
+  type ActionFeedback,
+} from '@/lib/action-feedback'
+import { APP_NOTICES } from '@/lib/app-notices'
 import type { Event, User } from '@/payload-types'
 
 function slugify(value: string): string {
@@ -189,6 +195,73 @@ export async function createEventAction(formData: FormData) {
   })
   revalidateOrganizationPaths(organization.slug)
   redirect(`/organizations/${organization.slug}?tab=events`)
+}
+
+export async function updateEventSettingsAction(
+  _previousState: ActionFeedback,
+  formData: FormData,
+): Promise<ActionFeedback> {
+  try {
+    const user = await requireAppUser()
+    const payload = await getPayload({ config: configPromise })
+    const id = stringValue(formData, 'id')
+    const originalSlug = stringValue(formData, 'originalSlug')
+    const title = stringValue(formData, 'title')
+    const organizationId = numericValue(formData, 'organizationId')
+
+    if (!id || !originalSlug || !title) {
+      return errorFeedback('Event ID, original slug, and title are required.')
+    }
+
+    if (!organizationId) {
+      return errorFeedback('Organization is required.')
+    }
+
+    await assertCanCreateEventInOrganization(payload, user, organizationId)
+
+    const event = await payload.update({
+      id,
+      collection: 'events',
+      data: {
+        dateEnd: dateValue(formData, 'dateEnd'),
+        dateStart: dateValue(formData, 'dateStart'),
+        defaultLanguage: stringValue(formData, 'defaultLanguage') ?? 'en',
+        description: stringValue(formData, 'description'),
+        location: stringValue(formData, 'location'),
+        listenerPassword: stringValue(formData, 'listenerPassword'),
+        listenerPasswordEnabled: booleanValue(formData, 'listenerPasswordEnabled'),
+        organization: organizationId,
+        publicListenerEnabled: booleanValue(formData, 'publicListenerEnabled'),
+        unifiedListenerQrEnabled: booleanValue(formData, 'unifiedListenerQrEnabled'),
+        slug: slugify(stringValue(formData, 'slug') ?? title),
+        speakerPassword: stringValue(formData, 'speakerPassword'),
+        speakerPasswordEnabled: booleanValue(formData, 'speakerPasswordEnabled'),
+        status: statusValue(formData),
+        title,
+      },
+      overrideAccess: false,
+      user,
+    })
+
+    revalidatePath('/dashboard')
+    revalidatePath('/events')
+    revalidatePath(`/events/${originalSlug}`)
+    revalidatePath(`/events/${event.slug}`)
+    revalidatePath(`/listen/${event.slug}`)
+    revalidateOrganizationPaths()
+
+    const organization = await payload.findByID({
+      id: organizationId,
+      collection: 'organizations',
+      depth: 0,
+      overrideAccess: true,
+    })
+    revalidateOrganizationPaths(organization.slug)
+
+    return successFeedback(APP_NOTICES.eventSaved)
+  } catch (error) {
+    return errorFeedback(error instanceof Error ? error.message : APP_NOTICES.genericError)
+  }
 }
 
 export async function updateEventAction(formData: FormData) {

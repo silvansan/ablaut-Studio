@@ -205,3 +205,50 @@ export async function getUsersHubData(): Promise<UsersHubData> {
     showOrganizationColumn,
   }
 }
+
+export async function getPendingJoinRequestsForHub() {
+  const currentUser = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
+
+  if (!(await hasOrganizationManagementAccess({ payload, user: currentUser } as never))) {
+    return []
+  }
+
+  const organizations = await getManageableOrganizations()
+  const organizationIDs = organizations.map((organization) => organization.id)
+
+  if (organizationIDs.length === 0) {
+    return []
+  }
+
+  const memberships = await payload.find({
+    collection: 'organization-memberships',
+    depth: 1,
+    limit: 200,
+    overrideAccess: false,
+    pagination: false,
+    sort: 'updatedAt',
+    user: currentUser,
+    where: {
+      and: [
+        {
+          organization: {
+            in: organizationIDs,
+          },
+        },
+        {
+          status: {
+            equals: 'pending',
+          },
+        },
+        {
+          requestedBy: {
+            exists: true,
+          },
+        },
+      ],
+    },
+  })
+
+  return memberships.docs
+}

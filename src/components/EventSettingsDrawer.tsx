@@ -1,5 +1,6 @@
-import { updateEventAction } from '@/app/events/actions'
+import { updateEventSettingsAction } from '@/app/events/actions'
 import { EventAssignmentsSection } from '@/components/EventAssignmentsSection'
+import { ActionFeedbackForm } from '@/components/ActionFeedbackForm'
 import { EventForm } from '@/components/EventForm'
 import { PanelDrawer } from '@/components/PanelDrawer'
 import type { Event, EventAssignment } from '@/payload-types'
@@ -38,13 +39,9 @@ export function EventSettingsDrawer({
       title="Settings"
     >
       <div className="space-y-6">
-        <EventForm
-          action={updateEventAction}
-          event={event}
-          organizations={organizations}
-          submitLabel="Save event"
-          variant="drawer"
-        />
+        <ActionFeedbackForm action={updateEventSettingsAction} className="space-y-5">
+          <EventForm embedded event={event} organizations={organizations} submitLabel="Save event" variant="drawer" />
+        </ActionFeedbackForm>
         <EventAssignmentsSection
           assignments={assignments}
           assignableUsers={assignableUsers}

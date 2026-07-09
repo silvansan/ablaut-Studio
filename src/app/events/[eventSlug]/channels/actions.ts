@@ -8,6 +8,12 @@ import { getPayload, type Payload } from 'payload'
 import { requireAppUser } from '@/lib/app-auth'
 import { resolveChannelSlugForCreate, resolveChannelSlugForUpdate } from '@/lib/channel-identity'
 import { canUserManageChannelsForEventByID } from '@/lib/permissions'
+import {
+  errorFeedback,
+  successFeedback,
+  type ActionFeedback,
+} from '@/lib/action-feedback'
+import { APP_NOTICES } from '@/lib/app-notices'
 import type { User } from '@/payload-types'
 
 function stringValue(formData: FormData, key: string): string | undefined {
@@ -161,57 +167,171 @@ export async function updateChannelAction(formData: FormData) {
   redirect(`/events/${eventSlug}/channels/${channel.slug}`)
 }
 
-export async function updateChannelSummaryAction(formData: FormData) {
-  const eventSlug = stringValue(formData, 'eventSlug')
-  const channelSlug = stringValue(formData, 'channelSlug')
-  const id = stringValue(formData, 'id')
-  const name = stringValue(formData, 'name')
-  const description = formData.get('description')
+export async function updateChannelSummaryAction(
+  _previousState: ActionFeedback,
+  formData: FormData,
+): Promise<ActionFeedback> {
+  try {
+    const eventSlug = stringValue(formData, 'eventSlug')
+    const channelSlug = stringValue(formData, 'channelSlug')
+    const id = stringValue(formData, 'id')
+    const name = stringValue(formData, 'name')
+    const description = formData.get('description')
 
-  if (!eventSlug || !channelSlug || !id) {
-    throw new Error('Event slug, channel slug, and channel ID are required.')
+    if (!eventSlug || !channelSlug || !id) {
+      return errorFeedback('Event slug, channel slug, and channel ID are required.')
+    }
+
+    const user = await requireAppUser()
+    const payload = await getPayload({ config: configPromise })
+    const existingChannel = await payload.findByID({
+      collection: 'channels',
+      id,
+      overrideAccess: true,
+      user,
+    })
+    const eventID = typeof existingChannel.event === 'object' ? existingChannel.event.id : existingChannel.event
+
+    if (!(await canManageChannels(payload, user, eventID))) {
+      return errorFeedback('You do not have permission to update this channel.')
+    }
+
+    const data: { description?: string | null; name?: string } = {}
+
+    if (name) {
+      data.name = name
+    }
+
+    if (typeof description === 'string') {
+      data.description = description.trim() || null
+    }
+
+    if (!data.name && !('description' in data)) {
+      return errorFeedback('Nothing changed.')
+    }
+
+    await payload.update({
+      id,
+      collection: 'channels',
+      data,
+      overrideAccess: true,
+      user,
+    })
+
+    revalidatePath('/dashboard')
+    revalidatePath('/channels')
+    revalidatePath(`/events/${eventSlug}`)
+    revalidatePath(`/events/${eventSlug}/channels/${channelSlug}`)
+
+    return successFeedback(APP_NOTICES.channelSummarySaved)
+  } catch (error) {
+    return errorFeedback(error instanceof Error ? error.message : APP_NOTICES.genericError)
   }
+}
 
-  const user = await requireAppUser()
-  const payload = await getPayload({ config: configPromise })
-  const existingChannel = await payload.findByID({
-    collection: 'channels',
-    id,
-    overrideAccess: true,
-    user,
-  })
-  const eventID = typeof existingChannel.event === 'object' ? existingChannel.event.id : existingChannel.event
+export async function updateChannelSettingsAction(
+  _previousState: ActionFeedback,
+  formData: FormData,
+): Promise<ActionFeedback> {
+  try {
+    const eventSlug = stringValue(formData, 'eventSlug')
+    const id = stringValue(formData, 'id')
+    const originalSlug = stringValue(formData, 'originalSlug')
+    const name = stringValue(formData, 'name')
 
-  if (!(await canManageChannels(payload, user, eventID))) {
-    throw new Error('You do not have permission to update this channel.')
+    if (!eventSlug || !id || !originalSlug || !name) {
+      return errorFeedback('Event slug, channel ID, original slug, and name are required.')
+    }
+
+    const user = await requireAppUser()
+    const payload = await getPayload({ config: configPromise })
+    const existingChannel = await payload.findByID({
+      collection: 'channels',
+      id,
+      overrideAccess: true,
+      user,
+    })
+    const eventID = typeof existingChannel.event === 'object' ? existingChannel.event.id : existingChannel.event
+
+    if (!(await canManageChannels(payload, user, eventID))) {
+      return errorFeedback('You do not have permission to update this channel.')
+    }
+
+    const channel = await payload.update({
+      id,
+      collection: 'channels',
+      data: {
+        audioQuality: audioQualityValue(formData),
+        description: stringValue(formData, 'description'),
+        enabled: booleanValue(formData, 'enabled'),
+        hlsEnabled: booleanValue(formData, 'hlsEnabled'),
+        icecastFallbackUrl: stringValue(formData, 'icecastFallbackUrl'),
+        listenerPageEnabled: booleanValue(formData, 'listenerPageEnabled'),
+        listenerTokenMode: tokenModeValue(formData),
+        slug: resolveChannelSlugForUpdate(stringValue(formData, 'slug'), existingChannel.slug),
+        speakerPageEnabled: booleanValue(formData, 'speakerPageEnabled'),
+        speakerPassword: stringValue(formData, 'speakerPassword'),
+        speakerPasswordEnabled: booleanValue(formData, 'speakerPasswordEnabled'),
+        sortOrder: Number(stringValue(formData, 'sortOrder') ?? 0),
+        webrtcEnabled: booleanValue(formData, 'webrtcEnabled'),
+        name,
+      },
+      overrideAccess: true,
+      user,
+    })
+
+    revalidatePath('/dashboard')
+    revalidatePath('/channels')
+    revalidatePath(`/events/${eventSlug}`)
+    revalidatePath(`/events/${eventSlug}/channels`)
+    revalidatePath(`/events/${eventSlug}/channels/${originalSlug}`)
+    revalidatePath(`/events/${eventSlug}/channels/${channel.slug}`)
+
+    return successFeedback(APP_NOTICES.channelSaved)
+  } catch (error) {
+    return errorFeedback(error instanceof Error ? error.message : APP_NOTICES.genericError)
   }
+}
 
-  const data: { description?: string | null; name?: string } = {}
+export async function setChannelPageEnabledAction(
+  _previousState: ActionFeedback,
+  formData: FormData,
+): Promise<ActionFeedback> {
+  try {
+    const eventSlug = stringValue(formData, 'eventSlug')
+    const channelSlug = stringValue(formData, 'channelSlug')
+    const id = stringValue(formData, 'id')
+    const page = stringValue(formData, 'page')
+    const enabled = formData.get('enabled') === 'true'
 
-  if (name) {
-    data.name = name
+    if (!eventSlug || !channelSlug || !id || (page !== 'listener' && page !== 'speaker')) {
+      return errorFeedback('Channel, event, and page type are required.')
+    }
+
+    const user = await requireAppUser()
+    const payload = await getPayload({ config: configPromise })
+    const channelID = Number(id)
+
+    if (page === 'listener') {
+      await updateChannelFlags(payload, user, channelID, { listenerPageEnabled: enabled })
+    } else {
+      await updateChannelFlags(payload, user, channelID, { speakerPageEnabled: enabled })
+    }
+
+    revalidatePath('/dashboard')
+    revalidatePath('/channels')
+    revalidatePath(`/events/${eventSlug}`)
+    revalidatePath(`/events/${eventSlug}/channels`)
+    revalidatePath(`/events/${eventSlug}/channels/${channelSlug}`)
+
+    return successFeedback(
+      page === 'listener'
+        ? APP_NOTICES.channelListenerPage(enabled)
+        : APP_NOTICES.channelSpeakerPage(enabled),
+    )
+  } catch (error) {
+    return errorFeedback(error instanceof Error ? error.message : APP_NOTICES.genericError)
   }
-
-  if (typeof description === 'string') {
-    data.description = description.trim() || null
-  }
-
-  if (!data.name && !('description' in data)) {
-    throw new Error('Nothing changed.')
-  }
-
-  await payload.update({
-    id,
-    collection: 'channels',
-    data,
-    overrideAccess: true,
-    user,
-  })
-
-  revalidatePath('/dashboard')
-  revalidatePath('/channels')
-  revalidatePath(`/events/${eventSlug}`)
-  revalidatePath(`/events/${eventSlug}/channels/${channelSlug}`)
 }
 
 export async function deleteChannelAction(formData: FormData) {

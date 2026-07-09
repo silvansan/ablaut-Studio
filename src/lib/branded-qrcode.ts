@@ -14,6 +14,32 @@ export const ABLAUT_QR_COLORS = {
   white: '#ffffff',
 } as const
 
+export const HIGH_CONTRAST_QR_COLORS = {
+  greenDark: '#000000',
+  green: '#111111',
+  blue: '#000000',
+  blueDark: '#000000',
+  muted: '#333333',
+  card: '#ffffff',
+  white: '#ffffff',
+} as const
+
+export type BrandedQrStyle = 'ablaut-default' | 'high-contrast'
+
+export type BrandedQrColors = {
+  blue: string
+  blueDark: string
+  card: string
+  green: string
+  greenDark: string
+  muted: string
+  white: string
+}
+
+function resolveQrColors(style: BrandedQrStyle = 'ablaut-default'): BrandedQrColors {
+  return style === 'high-contrast' ? HIGH_CONTRAST_QR_COLORS : ABLAUT_QR_COLORS
+}
+
 export type BrandedQrKind = 'listener' | 'speaker' | 'download'
 
 export type BrandedQrCardInput = {
@@ -21,6 +47,7 @@ export type BrandedQrCardInput = {
   kind: BrandedQrKind
   primaryTitle: string
   secondaryTitle: string
+  style?: BrandedQrStyle
   url: string
 }
 
@@ -94,11 +121,12 @@ async function loadLogoBuffer(size: number): Promise<Buffer> {
   return createFallbackLogo(size)
 }
 
-async function createQrWithLogo(url: string, qrSize: number): Promise<Buffer> {
+async function createQrWithLogo(url: string, qrSize: number, style: BrandedQrStyle = 'ablaut-default'): Promise<Buffer> {
+  const colors = resolveQrColors(style)
   const qrBuffer = await QRCode.toBuffer(url, {
     color: {
-      dark: ABLAUT_QR_COLORS.greenDark,
-      light: ABLAUT_QR_COLORS.white,
+      dark: colors.greenDark,
+      light: colors.white,
     },
     errorCorrectionLevel: 'H',
     margin: 1,
@@ -125,6 +153,7 @@ async function createQrWithLogo(url: string, qrSize: number): Promise<Buffer> {
 }
 
 function buildCardSvg(input: BrandedQrCardInput, qrBase64: string): string {
+  const colors = resolveQrColors(input.style)
   const footerLabel = input.footerLabel ?? defaultFooterLabel(input.kind)
   const primaryTitle = escapeXml(truncateTitle(input.primaryTitle, 42))
   const secondaryTitle = escapeXml(truncateTitle(input.secondaryTitle, 48))
@@ -134,31 +163,33 @@ function buildCardSvg(input: BrandedQrCardInput, qrBase64: string): string {
 <svg width="${CARD_WIDTH}" height="${CARD_HEIGHT}" viewBox="0 0 ${CARD_WIDTH} ${CARD_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="cardBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="${ABLAUT_QR_COLORS.card}"/>
+      <stop offset="0%" stop-color="${colors.card}"/>
       <stop offset="100%" stop-color="#eef5f4"/>
     </linearGradient>
     <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="${ABLAUT_QR_COLORS.greenDark}" flood-opacity="0.12"/>
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="${colors.greenDark}" flood-opacity="0.12"/>
     </filter>
   </defs>
-  <rect x="24" y="24" width="672" height="852" rx="36" fill="url(#cardBg)" stroke="${ABLAUT_QR_COLORS.greenDark}" stroke-opacity="0.12" filter="url(#cardShadow)"/>
-  <text x="360" y="98" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="${ABLAUT_QR_COLORS.greenDark}">${primaryTitle}</text>
-  <text x="360" y="142" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="22" font-weight="600" fill="${ABLAUT_QR_COLORS.blueDark}">${secondaryTitle}</text>
-  <line x1="120" y1="168" x2="600" y2="168" stroke="${ABLAUT_QR_COLORS.greenDark}" stroke-opacity="0.14" stroke-width="2"/>
-  <rect x="150" y="196" width="${QR_SIZE}" height="${QR_SIZE}" rx="28" fill="white" stroke="${ABLAUT_QR_COLORS.blue}" stroke-opacity="0.22" stroke-width="2"/>
+  <rect x="24" y="24" width="672" height="852" rx="36" fill="url(#cardBg)" stroke="${colors.greenDark}" stroke-opacity="0.12" filter="url(#cardShadow)"/>
+  <text x="360" y="98" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="${colors.greenDark}">${primaryTitle}</text>
+  <text x="360" y="142" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="22" font-weight="600" fill="${colors.blueDark}">${secondaryTitle}</text>
+  <line x1="120" y1="168" x2="600" y2="168" stroke="${colors.greenDark}" stroke-opacity="0.14" stroke-width="2"/>
+  <rect x="150" y="196" width="${QR_SIZE}" height="${QR_SIZE}" rx="28" fill="white" stroke="${colors.blue}" stroke-opacity="0.22" stroke-width="2"/>
   <image href="data:image/png;base64,${qrBase64}" x="150" y="196" width="${QR_SIZE}" height="${QR_SIZE}" preserveAspectRatio="xMidYMid meet"/>
-  <rect x="150" y="648" width="${QR_SIZE}" height="56" rx="14" fill="${ABLAUT_QR_COLORS.greenDark}"/>
+  <rect x="150" y="648" width="${QR_SIZE}" height="56" rx="14" fill="${colors.greenDark}"/>
   <text x="360" y="684" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="22" font-weight="700" letter-spacing="0.08em" fill="white">SCAN ME</text>
-  <text x="360" y="748" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="14" font-weight="600" letter-spacing="0.16em" fill="${ABLAUT_QR_COLORS.muted}">${footer}</text>
-  <text x="360" y="818" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="${ABLAUT_QR_COLORS.green}" opacity="0.85">ablaut</text>
+  <text x="360" y="748" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="14" font-weight="600" letter-spacing="0.16em" fill="${colors.muted}">${footer}</text>
+  <text x="360" y="818" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="${colors.green}" opacity="0.85">ablaut</text>
 </svg>`
 }
 
-async function createSimpleQrDataUrl(url: string): Promise<string> {
+async function createSimpleQrDataUrl(url: string, style: BrandedQrStyle = 'ablaut-default'): Promise<string> {
+  const colors = resolveQrColors(style)
+
   return QRCode.toDataURL(url, {
     color: {
-      dark: ABLAUT_QR_COLORS.greenDark,
-      light: ABLAUT_QR_COLORS.white,
+      dark: colors.greenDark,
+      light: colors.white,
     },
     margin: 2,
     width: 512,
@@ -166,9 +197,11 @@ async function createSimpleQrDataUrl(url: string): Promise<string> {
 }
 
 export async function generateBrandedQrCardDataUrl(input: BrandedQrCardInput): Promise<string> {
+  const style = input.style ?? 'ablaut-default'
+
   try {
-    const qrWithLogo = await createQrWithLogo(input.url, QR_SIZE)
-    const svg = buildCardSvg(input, qrWithLogo.toString('base64'))
+    const qrWithLogo = await createQrWithLogo(input.url, QR_SIZE, style)
+    const svg = buildCardSvg({ ...input, style }, qrWithLogo.toString('base64'))
     const png = await sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toBuffer()
 
     return `data:image/png;base64,${png.toString('base64')}`
@@ -178,13 +211,14 @@ export async function generateBrandedQrCardDataUrl(input: BrandedQrCardInput): P
       error instanceof Error ? error.message : error,
     )
 
-    return createSimpleQrDataUrl(input.url)
+    return createSimpleQrDataUrl(input.url, style)
   }
 }
 
 export async function generateBrandedRouteQrDataUrl(input: {
   channelName: string
   organizationName: string
+  style?: BrandedQrStyle
   url: string
   variant: 'listener' | 'speaker'
 }): Promise<string> {
@@ -192,11 +226,13 @@ export async function generateBrandedRouteQrDataUrl(input: {
     kind: input.variant,
     primaryTitle: input.organizationName,
     secondaryTitle: input.channelName,
+    style: input.style,
     url: input.url,
   })
 }
 
 export async function generateBrandedDownloadQrDataUrl(input: {
+  style?: BrandedQrStyle
   url: string
   version: string
 }): Promise<string> {
@@ -205,6 +241,7 @@ export async function generateBrandedDownloadQrDataUrl(input: {
     kind: 'download',
     primaryTitle: 'ablaut listener app',
     secondaryTitle: `Android v${input.version}`,
+    style: input.style,
     url: input.url,
   })
 }

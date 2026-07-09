@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 
+import { useActionFeedback } from '@/components/AppToastProvider'
 import { PencilIcon } from '@/components/ActionIcons'
+import type { ActionFeedbackHandler } from '@/lib/action-feedback'
 
 type InlineEditFieldProps = {
-  action: (formData: FormData) => Promise<void>
+  action: ActionFeedbackHandler
   children: ReactNode
   fieldName: string
   hiddenFields: Record<string, number | string>
@@ -27,15 +29,17 @@ export function InlineEditField({
   value,
 }: InlineEditFieldProps) {
   const [editing, setEditing] = useState(false)
+  const { formAction, state } = useActionFeedback(action)
 
-  async function submitInlineEdit(formData: FormData) {
-    await action(formData)
-    setEditing(false)
-  }
+  useEffect(() => {
+    if (editing && state.ok && state.message) {
+      setEditing(false)
+    }
+  }, [editing, state])
 
   if (editing) {
     return (
-      <form action={submitInlineEdit} className="space-y-3">
+      <form action={formAction} className="space-y-3">
         {Object.entries(hiddenFields).map(([key, hiddenValue]) => (
           <input key={key} name={key} type="hidden" value={hiddenValue} />
         ))}
@@ -80,7 +84,6 @@ export function InlineEditField({
         className="mt-1 inline-flex h-9 w-9 flex-none items-center justify-center rounded-full border bg-white/80 opacity-80 transition hover:-translate-y-0.5 hover:opacity-100 hover:shadow-md"
         onClick={() => setEditing(true)}
         style={{ borderColor: 'var(--us-border)', color: 'var(--us-blue-dark)' }}
-        title={`Edit ${inputLabel.toLowerCase()}`}
         type="button"
       >
         <PencilIcon />

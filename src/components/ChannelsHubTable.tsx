@@ -1,10 +1,10 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 import { bulkChannelsAction } from '@/app/events/[eventSlug]/channels/actions'
-import { RouteActionCluster } from '@/components/RouteActionCluster'
 import {
   BulkActionSelect,
   ListBulkActionsPanel,
@@ -21,15 +21,9 @@ type ChannelListItem = {
   description?: string | null
   enabled?: boolean | null
   eventSlug: string
-  listenerPageEnabled?: boolean | null
-  listenerQrDataUrl?: string
-  listenerUrl: string
   name: string
   rowTint?: ListRowTint
   slug: string
-  speakerPageEnabled?: boolean | null
-  speakerQrDataUrl?: string
-  speakerUrl: string
 }
 
 type ChannelsHubTableProps = {
@@ -115,7 +109,7 @@ export function ChannelsHubTable({ channels, returnPath }: ChannelsHubTableProps
             <span>Channel</span>
           </span>
           <span className="us-data-row__chips">Status</span>
-          <span className="us-data-row__actions">Speaker / listener links</span>
+          <span className="us-data-row__actions">Actions</span>
         </div>
 
         {channels.length === 0 ? (
@@ -168,26 +162,19 @@ export function ChannelsHubTable({ channels, returnPath }: ChannelsHubTableProps
                   </div>
 
                   <div className="us-data-row__actions flex flex-wrap gap-2">
-                    <RouteActionCluster
-                      disabled={channel.speakerPageEnabled === false}
-                      openLabel="Open speaker page"
-                      qrDataUrl={channel.speakerQrDataUrl}
-                      qrFileName={`${channel.eventSlug}-${channel.slug}-speaker.png`}
-                      qrLabel={`${channel.name} speaker`}
-                      qrTriggerLabel="Show speaker QR"
-                      url={channel.speakerUrl}
-                      variant="speaker"
-                    />
-                    <RouteActionCluster
-                      disabled={channel.listenerPageEnabled === false}
-                      openLabel="Open listener page"
-                      qrDataUrl={channel.listenerQrDataUrl}
-                      qrFileName={`${channel.eventSlug}-${channel.slug}-listener.png`}
-                      qrLabel={`${channel.name} listener`}
-                      qrTriggerLabel="Show listener QR"
-                      url={channel.listenerUrl}
-                      variant="listener"
-                    />
+                    <Link
+                      className="us-button-secondary px-3 py-2 text-sm font-medium"
+                      href={`/events/${channel.eventSlug}/share`}
+                    >
+                      Share
+                    </Link>
+                    <button
+                      className="us-button-secondary px-3 py-2 text-sm font-medium"
+                      onClick={() => router.push(href)}
+                      type="button"
+                    >
+                      Open
+                    </button>
                   </div>
                 </div>
               )
