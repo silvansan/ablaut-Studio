@@ -13,9 +13,14 @@
   --us-danger: #c74848;
   --us-warning: #e8b84d;
   --us-border: rgba(22, 63, 53, 0.14);
+  --us-warning-ink: #7d5900;
   --us-shell-max: 1720px;
   --us-shadow: 0 18px 40px rgba(18, 107, 182, 0.08);
   --us-shadow-soft: 0 10px 24px rgba(22, 63, 53, 0.08);
+  --us-shadow-strong: 0 28px 60px rgba(22, 63, 53, 0.22);
+  --us-scrim: rgba(21, 49, 58, 0.45);
+  --us-nav-gradient: linear-gradient(180deg, rgba(22, 63, 53, 0.98) 0%, rgba(18, 107, 182, 0.94) 100%);
+  --us-tint-gradient: linear-gradient(135deg, rgba(47, 143, 99, 0.08), rgba(38, 167, 242, 0.06));
 }
 
 * {
@@ -93,6 +98,41 @@ a:focus-visible {
   box-shadow: var(--us-shadow-soft);
 }
 
+/* Full-viewport dim behind any modal / drawer / mobile menu. */
+.us-scrim {
+  background: var(--us-scrim);
+}
+
+/* The white sheet a modal's content sits on. */
+.us-modal-card {
+  border: 1px solid var(--us-border);
+  border-radius: 1.5rem;
+  background: var(--us-card);
+  box-shadow: var(--us-shadow-strong);
+}
+
+/* Dark brand gradient shared by the desktop sidebar and the mobile menu. */
+.us-nav-surface {
+  background: var(--us-nav-gradient);
+}
+
+.us-nav-profile {
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.96);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+.us-nav-profile__email {
+  color: rgba(255, 255, 255, 0.74);
+}
+
+/* Inline warning callout (amber tint + amber border + amber ink). */
+.us-callout-warning {
+  border-color: color-mix(in srgb, var(--us-warning) 55%, var(--us-border) 45%);
+  background: color-mix(in srgb, var(--us-warning) 14%, white 86%);
+}
+
 .us-chip {
   display: inline-flex;
   align-items: center;
@@ -116,7 +156,7 @@ a:focus-visible {
 
 .us-chip-warning {
   background: rgba(232, 184, 77, 0.18);
-  color: #7d5900;
+  color: var(--us-warning-ink);
 }
 
 .us-chip-active {
@@ -492,54 +532,82 @@ a:focus-visible {
   transform: translateY(1px) rotate(180deg);
 }
 
-.us-app-nav__sublink {
-  border: none;
-  color: rgba(255, 255, 255, 0.94);
-  font-weight: 600;
-  text-shadow: none;
-  transition: background-color 160ms ease;
-}
-
+/* Submenu: inline push-down accordion that slides open (no overlay). */
 .us-app-nav__submenu {
-  position: absolute;
-  top: calc(100% - 0.45rem);
-  left: 0;
-  right: 0;
-  z-index: 50;
-  display: none;
-  padding-top: 0.55rem;
-}
-
-.us-app-nav__submenu-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 0.8rem;
-  background: rgba(14, 52, 88, 0.97);
-  padding: 0.3rem;
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(8px);
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 220ms ease;
 }
 
 .us-app-nav__item--open .us-app-nav__submenu {
-  display: block;
+  grid-template-rows: 1fr;
+}
+
+.us-app-nav__submenu-panel {
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin: 0.3rem 0 0.1rem 0.9rem;
+  padding-left: 0.6rem;
+  border-left: 2px solid rgba(255, 255, 255, 0.22);
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.us-app-nav__item--open .us-app-nav__submenu-panel {
+  opacity: 1;
 }
 
 .us-app-nav__sublink {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
   border-radius: 0.55rem;
   background-color: transparent;
-  padding: 0.5rem 0.65rem;
+  padding: 0.5rem 0.6rem;
   font-size: 0.8125rem;
+  font-weight: 600;
   line-height: 1.2;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: none;
   transform: none;
+  transition: background-color 160ms ease;
 }
 
 .us-app-nav__sublink:hover {
   background-color: rgba(255, 255, 255, 0.16);
   box-shadow: none;
   transform: none;
+}
+
+.us-app-nav__sublink--viewall {
+  margin-top: 0.15rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 0.75rem;
+}
+
+.us-app-nav__dot {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+.us-app-nav__dot--active {
+  background-color: #4ade80;
+}
+
+.us-app-nav__dot--draft {
+  background-color: rgba(255, 255, 255, 0.45);
+}
+
+.us-app-nav__dot--archived {
+  background-color: rgba(255, 255, 255, 0.25);
 }
 
 @media (min-width: 1280px) {
@@ -629,7 +697,7 @@ a:focus-visible {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #7d5900;
+  color: var(--us-warning-ink);
 }
 
 .us-hero-glow {
@@ -843,6 +911,10 @@ a:focus-visible {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
+}
+
+.us-mobile-tabbar__link {
+  font-size: 0.6875rem;
 }
 
 .us-mobile-tabbar__link--active {

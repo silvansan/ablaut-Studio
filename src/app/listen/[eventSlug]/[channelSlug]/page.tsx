@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { cookies } from 'next/headers'
+import { notFound } from 'next/navigation'
 
 import { Layout } from '@/components/Layout'
 import { ListenerConnectPanel } from '@/components/ListenerConnectPanel'
@@ -32,24 +33,27 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ListenPage({ params }: PageProps) {
   const { eventSlug, channelSlug } = await params
   const context = await getPublicChannelContext(eventSlug, channelSlug)
-  const listenerAvailable = context ? isListenerPubliclyAvailable(context) : true
-  const eventTitle = context?.event.title ?? eventSlug
-  const channelName = context?.channel.name ?? channelSlug
+
+  if (!context) {
+    notFound()
+  }
+
+  const listenerAvailable = isListenerPubliclyAvailable(context)
+  const eventTitle = context.event.title
+  const channelName = context.channel.name
   const cookieStore = await cookies()
   const listenerSession = cookieStore.get(getListenerSessionCookieName(eventSlug, channelSlug))?.value
   const hasListenerSession = verifyListenerSessionToken(eventSlug, channelSlug, listenerSession)
   const requestBaseUrl = await getRequestBaseUrl()
-  const streamInfo = context
-    ? resolveChannelStreamInfo({
-        channel: context.channel,
-        event: context.event,
-        preferSafariCompatibility: true,
-        requestBaseUrl,
-        settings: context.settings,
-      })
-    : null
+  const streamInfo = resolveChannelStreamInfo({
+    channel: context.channel,
+    event: context.event,
+    preferSafariCompatibility: true,
+    requestBaseUrl,
+    settings: context.settings,
+  })
   const hlsCandidateUrl =
-    context?.channel.hlsEnabled === true
+    context.channel.hlsEnabled === true
       ? buildHlsManifestUrl(
           eventSlug,
           channelSlug,

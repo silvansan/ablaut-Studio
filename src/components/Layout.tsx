@@ -11,7 +11,9 @@ import { MobileAppChrome } from './MobileAppChrome'
 import { getCurrentAppUser, requireAppUser } from '@/lib/app-auth'
 import { APP_PRONUNCIATION, APP_PRODUCT_NAME, APP_STUDIO_NAME } from '@/lib/branding'
 import { getFeatureNavItems } from '@/features/registry'
+import type { NavChild } from '@/features/types'
 import { getRequestBaseUrl } from '@/lib/links'
+import { getEventNavFlyout } from '@/lib/recent-events'
 import { loadPublicMobileAppRelease } from '@/lib/mobile-app-release'
 import { countActiveOrganizationsForUser, countPendingJoinRequestsForUser, hasOrganizationManagementAccess, shouldHideBetaBannerForUser, shouldShowMultiOrganizationNav } from '@/lib/organizations'
 import { generateBrandedDownloadQrDataUrl } from '@/lib/qrcode'
@@ -28,7 +30,7 @@ type LayoutProps = {
 
 type NavItem = {
   badge?: number
-  children?: Array<{ href: string; label: string }>
+  children?: NavChild[]
   href: string
   label: string
   show: boolean
@@ -55,6 +57,23 @@ export async function Layout({
       : null
   const showAppMenu = Boolean(user)
   const showPayloadAdmin = user ? isSuperAdminUser(user) : false
+  const eventFlyout = user ? await getEventNavFlyout(user) : null
+  const eventChildren: NavChild[] | undefined =
+    eventFlyout && eventFlyout.items.length > 0
+      ? [
+          ...eventFlyout.items.map((item) => ({
+            href: item.href,
+            label: item.label,
+            status: item.status,
+            variant: 'event' as const,
+          })),
+          {
+            href: '/events',
+            label: `View all (${eventFlyout.totalCount})`,
+            variant: 'viewall' as const,
+          },
+        ]
+      : undefined
   const activeOrganizationCount =
     user && showAppMenu
       ? await countActiveOrganizationsForUser(payload, user.id)
@@ -75,7 +94,16 @@ export async function Layout({
       isSuperAdmin: showPayloadAdmin,
       pendingJoinRequestCount,
       showMultiOrganizationNav,
-    }).map((item) => ({ ...item, show: true })),
+    }).map((item) => ({
+      ...item,
+      children: item.href === '/events' ? eventChildren : item.children,
+      show: true,
+    })),
+    {
+      href: '/settings',
+      label: 'Settings',
+      show: Boolean(user && (isAdminUser(user) || isOrganizationManager)),
+    },
     { href: '/admin', label: 'Payload Admin', show: showPayloadAdmin },
   ].filter((item) => item.show)
 
@@ -85,13 +113,7 @@ export async function Layout({
         <div className="flex min-h-[calc(100vh-1.5rem)] flex-col gap-4 xl:min-h-[calc(100vh-2rem)] xl:flex-row">
         {showAppMenu ? (
           <aside className="us-panel hidden overflow-visible xl:block xl:w-[290px] xl:flex-none">
-            <div
-              className="us-hero-glow relative flex h-full flex-col gap-5 px-5 py-5 xl:gap-8 xl:py-6"
-              style={{
-                background:
-                  'linear-gradient(180deg, rgba(22, 63, 53, 0.98) 0%, rgba(18, 107, 182, 0.94) 100%)',
-              }}
-            >
+            <div className="us-nav-surface us-hero-glow relative flex h-full flex-col gap-5 px-5 py-5 xl:gap-8 xl:py-6">
               <div className="relative z-10">
                 <Logo theme="light" />
               </div>
@@ -100,20 +122,14 @@ export async function Layout({
 
               <Link
                 href="/profile"
-                className="relative z-0 mt-auto flex min-w-0 items-center gap-3 rounded-2xl border px-4 py-4 text-sm font-semibold"
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.1)',
-                  borderColor: 'rgba(255,255,255,0.24)',
-                  color: 'rgba(255,255,255,0.96)',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.18)',
-                }}
+                className="us-nav-profile relative z-0 mt-auto flex min-w-0 items-center gap-3 rounded-2xl px-4 py-4 text-sm font-semibold"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white">
                   <UserCircleIcon />
                 </span>
                 <span className="min-w-0">
                   <span className="block">My profile</span>
-                  <span className="block truncate text-xs font-normal" style={{ color: 'rgba(255,255,255,0.74)' }}>
+                  <span className="us-nav-profile__email block truncate text-xs font-normal">
                     {user?.email}
                   </span>
                 </span>

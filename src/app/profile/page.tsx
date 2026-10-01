@@ -1,9 +1,13 @@
 import type { Metadata } from 'next'
+import configPromise from '@payload-config'
+import { getPayload } from 'payload'
 
 import { changeOwnPasswordAction, logoutAction, updateProfileAction } from '@/app/profile/actions'
+import { JoinOrganizationForm } from '@/components/JoinOrganizationForm'
 import { Layout } from '@/components/Layout'
 import { requireAppUser } from '@/lib/app-auth'
 import { pageMetadata } from '@/lib/branding'
+import { getJoinableOrganizations, hasPlatformWideOrganizationAccess } from '@/lib/organizations'
 
 export const metadata: Metadata = pageMetadata('My profile')
 
@@ -11,6 +15,10 @@ export const dynamic = 'force-dynamic'
 
 export default async function ProfilePage() {
   const user = await requireAppUser()
+  const canJoinOrganizations = !hasPlatformWideOrganizationAccess(user)
+  const joinableOrganizations = canJoinOrganizations
+    ? await getJoinableOrganizations(await getPayload({ config: configPromise }), user)
+    : []
 
   return (
     <Layout hideHeader title="My profile">
@@ -24,9 +32,9 @@ export default async function ProfilePage() {
             <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
               Email
               <input
-                className="mt-2 w-full rounded-2xl border bg-slate-50 px-4 py-3 text-base outline-none"
+                className="mt-2 w-full rounded-2xl border px-4 py-3 text-base outline-none"
                 disabled
-                style={{ borderColor: 'var(--us-border)', color: 'var(--us-muted)' }}
+                style={{ backgroundColor: 'var(--us-bg)', borderColor: 'var(--us-border)', color: 'var(--us-muted)' }}
                 value={user.email}
               />
             </label>
@@ -113,6 +121,20 @@ export default async function ProfilePage() {
             </button>
           </form>
         </article>
+
+        {canJoinOrganizations ? (
+          <article className="us-panel px-6 py-6 xl:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
+              Organizations
+            </p>
+            <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
+              Request access to an organization. A manager must approve your request before you can see its events.
+            </p>
+            <div className="mt-5">
+              <JoinOrganizationForm organizations={joinableOrganizations} />
+            </div>
+          </article>
+        ) : null}
 
         <article className="us-panel px-6 py-6 xl:col-span-2">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

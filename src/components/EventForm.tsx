@@ -1,3 +1,4 @@
+import { CollapsiblePanel } from '@/components/CollapsiblePanel'
 import {
   OrganizationSelectField,
   organizationIdFromEvent,
@@ -98,7 +99,7 @@ export function EventForm({
         />
       </label>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
           Status
           <select
@@ -134,18 +135,6 @@ export function EventForm({
             type="datetime-local"
           />
         </label>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-          Location
-          <input
-            className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
-            defaultValue={event?.location ?? ''}
-            name="location"
-            style={{ borderColor: 'var(--us-border)' }}
-          />
-        </label>
 
         <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
           Default language
@@ -163,11 +152,8 @@ export function EventForm({
         <span>Public listener pages enabled</span>
       </label>
 
-      <details className="rounded-2xl border px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
-        <summary className="cursor-pointer text-sm font-semibold" style={{ color: 'var(--us-green-dark)' }}>
-          Sharing and access options
-        </summary>
-        <div className="mt-4 space-y-4">
+      <CollapsiblePanel title="Sharing and access options">
+        <div className="space-y-4">
       <div className="rounded-2xl border px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
         <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
           Listener access
@@ -213,8 +199,22 @@ export function EventForm({
           />
         </label>
       </div>
+
+      <div className="rounded-2xl border px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
+          Private links
+        </p>
+        <label className="mt-4 flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
+          <input className="mt-1" defaultChecked={event?.privateLinksEnabled ?? false} name="privateLinksEnabled" type="checkbox" />
+          <span>Use random, unguessable links instead of readable ones for this event and its channels</span>
+        </label>
+        <p className="mt-3 text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
+          Turning this on replaces every listener and speaker URL with a random one. Links and QR codes already shared
+          stop working the moment it&apos;s on.
+        </p>
+      </div>
         </div>
-      </details>
+      </CollapsiblePanel>
 
       <button
         className="us-button-primary px-5 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"

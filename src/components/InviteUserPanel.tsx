@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 
 import { inviteUserAction } from '@/app/users/actions'
-import { SideDrawer } from '@/components/SideDrawer'
+import { Drawer } from '@/components/Drawer'
 import { INVITABLE_ORGANIZATION_ROLES } from '@/lib/organizations'
 import type { Organization } from '@/payload-types'
 
@@ -46,7 +46,7 @@ export function InviteUserPanel({
         Invite user
       </button>
 
-      <SideDrawer
+      <Drawer
         description="Send an activation email. Organization role controls what they can do inside that organization."
         onClose={() => setOpen(false)}
         open={open}
@@ -149,7 +149,7 @@ export function InviteUserPanel({
             Send invite
           </button>
         </form>
-      </SideDrawer>
+      </Drawer>
     </>
   )
 }

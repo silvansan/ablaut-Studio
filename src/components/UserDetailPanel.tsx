@@ -49,9 +49,11 @@ export function UserDetailPanel({ canManageUsers, currentUser, data }: UserDetai
           </div>
         </div>
 
-        <p className="mt-4 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-          {userEvents.length > 0 ? `Assigned events: ${userEvents.join(', ')}` : 'No assigned events in your organizations.'}
-        </p>
+        {userEvents.length === 0 ? (
+          <p className="mt-4 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
+            No assigned events in your organizations.
+          </p>
+        ) : null}
       </article>
 
       {canManageUsers && !isSelf ? (

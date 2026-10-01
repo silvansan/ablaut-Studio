@@ -7,7 +7,7 @@ import {
   removeMembershipAction,
 } from '@/app/users/actions'
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
-import { SideDrawer } from '@/components/SideDrawer'
+import { Drawer } from '@/components/Drawer'
 import { UserAccountActions } from '@/components/UserAccountActions'
 import { UserAccountForm } from '@/components/UserAccountForm'
 import { UserEventAssignmentsSection } from '@/components/UserEventAssignmentsSection'
@@ -121,7 +121,7 @@ export function OrganizationMembersTable({
         )}
       </article>
 
-      <SideDrawer
+      <Drawer
         description={selectedUser ? `${selectedUser.email} · ${organization.name}` : undefined}
         onClose={() => setSelectedUserId(null)}
         open={selectedUser !== null}
@@ -179,7 +179,7 @@ export function OrganizationMembersTable({
             Open the full user page to review this account, or choose another member to manage.
           </p>
         ) : null}
-      </SideDrawer>
+      </Drawer>
     </>
   )
 }

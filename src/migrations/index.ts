@@ -12,6 +12,8 @@ import * as migration_20260525_120000_ll_hls_1s_cap from './20260525_120000_ll_h
 import * as migration_20260526_120000_mobile_app_release from './20260526_120000_mobile_app_release';
 import * as migration_20260527_120000_events_active_default from './20260527_120000_events_active_default';
 import * as migration_20260709_120000_organization_production_mode from './20260709_120000_organization_production_mode';
+import * as migration_20260905_120000_user_recent_events from './20260905_120000_user_recent_events';
+import * as migration_20261001_120000_private_links from './20261001_120000_private_links';
 
 export const migrations = [
   {
@@ -83,5 +85,15 @@ export const migrations = [
     up: migration_20260709_120000_organization_production_mode.up,
     down: migration_20260709_120000_organization_production_mode.down,
     name: '20260709_120000_organization_production_mode'
+  },
+  {
+    up: migration_20260905_120000_user_recent_events.up,
+    down: migration_20260905_120000_user_recent_events.down,
+    name: '20260905_120000_user_recent_events'
+  },
+  {
+    up: migration_20261001_120000_private_links.up,
+    down: migration_20261001_120000_private_links.down,
+    name: '20261001_120000_private_links'
   },
 ];

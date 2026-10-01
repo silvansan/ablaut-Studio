@@ -4,12 +4,13 @@ import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 
 import { importConfigAction, updateSiteSettingsAction } from '@/app/settings/actions'
-import { JoinOrganizationForm } from '@/components/JoinOrganizationForm'
 import { Layout } from '@/components/Layout'
-import { PanelDrawer } from '@/components/PanelDrawer'
+import { OrganizationSettingsPanel } from '@/components/OrganizationSettingsPanel'
+import { CollapsiblePanel } from '@/components/CollapsiblePanel'
 import { requireAppUser } from '@/lib/app-auth'
 import { pageMetadata } from '@/lib/branding'
-import { hasOrganizationManagementAccess, hasPlatformWideOrganizationAccess, getJoinableOrganizations } from '@/lib/organizations'
+import { getManageableOrganizations } from '@/lib/organization-data'
+import { hasOrganizationManagementAccess } from '@/lib/organizations'
 import { isAdminUser, isSuperAdminUser } from '@/lib/permissions'
 
 export const metadata: Metadata = pageMetadata('Settings')
@@ -18,34 +19,50 @@ export const dynamic = 'force-dynamic'
 
 export default async function SettingsPage() {
   const user = await requireAppUser()
-  const canTransferConfig = isAdminUser(user)
-  const showPayloadAdmin = isSuperAdminUser(user)
-  const showJoinOrganization = !hasPlatformWideOrganizationAccess(user)
   const payload = await getPayload({ config: configPromise })
+  const showPayloadAdmin = isSuperAdminUser(user)
+  const canTransferConfig = isAdminUser(user)
   const isOrganizationManager = await hasOrganizationManagementAccess({ payload, user } as never)
-  const joinableOrganizations = showJoinOrganization ? await getJoinableOrganizations(payload, user) : []
+
+  if (!showPayloadAdmin && !canTransferConfig && !isOrganizationManager) {
+    return (
+      <Layout hideHeader title="Settings">
+        <article className="us-panel px-6 py-6">
+          <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
+            Settings are managed by administrators. Manage your own account from{' '}
+            <Link href="/profile" style={{ color: 'var(--us-blue-dark)' }}>
+              My profile
+            </Link>
+            .
+          </p>
+        </article>
+      </Layout>
+    )
+  }
+
+  const manageableOrganizations =
+    showPayloadAdmin || isOrganizationManager ? await getManageableOrganizations() : []
   const settings = showPayloadAdmin
-    ? await payload.findGlobal({
-        slug: 'site-settings',
-        overrideAccess: true,
-      })
+    ? await payload.findGlobal({ slug: 'site-settings', overrideAccess: true })
     : null
-  const publicBaseUrl = settings?.publicBaseUrl || process.env.PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || ''
-  const livekitPublicUrl = settings?.livekitPublicUrl || process.env.LIVEKIT_PUBLIC_URL || process.env.LIVEKIT_URL || ''
+  const publicBaseUrl =
+    settings?.publicBaseUrl || process.env.PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || ''
+  const livekitPublicUrl =
+    settings?.livekitPublicUrl || process.env.LIVEKIT_PUBLIC_URL || process.env.LIVEKIT_URL || ''
 
   return (
     <Layout hideHeader title="Settings">
-      <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+      <div className="space-y-4">
         {showPayloadAdmin && settings ? (
           <form action={updateSiteSettingsAction} className="us-panel space-y-5 px-6 py-6">
             <div>
-              <span className="us-chip us-chip-muted">Site settings</span>
+              <span className="us-chip us-chip-muted">Site</span>
               <h2 className="mt-4 text-2xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
                 App-wide settings
               </h2>
               <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-                These values control public URLs, default listener behavior, token lifetime, and the LiveKit URL shown to
-                browser/mobile clients.
+                Public URLs, default listener behavior, token lifetime, and the LiveKit URL shown to browser and mobile
+                clients. QR codes follow the host used to open the app.
               </p>
             </div>
 
@@ -83,6 +100,9 @@ export default async function SettingsPage() {
                 style={{ borderColor: 'var(--us-border)' }}
                 type="url"
               />
+              <span className="mt-1 block text-xs" style={{ color: 'var(--us-muted)' }}>
+                Set with <code>NEXT_PUBLIC_APP_URL</code> / <code>PUBLIC_BASE_URL</code>; this field overrides them.
+              </span>
             </label>
 
             <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
@@ -94,6 +114,9 @@ export default async function SettingsPage() {
                 placeholder="wss://livekit.example.com"
                 style={{ borderColor: 'var(--us-border)' }}
               />
+              <span className="mt-1 block text-xs" style={{ color: 'var(--us-muted)' }}>
+                The browser-reachable LiveKit WebSocket URL. Set with <code>LIVEKIT_URL</code> or this field.
+              </span>
             </label>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -124,87 +147,45 @@ export default async function SettingsPage() {
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="flex items-center gap-3 rounded-2xl border bg-white px-4 py-3 text-sm font-medium" style={{ borderColor: 'var(--us-border)', color: 'var(--us-text)' }}>
+              <label
+                className="flex items-center gap-3 rounded-2xl border bg-white px-4 py-3 text-sm font-medium"
+                style={{ borderColor: 'var(--us-border)', color: 'var(--us-text)' }}
+              >
                 <input defaultChecked={settings.allowPublicListenerPages ?? true} name="allowPublicListenerPages" type="checkbox" />
                 Allow public listener pages
               </label>
 
-              <label className="flex items-center gap-3 rounded-2xl border bg-white px-4 py-3 text-sm font-medium" style={{ borderColor: 'var(--us-border)', color: 'var(--us-text)' }}>
+              <label
+                className="flex items-center gap-3 rounded-2xl border bg-white px-4 py-3 text-sm font-medium"
+                style={{ borderColor: 'var(--us-border)', color: 'var(--us-text)' }}
+              >
                 <input defaultChecked={settings.requireEmailVerification ?? true} name="requireEmailVerification" type="checkbox" />
                 Require email verification
               </label>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              <button className="us-button-primary px-5 py-3 text-sm font-medium" type="submit">
-                Save settings
-              </button>
-              <Link href="/admin/globals/site-settings" className="us-button-secondary px-4 py-3 text-sm font-medium">
-                Advanced Payload settings
-              </Link>
-            </div>
+            <button className="us-button-primary px-5 py-3 text-sm font-medium" type="submit">
+              Save settings
+            </button>
           </form>
-        ) : (
-          <article className="us-panel px-6 py-6">
-            <span className="us-chip us-chip-muted">Your workspace</span>
-            <h2 className="mt-4 text-2xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
-              {isOrganizationManager ? 'Manager settings' : 'Settings'}
-            </h2>
-            <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              {isOrganizationManager
-                ? 'Manage your organization, team, and events. Server deployment settings are limited to super admins.'
-                : 'Global site settings are managed by super admins. You can still request access to an organization below.'}
-            </p>
-            {isOrganizationManager ? (
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Link className="us-button-primary px-4 py-2.5 text-sm font-medium" href="/organizations">
-                  Organizations
-                </Link>
-                <Link className="us-button-secondary px-4 py-2.5 text-sm font-medium" href="/users">
-                  Users
-                </Link>
-                <Link className="us-button-secondary px-4 py-2.5 text-sm font-medium" href="/events">
-                  Events
-                </Link>
-              </div>
-            ) : (
-              <Link href="/dashboard" className="mt-6 inline-flex us-button-secondary px-4 py-2.5 text-sm font-medium">
-                Back to dashboard
-              </Link>
-            )}
-            {showJoinOrganization ? (
-              <div className="mt-8 border-t pt-6" style={{ borderColor: 'var(--us-border)' }}>
-                <JoinOrganizationForm organizations={joinableOrganizations} />
-              </div>
-            ) : null}
-          </article>
-        )}
+        ) : null}
 
-        {showJoinOrganization && showPayloadAdmin ? (
+        {manageableOrganizations.length === 1 ? (
+          <div>
+            <OrganizationSettingsPanel canDelete={false} organization={manageableOrganizations[0]} />
+          </div>
+        ) : manageableOrganizations.length > 1 ? (
           <article className="us-panel px-6 py-6">
             <span className="us-chip us-chip-muted">Organizations</span>
             <h2 className="mt-4 text-2xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
-              Join another organization
+              Multiple organizations
             </h2>
             <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              Request access to another organization. A manager must approve your request.
+              You manage {manageableOrganizations.length} organizations. Edit each one from the organizations list.
             </p>
-            <div className="mt-5">
-              <JoinOrganizationForm organizations={joinableOrganizations} />
-            </div>
-          </article>
-        ) : null}
-
-        {showPayloadAdmin ? (
-          <article className="us-panel px-6 py-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-              Deployment notes
-            </p>
-            <ul className="mt-4 space-y-3 text-sm leading-6" style={{ color: 'var(--us-text)' }}>
-              <li>Set app URL with `NEXT_PUBLIC_APP_URL` and `PUBLIC_BASE_URL`.</li>
-              <li>Set browser LiveKit URL with `LIVEKIT_URL` or the LiveKit public URL field.</li>
-              <li>QR codes follow the host used to open the dashboard.</li>
-            </ul>
+            <Link className="us-button-primary mt-5 inline-flex px-4 py-2.5 text-sm font-medium" href="/organizations">
+              Open organizations
+            </Link>
           </article>
         ) : null}
 
@@ -215,8 +196,8 @@ export default async function SettingsPage() {
               Android listener app footer
             </h2>
             <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              The site footer shows the latest Android release with a QR code that points to this server&apos;s download
-              redirect. Metadata is synced from GitHub Releases on startup and can be refreshed manually with{' '}
+              The site footer shows the latest Android release with a QR code pointing to this server&apos;s download
+              redirect. Metadata syncs from GitHub Releases on startup and can be refreshed with{' '}
               <code>npm run sync:mobile-app</code>.
             </p>
             <dl className="mt-5 grid gap-3 text-sm md:grid-cols-2">
@@ -235,9 +216,7 @@ export default async function SettingsPage() {
               <div>
                 <dt style={{ color: 'var(--us-muted)' }}>Last synced</dt>
                 <dd className="font-medium" style={{ color: 'var(--us-text)' }}>
-                  {settings.mobileAppLastSyncedAt
-                    ? new Date(settings.mobileAppLastSyncedAt).toLocaleString()
-                    : '—'}
+                  {settings.mobileAppLastSyncedAt ? new Date(settings.mobileAppLastSyncedAt).toLocaleString() : '—'}
                 </dd>
               </div>
               <div>
@@ -247,28 +226,18 @@ export default async function SettingsPage() {
                 </dd>
               </div>
             </dl>
-            {settings.mobileAppDownloadUrl ? (
-              <p className="mt-4 text-sm" style={{ color: 'var(--us-muted)' }}>
-                Footer download URL:{' '}
-                <Link href="/api/public/mobile-app/download" style={{ color: 'var(--us-blue-dark)' }}>
-                  /api/public/mobile-app/download
-                </Link>
-              </p>
-            ) : null}
           </article>
         ) : null}
 
         {canTransferConfig ? (
-          <div className="xl:col-span-2">
-            <PanelDrawer
-              description="Export or import events, channels, organizations, users, and assignments. Password hashes only — never plain secrets."
-              title="Config import / export"
-            >
+          <CollapsiblePanel
+            description="Export or import events, channels, organizations, users, and assignments. Password hashes only — never plain secrets."
+            title="Data import / export"
+          >
             <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              Export or import configuration as JSON. Full config includes organizations, organization memberships,
-              users, events (with organization slug), channels, and event assignments. Speaker/listener password values
-              are exported only as stored hashes. User passwords and secrets are never exported; imported users must
-              activate or reset their password.
+              Export or import configuration as JSON. Full config includes organizations, memberships, users, events (with
+              organization slug), channels, and event assignments. Speaker/listener passwords transfer only as stored
+              hashes. User passwords and secrets are never exported; imported users must activate or reset their password.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-3">
@@ -288,7 +257,11 @@ export default async function SettingsPage() {
             <form action={importConfigAction} className="mt-6 grid gap-4 lg:grid-cols-[220px_1fr_auto] lg:items-end">
               <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
                 Import scope
-                <select className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none" name="scope" style={{ borderColor: 'var(--us-border)' }}>
+                <select
+                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                  name="scope"
+                  style={{ borderColor: 'var(--us-border)' }}
+                >
                   <option value="events">Events</option>
                   <option value="channels">Channels</option>
                   {showPayloadAdmin ? <option value="full">Full config</option> : null}
@@ -296,16 +269,42 @@ export default async function SettingsPage() {
               </label>
               <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
                 Config JSON
-                <input accept="application/json,.json" className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none" name="configFile" required style={{ borderColor: 'var(--us-border)' }} type="file" />
+                <input
+                  accept="application/json,.json"
+                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                  name="configFile"
+                  required
+                  style={{ borderColor: 'var(--us-border)' }}
+                  type="file"
+                />
               </label>
               <button className="us-button-primary px-5 py-3 text-sm font-medium" type="submit">
                 Import config
               </button>
             </form>
-            </PanelDrawer>
-          </div>
+          </CollapsiblePanel>
         ) : null}
-      </section>
+
+        {showPayloadAdmin ? (
+          <article className="us-panel px-6 py-6">
+            <span className="us-chip us-chip-muted">Advanced</span>
+            <h2 className="mt-4 text-2xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
+              Payload back office
+            </h2>
+            <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
+              Raw collections, globals, and fields not surfaced here. Super admins only.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link className="us-button-secondary px-4 py-2.5 text-sm font-medium" href="/admin/globals/site-settings">
+                Site settings in Payload
+              </Link>
+              <Link className="us-button-secondary px-4 py-2.5 text-sm font-medium" href="/admin">
+                Open Payload admin
+              </Link>
+            </div>
+          </article>
+        ) : null}
+      </div>
     </Layout>
   )
 }

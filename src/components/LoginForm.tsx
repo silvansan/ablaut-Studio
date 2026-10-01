@@ -6,11 +6,11 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 function getSafeNextPath(value: string | null): string {
   if (!value || !value.startsWith('/') || value.startsWith('//')) {
-    return '/dashboard'
+    return '/events'
   }
 
   if (value.startsWith('/listen/') || value.startsWith('/speak/')) {
-    return '/dashboard'
+    return '/events'
   }
 
   return value

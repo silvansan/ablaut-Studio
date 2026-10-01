@@ -5,7 +5,7 @@ import { getPayload } from 'payload'
 import { canDeleteEvent, createEventAction } from '@/app/events/actions'
 import { EventForm } from '@/components/EventForm'
 import { EventRow } from '@/components/EventRow'
-import { PanelDrawer } from '@/components/PanelDrawer'
+import { CollapsiblePanel } from '@/components/CollapsiblePanel'
 import { TruncatedList } from '@/components/TruncatedList'
 import { requireAppUser } from '@/lib/app-auth'
 import { getDashboardEventsForOrganization } from '@/lib/dashboard-data'
@@ -71,9 +71,9 @@ export async function OrganizationEventsPanel({ organization, status }: Organiza
         })}
         {canCreateEventsUser ? (
           <div className="ml-auto">
-            <PanelDrawer description="Create an event in this organization." title="Create event">
+            <CollapsiblePanel description="Create an event in this organization." title="Create event">
               <EventForm action={createEventAction} organizationId={organization.id} submitLabel="Create event" variant="drawer" />
-            </PanelDrawer>
+            </CollapsiblePanel>
           </div>
         ) : null}
       </div>
@@ -111,9 +111,9 @@ export async function OrganizationEventsPanel({ organization, status }: Organiza
           </p>
           {canCreateEventsUser ? (
             <div className="mt-4">
-              <PanelDrawer description="Create an event in this organization." title="Create event">
+              <CollapsiblePanel description="Create an event in this organization." title="Create event">
                 <EventForm action={createEventAction} organizationId={organization.id} submitLabel="Create event" variant="drawer" />
-              </PanelDrawer>
+              </CollapsiblePanel>
             </div>
           ) : null}
         </div>

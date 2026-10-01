@@ -64,16 +64,15 @@ export function QRPopup({
       {open ? (
         <ModalPortal>
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/42 px-4 py-6"
+          className="us-scrim fixed inset-0 z-50 flex items-center justify-center px-4 py-6"
           role="dialog"
           aria-modal="true"
           aria-label={`${label} QR code`}
           onClick={() => setOpen(false)}
         >
           <div
-            className="w-full max-w-[min(96vw,560px)] rounded-3xl border bg-white p-5 shadow-2xl transition-all duration-200"
+            className="us-modal-card w-full max-w-[min(96vw,560px)] p-5 transition-all duration-200"
             onClick={(event) => event.stopPropagation()}
-            style={{ borderColor: 'var(--us-border)' }}
           >
             <div className="flex items-center justify-between gap-3">
               <div>

@@ -17,6 +17,7 @@ export type DashboardChannel = Pick<
   | 'listenerPageEnabled'
   | 'livekitRoomName'
   | 'name'
+  | 'publicId'
   | 'roomName'
   | 'slug'
   | 'speakerPageEnabled'
@@ -35,6 +36,8 @@ export type DashboardEvent = Pick<
   | 'id'
   | 'location'
   | 'organization'
+  | 'privateLinksEnabled'
+  | 'publicId'
   | 'publicListenerEnabled'
   | 'slug'
   | 'status'
@@ -85,6 +88,8 @@ function normalizeEvent(event: Event, channelCount = 0): DashboardEvent {
     organizationId: organization?.id ?? (typeof event.organization === 'number' ? event.organization : null),
     organizationSlug: organization?.slug ?? null,
     organizationTitle: organization?.name ?? null,
+    privateLinksEnabled: event.privateLinksEnabled,
+    publicId: event.publicId,
     publicListenerEnabled: event.publicListenerEnabled,
     slug: event.slug,
     status: event.status,
@@ -105,6 +110,7 @@ function normalizeChannel(channel: Channel): DashboardChannel {
     listenerPageEnabled: channel.listenerPageEnabled,
     livekitRoomName: channel.livekitRoomName,
     name: channel.name,
+    publicId: channel.publicId,
     roomName: channel.roomName,
     slug: channel.slug,
     speakerPageEnabled: channel.speakerPageEnabled,

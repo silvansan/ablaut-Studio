@@ -75,9 +75,7 @@ export async function importConfigAction(formData: FormData) {
 
   await importAblautConfig(user, json, scope)
 
-  revalidatePath('/dashboard')
   revalidatePath('/events')
-  revalidatePath('/channels')
   revalidatePath('/users')
   revalidatePath('/settings')
 }

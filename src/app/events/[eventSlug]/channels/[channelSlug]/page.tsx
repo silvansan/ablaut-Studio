@@ -6,7 +6,6 @@ import { getPayload } from 'payload'
 
 import { AppBreadcrumbs } from '@/components/AppBreadcrumbs'
 import { ChannelAdvancedSettings } from '@/components/ChannelAdvancedSettings'
-import { IconActionLink } from '@/components/ActionIcons'
 import { InlineEditField } from '@/components/InlineEditField'
 import { Layout } from '@/components/Layout'
 import { SharePanel } from '@/components/SharePanel'
@@ -15,6 +14,7 @@ import { formatEventChannelTitle } from '@/lib/branding'
 import { channelEnabledChip } from '@/lib/active-status'
 import { getDashboardChannel, getDashboardEvent } from '@/lib/dashboard-data'
 import { getListenerUrl, getRequestBaseUrl, getSpeakerUrl } from '@/lib/links'
+import { effectiveChannelSegment, effectiveEventSegment } from '@/lib/private-links'
 import { generateBrandedRouteQrDataUrl } from '@/lib/qrcode'
 import { getDefaultQrStyle } from '@/lib/qr-settings'
 import {
@@ -118,8 +118,10 @@ export default async function ChannelDetailPage({ params, searchParams }: PagePr
   })
 
   const publicBaseUrl = await getRequestBaseUrl()
-  const listenerUrl = getListenerUrl(eventSlug, channelSlug, publicBaseUrl)
-  const speakerUrl = getSpeakerUrl(eventSlug, channelSlug, publicBaseUrl)
+  const eventSegment = effectiveEventSegment(eventRecord)
+  const channelSegment = effectiveChannelSegment(eventRecord, channelSettings)
+  const listenerUrl = getListenerUrl(eventSegment, channelSegment, publicBaseUrl)
+  const speakerUrl = getSpeakerUrl(eventSegment, channelSegment, publicBaseUrl)
   const organizationName = resolveBrandedQrOrganizationTitle(event?.organizationTitle)
   const channelName = resolveBrandedQrChannelTitle(channel.name, channelSlug)
   const qrStyle = await getDefaultQrStyle()
@@ -183,86 +185,51 @@ export default async function ChannelDetailPage({ params, searchParams }: PagePr
           eventTitle={event?.title ?? eventSlug}
         />
 
-        <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-          <article className="us-panel px-6 py-6">
-            <div className="mt-1">
-              <InlineEditField
-                action={updateChannelSummaryAction}
-                fieldName="name"
-                hiddenFields={{ channelSlug, eventSlug, id: channel.id }}
-                inputLabel="Channel name"
-                value={channel.name}
-              >
-                <h2 className="text-2xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
-                  {channel.name}
-                </h2>
-              </InlineEditField>
-            </div>
-            <div className="mt-3">
-              <InlineEditField
-                action={updateChannelSummaryAction}
-                fieldName="description"
-                hiddenFields={{ channelSlug, eventSlug, id: channel.id }}
-                inputLabel="Description"
-                multiline
-                placeholder="Add a short channel description"
-                value={channel.description ?? ''}
-              >
-                <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-                  {channel.description || 'No description yet.'}
-                </p>
-              </InlineEditField>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {streamInfo.webrtcAvailable ? <span className="us-chip us-chip-blue">WebRTC available</span> : <span className="us-chip us-chip-warning">WebRTC off</span>}
-              {streamInfo.hlsAvailable ? <span className="us-chip us-chip-blue">HLS available</span> : null}
-              {streamInfo.hlsEgressStatus === 'live' ? <span className="us-chip us-chip-muted">HLS live</span> : null}
-              {streamInfo.hlsEgressStatus === 'starting' ? <span className="us-chip us-chip-muted">HLS starting</span> : null}
-              {streamInfo.hlsEgressStatus === 'error' ? <span className="us-chip us-chip-warning">HLS error</span> : null}
-              {streamInfo.fallbackUrl ? <span className="us-chip us-chip-blue">External fallback</span> : null}
-            </div>
-          </article>
-
-          <article className="us-panel px-6 py-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-              Auto-generated
-            </p>
-            <p className="mt-2 text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
-              Public URLs and the LiveKit room are derived from the channel slug.
-            </p>
-            <dl className="mt-4 space-y-3 text-sm leading-6" style={{ color: 'var(--us-text)' }}>
-              <div>
-                <dt className="font-semibold">URL name</dt>
-                <dd className="break-all font-mono text-xs" style={{ color: 'var(--us-muted)' }}>
-                  {channelSlug}
-                </dd>
-              </div>
-              <div>
-                <dt className="font-semibold">LiveKit room</dt>
-                <dd className="break-all font-mono text-xs" style={{ color: 'var(--us-muted)' }}>
-                  {channel.livekitRoomName || channel.roomName || `ablaut_${eventSlug}_${channelSlug}`}
-                </dd>
-              </div>
-            </dl>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <IconActionLink href={listenerUrl} icon="open" target="_blank">
-                Open listener page
-              </IconActionLink>
-              <IconActionLink href={speakerUrl} icon="open" target="_blank">
-                Open speaker page
-              </IconActionLink>
-            </div>
-          </article>
-
-          <div className="xl:col-span-2">
-            <ChannelAdvancedSettings
-              channel={channelSettings}
-              defaultOpen={settingsQuery === 'open'}
-              eventListenerPasswordConfigured={listenerPasswordReady}
-              eventSlug={eventSlug}
-            />
+        <article className="us-panel px-6 py-6">
+          <div className="mt-1">
+            <InlineEditField
+              action={updateChannelSummaryAction}
+              fieldName="name"
+              hiddenFields={{ channelSlug, eventSlug, id: channel.id }}
+              inputLabel="Channel name"
+              value={channel.name}
+            >
+              <h2 className="text-2xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
+                {channel.name}
+              </h2>
+            </InlineEditField>
           </div>
-        </div>
+          <div className="mt-3">
+            <InlineEditField
+              action={updateChannelSummaryAction}
+              fieldName="description"
+              hiddenFields={{ channelSlug, eventSlug, id: channel.id }}
+              inputLabel="Description"
+              multiline
+              placeholder="Add a short channel description"
+              value={channel.description ?? ''}
+            >
+              <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
+                {channel.description || 'No description yet.'}
+              </p>
+            </InlineEditField>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {streamInfo.webrtcAvailable ? <span className="us-chip us-chip-blue">WebRTC available</span> : <span className="us-chip us-chip-warning">WebRTC off</span>}
+            {streamInfo.hlsAvailable ? <span className="us-chip us-chip-blue">HLS available</span> : null}
+            {streamInfo.hlsEgressStatus === 'live' ? <span className="us-chip us-chip-muted">HLS live</span> : null}
+            {streamInfo.hlsEgressStatus === 'starting' ? <span className="us-chip us-chip-muted">HLS starting</span> : null}
+            {streamInfo.hlsEgressStatus === 'error' ? <span className="us-chip us-chip-warning">HLS error</span> : null}
+            {streamInfo.fallbackUrl ? <span className="us-chip us-chip-blue">External fallback</span> : null}
+          </div>
+        </article>
+
+        <ChannelAdvancedSettings
+          channel={channelSettings}
+          defaultOpen={settingsQuery === 'open'}
+          eventListenerPasswordConfigured={listenerPasswordReady}
+          eventSlug={eventSlug}
+        />
       </section>
     </Layout>
   )

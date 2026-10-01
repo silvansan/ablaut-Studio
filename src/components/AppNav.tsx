@@ -1,11 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useState } from 'react'
+
+import type { NavChild } from '@/features/types'
 
 type AppNavItem = {
   badge?: number
-  children?: Array<{ href: string; label: string }>
+  children?: NavChild[]
   href: string
   label: string
 }
@@ -14,114 +16,43 @@ type AppNavProps = {
   items: AppNavItem[]
 }
 
-const LINGER_MS = 1500
-
-function usePrefersHover(): boolean {
-  const [prefersHover, setPrefersHover] = useState(true)
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(hover: hover)')
-    const update = () => setPrefersHover(mediaQuery.matches)
-
-    update()
-    mediaQuery.addEventListener('change', update)
-
-    return () => mediaQuery.removeEventListener('change', update)
-  }, [])
-
-  return prefersHover
-}
-
 export function AppNav({ items }: AppNavProps) {
-  const navRef = useRef<HTMLElement>(null)
-  const closeTimerRef = useRef<number | null>(null)
   const [openKey, setOpenKey] = useState<string | null>(null)
-  const prefersHover = usePrefersHover()
   const navId = useId()
 
-  const clearCloseTimer = useCallback(() => {
-    if (closeTimerRef.current !== null) {
-      window.clearTimeout(closeTimerRef.current)
-      closeTimerRef.current = null
-    }
+  const closeSubmenu = useCallback(() => setOpenKey(null), [])
+
+  const toggleItem = useCallback((href: string) => {
+    setOpenKey((current) => (current === href ? null : href))
   }, [])
-
-  const openItem = useCallback(
-    (href: string) => {
-      clearCloseTimer()
-      setOpenKey(href)
-    },
-    [clearCloseTimer],
-  )
-
-  const scheduleClose = useCallback(() => {
-    clearCloseTimer()
-    closeTimerRef.current = window.setTimeout(() => {
-      setOpenKey(null)
-      closeTimerRef.current = null
-    }, LINGER_MS)
-  }, [clearCloseTimer])
-
-  const toggleItem = useCallback(
-    (href: string) => {
-      clearCloseTimer()
-      setOpenKey((current) => (current === href ? null : href))
-    },
-    [clearCloseTimer],
-  )
 
   useEffect(() => {
     if (!openKey) {
       return
     }
 
-    function handlePointerDown(event: PointerEvent) {
-      if (!navRef.current?.contains(event.target as Node)) {
-        setOpenKey(null)
-        clearCloseTimer()
-      }
-    }
-
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setOpenKey(null)
-        clearCloseTimer()
       }
     }
 
-    document.addEventListener('pointerdown', handlePointerDown)
     document.addEventListener('keydown', handleKeyDown)
 
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [clearCloseTimer, openKey])
-
-  useEffect(() => {
-    return () => clearCloseTimer()
-  }, [clearCloseTimer])
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [openKey])
 
   return (
-    <nav ref={navRef} aria-label="App navigation" className="us-app-nav relative z-10">
+    <nav aria-label="App navigation" className="us-app-nav relative z-10">
       {items.map((item) => {
         const hasChildren = Boolean(item.children?.length)
         const isOpen = openKey === item.href
         const submenuId = `${navId}-${item.href.replace(/\W+/g, '-')}-submenu`
 
-        const hoverHandlers =
-          hasChildren && prefersHover
-            ? {
-                onMouseEnter: () => openItem(item.href),
-                onMouseLeave: () => scheduleClose(),
-              }
-            : undefined
-
         return (
           <div
             key={item.href}
             className={`us-app-nav__item${hasChildren ? ' us-app-nav__item--has-children' : ''}${isOpen ? ' us-app-nav__item--open' : ''}`}
-            {...hoverHandlers}
           >
             <div className="us-app-nav__link-row">
               {hasChildren ? (
@@ -159,19 +90,20 @@ export function AppNav({ items }: AppNavProps) {
               )}
             </div>
             {hasChildren ? (
-              <div className="us-app-nav__submenu" id={submenuId} {...hoverHandlers}>
+              <div className="us-app-nav__submenu" id={submenuId}>
                 <div className="us-app-nav__submenu-panel">
                   {item.children?.map((child) => (
                     <Link
-                      key={child.href}
-                      className="us-app-nav__sublink"
+                      key={`${child.href}-${child.label}`}
+                      className={`us-app-nav__sublink${child.variant === 'viewall' ? ' us-app-nav__sublink--viewall' : ''}`}
                       href={child.href}
-                      onClick={() => {
-                        setOpenKey(null)
-                        clearCloseTimer()
-                      }}
+                      onClick={closeSubmenu}
+                      tabIndex={isOpen ? undefined : -1}
                     >
-                      {child.label}
+                      {child.status ? (
+                        <span aria-hidden="true" className={`us-app-nav__dot us-app-nav__dot--${child.status}`} />
+                      ) : null}
+                      <span className="min-w-0 truncate">{child.label}</span>
                     </Link>
                   ))}
                 </div>

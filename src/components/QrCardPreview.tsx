@@ -16,12 +16,15 @@ export function QrCardPreview({ alt, qrDataUrl }: QrCardPreviewProps) {
   return (
     <div
       className="relative flex justify-center rounded-3xl border p-3 transition-all duration-200"
-      style={{ borderColor: 'rgba(38, 167, 242, 0.22)', background: 'linear-gradient(180deg, #fcfffd, #eef5f4)' }}
+      style={{
+        borderColor: 'var(--us-border)',
+        background: 'linear-gradient(180deg, var(--us-card), var(--us-bg))',
+      }}
     >
       <button
         aria-label={enlarged ? 'Show smaller QR card' : 'Show larger QR card'}
         aria-pressed={enlarged}
-        className="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border bg-white/95 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        className="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border bg-white/95 transition hover:-translate-y-0.5"
         onClick={() => setEnlarged((current) => !current)}
         style={{ borderColor: 'var(--us-border)', color: 'var(--us-blue-dark)' }}
         title={enlarged ? 'Smaller' : 'Larger'}

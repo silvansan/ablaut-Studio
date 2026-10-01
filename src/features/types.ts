@@ -1,6 +1,13 @@
+export type NavChild = {
+  href: string
+  label: string
+  status?: 'active' | 'draft' | 'archived'
+  variant?: 'event' | 'viewall'
+}
+
 export type FeatureNavItem = {
   badge?: number
-  children?: Array<{ href: string; label: string }>
+  children?: NavChild[]
   featureId: string
   href: string
   label: string

@@ -43,11 +43,8 @@ export function ListenerAccessFields({
       </label>
 
       {missingEventPassword ? (
-        <div
-          className="mt-4 rounded-2xl border px-4 py-4"
-          style={{ backgroundColor: 'rgba(232, 184, 77, 0.12)', borderColor: 'rgba(232, 184, 77, 0.45)' }}
-        >
-          <p className="text-sm font-semibold" style={{ color: '#7d5900' }}>
+        <div className="us-callout-warning mt-4 rounded-2xl border px-4 py-4">
+          <p className="text-sm font-semibold" style={{ color: 'var(--us-warning-ink)' }}>
             Event listener password is missing
           </p>
           <p className="mt-2 text-sm leading-6" style={{ color: 'var(--us-text)' }}>

@@ -179,6 +179,13 @@ export const Users: CollectionConfig = {
       defaultValue: 'en',
     },
     {
+      name: 'recentEvents',
+      type: 'json',
+      admin: {
+        hidden: true,
+      },
+    },
+    {
       name: 'lastLogin',
       type: 'date',
       admin: {

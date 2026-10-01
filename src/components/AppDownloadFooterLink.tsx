@@ -36,14 +36,13 @@ export function AppDownloadFooterLink({
           <div
             aria-label="Android app download"
             aria-modal="true"
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/42 px-4 py-6"
+            className="us-scrim fixed inset-0 z-50 flex items-center justify-center px-4 py-6"
             onClick={() => setOpen(false)}
             role="dialog"
           >
             <div
-              className="w-full max-w-[min(96vw,560px)] rounded-3xl border bg-white p-5 shadow-2xl"
+              className="us-modal-card w-full max-w-[min(96vw,560px)] p-5"
               onClick={(event) => event.stopPropagation()}
-              style={{ borderColor: 'var(--us-border)' }}
             >
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -57,7 +56,13 @@ export function AppDownloadFooterLink({
                     Android v{latestVersion}
                   </h2>
                 </div>
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#eef8f2] text-[#1a3d2e]">
+                <span
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full"
+                  style={{
+                    backgroundColor: 'color-mix(in srgb, var(--us-green) 12%, white 88%)',
+                    color: 'var(--us-green-dark)',
+                  }}
+                >
                   <QRCodeIcon />
                 </span>
               </div>

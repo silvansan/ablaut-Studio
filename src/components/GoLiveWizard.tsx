@@ -3,8 +3,6 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
-import { channelEnabledChip } from '@/lib/active-status'
-
 export type GoLiveChannelItem = {
   enabled?: boolean | null
   listenerPageEnabled?: boolean | null
@@ -17,7 +15,6 @@ export type GoLiveChannelItem = {
 
 type GoLiveWizardProps = {
   channels: GoLiveChannelItem[]
-  eventSlug: string
   eventTitle: string
   publicListenerEnabled?: boolean | null
   shareHref: string
@@ -54,7 +51,6 @@ function ChecklistRow({
 
 export function GoLiveWizard({
   channels,
-  eventSlug,
   eventTitle,
   publicListenerEnabled,
   shareHref,
@@ -85,56 +81,21 @@ export function GoLiveWizard({
       </div>
 
       <ul className="mt-5 space-y-3">
-        <ChecklistRow done={channelsReady} title="Channels are enabled">
-          {channels.length === 0 ? (
-            <p className="text-sm leading-6" style={{ color: 'var(--us-muted)' }}>
-              Add at least one channel for this event.
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {channels.map((channel) => {
-                const status = channelEnabledChip(channel.enabled)
-
-                return (
-                  <li className="flex flex-wrap items-center gap-2 text-sm" key={channel.slug}>
-                    <span className={`us-chip ${status.className}`}>{status.label}</span>
-                    <span style={{ color: 'var(--us-text)' }}>{channel.name}</span>
-                    <Link
-                      className="font-medium hover:underline"
-                      href={`/events/${eventSlug}/channels/${channel.slug}`}
-                      style={{ color: 'var(--us-blue-dark)' }}
-                    >
-                      Open
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </ChecklistRow>
-
         <ChecklistRow done={listenerPagesReady} title="Listener pages and QRs are ready">
           {publicListenerEnabled === false ? (
             <p className="text-sm leading-6" style={{ color: 'var(--us-danger)' }}>
               Public listeners are turned off for this event. Enable them in Settings.
             </p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              <Link className="us-button-secondary px-3 py-2 text-sm font-medium" href={shareHref}>
-                Open share hub
-              </Link>
-              {enabledChannels[0] ? (
-                <a
-                  className="us-button-secondary px-3 py-2 text-sm font-medium"
-                  href={enabledChannels[0].listenerUrl}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  Test listener page
-                </a>
-              ) : null}
-            </div>
-          )}
+          ) : enabledChannels[0] ? (
+            <a
+              className="us-button-secondary px-3 py-2 text-sm font-medium"
+              href={enabledChannels[0].listenerUrl}
+              rel="noreferrer"
+              target="_blank"
+            >
+              Test listener page
+            </a>
+          ) : null}
         </ChecklistRow>
 
         <ChecklistRow done={speakerPagesReady} title="Speaker / translator pages are ready">

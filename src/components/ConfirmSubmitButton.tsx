@@ -90,14 +90,13 @@ export function ConfirmSubmitButton({
           <div
             aria-label={title}
             aria-modal="true"
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/42 px-4 py-6"
+            className="us-scrim fixed inset-0 z-50 flex items-center justify-center px-4 py-6"
             onClick={() => setOpen(false)}
             role="dialog"
           >
             <div
-              className="w-full max-w-[380px] rounded-3xl border bg-white p-5 shadow-2xl"
+              className="us-modal-card w-full max-w-sm p-5"
               onClick={(event) => event.stopPropagation()}
-              style={{ borderColor: 'var(--us-border)' }}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-danger)' }}>
                 Dangerous action

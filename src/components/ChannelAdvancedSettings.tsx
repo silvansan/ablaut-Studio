@@ -1,7 +1,7 @@
 import { updateChannelSettingsAction } from '@/app/events/[eventSlug]/channels/actions'
 import { ChannelForm } from '@/components/ChannelForm'
 import { ActionFeedbackForm } from '@/components/ActionFeedbackForm'
-import { PanelDrawer } from '@/components/PanelDrawer'
+import { CollapsiblePanel } from '@/components/CollapsiblePanel'
 import type { Channel } from '@/payload-types'
 
 type ChannelAdvancedSettingsProps = {
@@ -18,7 +18,7 @@ export function ChannelAdvancedSettings({
   eventSlug,
 }: ChannelAdvancedSettingsProps) {
   return (
-    <PanelDrawer
+    <CollapsiblePanel
       defaultOpen={defaultOpen}
       description="Listener/speaker access, passwords, WebRTC, HLS, and audio defaults."
       title="Advanced settings"
@@ -33,6 +33,6 @@ export function ChannelAdvancedSettings({
           variant="advanced"
         />
       </ActionFeedbackForm>
-    </PanelDrawer>
+    </CollapsiblePanel>
   )
 }

@@ -2,6 +2,7 @@ import configPromise from '@payload-config'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { after } from 'next/server'
 import { getPayload } from 'payload'
 
 import { canManageChannels } from '@/app/events/[eventSlug]/channels/actions'
@@ -9,7 +10,6 @@ import { canManageAssignment } from '@/app/events/[eventSlug]/settings/actions'
 import { AppBreadcrumbs } from '@/components/AppBreadcrumbs'
 import { ChannelRow } from '@/components/ChannelRow'
 import { GoLiveWizard } from '@/components/GoLiveWizard'
-import { SharePanel } from '@/components/SharePanel'
 import { TruncatedList } from '@/components/TruncatedList'
 import { EventSettingsDrawer } from '@/components/EventSettingsDrawer'
 import { Layout } from '@/components/Layout'
@@ -17,15 +17,11 @@ import { requireAppUser } from '@/lib/app-auth'
 import { eventStatusChip } from '@/lib/active-status'
 import { getDashboardChannels, getDashboardEvent } from '@/lib/dashboard-data'
 import { assignGroupTints } from '@/lib/list-group-tints'
-import { getEventListenerUrl, getListenerUrl, getRequestBaseUrl, getSpeakerUrl } from '@/lib/links'
+import { getListenerUrl, getRequestBaseUrl, getSpeakerUrl } from '@/lib/links'
 import { getManageableOrganizations } from '@/lib/organization-data'
 import { isSuperAdminUser } from '@/lib/permissions'
-import { generateBrandedRouteQrDataUrl } from '@/lib/qrcode'
-import { getDefaultQrStyle } from '@/lib/qr-settings'
-import {
-  resolveBrandedQrChannelTitle,
-  resolveBrandedQrOrganizationTitle,
-} from '@/lib/branded-qrcode-labels'
+import { effectiveChannelSegment, effectiveEventSegment } from '@/lib/private-links'
+import { recordEventAccess } from '@/lib/recent-events'
 import type { OrganizationMembership, User } from '@/payload-types'
 
 type PageProps = {
@@ -129,6 +125,9 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
   }
 
   const user = await requireAppUser()
+
+  after(() => recordEventAccess(user, event.id))
+
   const payload = await getPayload({ config: configPromise })
   const [eventRecord, assignments, canManageAssignments] = await Promise.all([
     payload.find({
@@ -170,54 +169,16 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
     ? await getAssignableUsersForEvent(payload, user, event.organizationId)
     : []
   const publicBaseUrl = await getRequestBaseUrl()
-  const qrStyle = await getDefaultQrStyle()
   const canManageChannelsUser = await canManageChannels(payload, user, event.id)
-  const eventListenerUrl = getEventListenerUrl(eventSlug, publicBaseUrl)
-  const organizationName = resolveBrandedQrOrganizationTitle(event.organizationTitle)
-  const eventListenerQrDataUrl =
-    fullEvent.unifiedListenerQrEnabled === true
-      ? await generateBrandedRouteQrDataUrl({
-          channelName: resolveBrandedQrChannelTitle(event.title, eventSlug),
-          organizationName,
-          style: qrStyle,
-          url: eventListenerUrl,
-          variant: 'listener',
-        })
-      : null
   const sortedChannels = [...channels].sort((a, b) => a.name.localeCompare(b.name))
   const tintedChannels = assignGroupTints(sortedChannels, () => eventSlug)
-  const channelRows = await Promise.all(
-    tintedChannels.map(async (channel) => {
-      const listenerUrl = getListenerUrl(eventSlug, channel.slug, publicBaseUrl)
-      const speakerUrl = getSpeakerUrl(eventSlug, channel.slug, publicBaseUrl)
-      const channelName = resolveBrandedQrChannelTitle(channel.name, channel.slug)
-      const [listenerQrDataUrl, speakerQrDataUrl] = await Promise.all([
-        generateBrandedRouteQrDataUrl({
-          channelName,
-          organizationName,
-          style: qrStyle,
-          url: listenerUrl,
-          variant: 'listener',
-        }),
-        generateBrandedRouteQrDataUrl({
-          channelName,
-          organizationName,
-          style: qrStyle,
-          url: speakerUrl,
-          variant: 'speaker',
-        }),
-      ])
-
-      return {
-        channel,
-        listenerQrDataUrl,
-        listenerUrl,
-        rowTint: channel.rowTint,
-        speakerQrDataUrl,
-        speakerUrl,
-      }
-    }),
-  )
+  const eventSegment = effectiveEventSegment(event)
+  const channelRows = tintedChannels.map((channel) => ({
+    channel,
+    listenerUrl: getListenerUrl(eventSegment, effectiveChannelSegment(event, channel), publicBaseUrl),
+    rowTint: channel.rowTint,
+    speakerUrl: getSpeakerUrl(eventSegment, effectiveChannelSegment(event, channel), publicBaseUrl),
+  }))
   const eventStatus = eventStatusChip(event.status)
 
   return (
@@ -241,7 +202,10 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
           {event.publicListenerEnabled === false ? (
             <span className="us-chip us-chip-warning">Public listeners off</span>
           ) : null}
-          <Link className="us-button-secondary ml-auto px-3 py-2 text-sm font-medium" href={`/channels?event=${eventSlug}`}>
+          <Link
+            className="us-button-secondary ml-auto px-3 py-2 text-sm font-medium"
+            href={`/events/${eventSlug}/channels`}
+          >
             All channels
           </Link>
         </div>
@@ -274,31 +238,9 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
             speakerPageEnabled: item.channel.speakerPageEnabled,
             speakerUrl: item.speakerUrl,
           }))}
-          eventSlug={eventSlug}
           eventTitle={event.title}
           publicListenerEnabled={fullEvent.publicListenerEnabled}
           shareHref={`/events/${eventSlug}/share`}
-        />
-
-        <SharePanel
-          canManage={canManageChannelsUser}
-          channels={channelRows.map((item) => ({
-            channelId: item.channel.id,
-            channelSlug: item.channel.slug,
-            enabled: item.channel.enabled,
-            listenerPageEnabled: item.channel.listenerPageEnabled,
-            listenerQrDataUrl: item.listenerQrDataUrl,
-            listenerUrl: item.listenerUrl,
-            name: item.channel.name,
-            speakerPageEnabled: item.channel.speakerPageEnabled,
-            speakerQrDataUrl: item.speakerQrDataUrl,
-            speakerUrl: item.speakerUrl,
-          }))}
-          eventSlug={eventSlug}
-          eventTitle={event.title}
-          unifiedListenerQrDataUrl={eventListenerQrDataUrl ?? undefined}
-          unifiedListenerQrEnabled={fullEvent.unifiedListenerQrEnabled === true}
-          unifiedListenerUrl={eventListenerUrl}
         />
 
         <article className="us-panel px-5 py-5">

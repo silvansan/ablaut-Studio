@@ -143,6 +143,15 @@ export interface User {
   role: 'super_admin' | 'admin' | 'moderator';
   active?: boolean | null;
   preferredLanguage?: string | null;
+  recentEvents?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   lastLogin?: string | null;
   invitationStatus?: ('none' | 'pending' | 'accepted' | 'expired') | null;
   invitedAt?: string | null;
@@ -210,6 +219,9 @@ export interface Organization {
   slug: string;
   description?: string | null;
   active?: boolean | null;
+  /**
+   * When enabled, members of this organization do not see the beta banner.
+   */
   productionMode?: boolean | null;
   supportEmail?: string | null;
   createdBy?: (number | null) | User;
@@ -260,6 +272,11 @@ export interface Event {
    * Allow one listener QR for the whole event (channel picker).
    */
   unifiedListenerQrEnabled?: boolean | null;
+  /**
+   * Replace readable listener/speaker URLs with random opaque links for this event and its channels. Existing readable links stop working once enabled.
+   */
+  privateLinksEnabled?: boolean | null;
+  publicId?: string | null;
   listenerPasswordEnabled?: boolean | null;
   listenerPasswordHash?: string | null;
   /**
@@ -313,6 +330,7 @@ export interface Channel {
   event: number | Event;
   name: string;
   slug: string;
+  publicId?: string | null;
   /**
    * Legacy field. Studio uses channel name as the display label.
    */
@@ -333,6 +351,9 @@ export interface Channel {
    */
   livekitRoomName?: string | null;
   webrtcEnabled?: boolean | null;
+  /**
+   * Enable LL-HLS compatibility fallback for this channel.
+   */
   hlsEnabled?: boolean | null;
   icecastFallbackUrl?: string | null;
   /**
@@ -509,6 +530,7 @@ export interface UsersSelect<T extends boolean = true> {
   role?: T;
   active?: T;
   preferredLanguage?: T;
+  recentEvents?: T;
   lastLogin?: T;
   invitationStatus?: T;
   invitedAt?: T;
@@ -605,6 +627,8 @@ export interface EventsSelect<T extends boolean = true> {
   defaultLanguage?: T;
   publicListenerEnabled?: T;
   unifiedListenerQrEnabled?: T;
+  privateLinksEnabled?: T;
+  publicId?: T;
   listenerPasswordEnabled?: T;
   listenerPasswordHash?: T;
   listenerPassword?: T;
@@ -646,6 +670,7 @@ export interface ChannelsSelect<T extends boolean = true> {
   event?: T;
   name?: T;
   slug?: T;
+  publicId?: T;
   languageCode?: T;
   languageLabel?: T;
   description?: T;
@@ -767,18 +792,36 @@ export interface SiteSetting {
   livekitPublicUrl?: string | null;
   defaultQrStyle?: ('ablaut-default' | 'high-contrast') | null;
   /**
-   * Public base URL for generated HLS manifests, e.g. https://app.example.com/hls
+   * Public base URL for generated LL-HLS manifests, e.g. https://app.example.com/hls
    */
   hlsPublicBaseUrl?: string | null;
-  hlsMode?: ('standard' | 'low-latency') | null;
   /**
-   * Segment duration in seconds. Use 1–2 for low-latency mode.
+   * Live events always use LL-HLS. Compatibility playback stays within 1 second of live.
+   */
+  hlsMode?: 'low-latency' | null;
+  /**
+   * Segment duration in seconds. Fixed at 1 second for sub-second live delay targets.
    */
   hlsSegmentDuration?: number | null;
+  /**
+   * Show the Android listener app download in the site footer with QR code.
+   */
   mobileAppEnabled?: boolean | null;
+  /**
+   * GitHub owner/repo used when syncing the latest release.
+   */
   mobileAppGithubRepo?: string | null;
+  /**
+   * Synced semver version, e.g. 0.3.1
+   */
   mobileAppLatestVersion?: string | null;
+  /**
+   * Synced Git tag, e.g. v0.3.1
+   */
   mobileAppLatestTag?: string | null;
+  /**
+   * Direct APK asset URL from GitHub Releases.
+   */
   mobileAppDownloadUrl?: string | null;
   mobileAppReleaseNotes?: string | null;
   mobileAppPublishedAt?: string | null;

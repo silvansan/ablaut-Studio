@@ -5,6 +5,7 @@ import { getListenerAccessInfo } from '@/lib/listener-password'
 import { resolvePublicLanguageFields } from '@/lib/channel-identity'
 import { getBrowserLiveKitURL } from '@/lib/livekit'
 import { getListenerUrl, getRequestBaseUrlFromRequest } from '@/lib/links'
+import { effectiveChannelSegment, effectiveEventSegment } from '@/lib/private-links'
 import { resolveChannelStreamInfo } from '@/lib/streaming/resolve-channel-stream'
 import type { TransportKind, TransportStatus } from '@/lib/streaming/types'
 import type { Channel, Event, SiteSetting } from '@/payload-types'
@@ -97,12 +98,16 @@ function isPositiveNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value > 0
 }
 
-export async function getPublicChannelContext(
-  eventSlug: string,
-  channelSlug: string,
-): Promise<PublicChannelContext | null> {
-  const payload = await getPayload({ config: configPromise })
-
+/**
+ * Resolves an event from a public URL segment, which is either the readable slug (normal
+ * events) or the opaque publicId (events with Private links on). A readable slug never
+ * resolves a private event, and an opaque id never resolves a non-private one — once
+ * Private links is enabled, the old readable URL is dead.
+ */
+async function resolvePublicEvent(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  eventParam: string,
+): Promise<Event | null> {
   const events = await payload.find({
     collection: 'events',
     depth: 1,
@@ -110,17 +115,22 @@ export async function getPublicChannelContext(
     overrideAccess: true,
     pagination: false,
     where: {
-      slug: {
-        equals: eventSlug,
-      },
+      or: [
+        { and: [{ slug: { equals: eventParam } }, { privateLinksEnabled: { not_equals: true } }] },
+        { and: [{ publicId: { equals: eventParam } }, { privateLinksEnabled: { equals: true } }] },
+      ],
     },
   })
-  const event = events.docs[0]
 
-  if (!event) {
-    return null
-  }
+  return events.docs[0] ?? null
+}
 
+async function resolvePublicChannel(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  event: Event,
+  channelParam: string,
+): Promise<Channel | null> {
+  const isPrivate = event.privateLinksEnabled === true
   const channels = await payload.find({
     collection: 'channels',
     depth: 0,
@@ -129,20 +139,27 @@ export async function getPublicChannelContext(
     pagination: false,
     where: {
       and: [
-        {
-          event: {
-            equals: event.id,
-          },
-        },
-        {
-          slug: {
-            equals: channelSlug,
-          },
-        },
+        { event: { equals: event.id } },
+        isPrivate ? { publicId: { equals: channelParam } } : { slug: { equals: channelParam } },
       ],
     },
   })
-  const channel = channels.docs[0]
+
+  return channels.docs[0] ?? null
+}
+
+export async function getPublicChannelContext(
+  eventSlug: string,
+  channelSlug: string,
+): Promise<PublicChannelContext | null> {
+  const payload = await getPayload({ config: configPromise })
+  const event = await resolvePublicEvent(payload, eventSlug)
+
+  if (!event) {
+    return null
+  }
+
+  const channel = await resolvePublicChannel(payload, event, channelSlug)
 
   if (!channel) {
     return null
@@ -189,7 +206,7 @@ export function toPublicChannelResponse(
       listenerTokenMode: channel.listenerTokenMode,
       name: channel.name,
       recommendedTransport: streamInfo.recommendedTransport,
-      slug: channel.slug,
+      slug: effectiveChannelSegment(event, channel),
       speakerPageEnabled: channel.speakerPageEnabled,
       speakerPasswordEnabled: channel.speakerPasswordEnabled,
       transportStatus: streamInfo.transportStatus,
@@ -199,7 +216,7 @@ export function toPublicChannelResponse(
       defaultLanguage: event.defaultLanguage,
       listenerPasswordEnabled: event.listenerPasswordEnabled,
       publicListenerEnabled: event.publicListenerEnabled,
-      slug: event.slug,
+      slug: effectiveEventSegment(event),
       speakerPasswordEnabled: event.speakerPasswordEnabled,
       status: event.status,
       title: event.title,
@@ -280,20 +297,8 @@ export function canIssueListenerTokenForSpeakerCrossMonitor(
 
 export async function getPublicEventBySlug(eventSlug: string): Promise<Event | null> {
   const payload = await getPayload({ config: configPromise })
-  const events = await payload.find({
-    collection: 'events',
-    depth: 0,
-    limit: 1,
-    overrideAccess: true,
-    pagination: false,
-    where: {
-      slug: {
-        equals: eventSlug,
-      },
-    },
-  })
 
-  return events.docs[0] ?? null
+  return resolvePublicEvent(payload, eventSlug)
 }
 
 export async function getEventChannelsForEvent(eventID: number): Promise<Channel[]> {
@@ -399,15 +404,16 @@ export async function buildPublicEventDirectoryResponse(
     },
     channels: channels.filter(isDirectoryChannel).map((channel) => {
       const publicLanguage = resolvePublicLanguageFields(channel)
+      const channelSegment = effectiveChannelSegment(event, channel)
 
       return {
         description: channel.description,
         languageCode: publicLanguage.languageCode,
         languageLabel: publicLanguage.languageLabel,
         listenerTokenMode: channel.listenerTokenMode,
-        listenerUrl: getListenerUrl(event.slug, channel.slug, baseUrl),
+        listenerUrl: getListenerUrl(effectiveEventSegment(event), channelSegment, baseUrl),
         name: channel.name,
-        slug: channel.slug,
+        slug: channelSegment,
         webrtcEnabled: channel.webrtcEnabled,
       }
     }),
@@ -415,7 +421,7 @@ export async function buildPublicEventDirectoryResponse(
       defaultLanguage: event.defaultLanguage,
       listenerPasswordEnabled: event.listenerPasswordEnabled,
       publicListenerEnabled: event.publicListenerEnabled,
-      slug: event.slug,
+      slug: effectiveEventSegment(event),
       status: event.status,
       title: event.title,
       unifiedListenerQrEnabled: event.unifiedListenerQrEnabled,
@@ -434,10 +440,12 @@ export async function getMonitorableChannelsForEvent(
   }
 
   const channels = await getEventChannelsForEvent(event.id)
+  const eventSegment = effectiveEventSegment(event)
 
   return channels
-    .filter((channel) => channel.slug !== publishChannelSlug)
-    .map((channel) => {
+    .map((channel) => ({ channel, segment: effectiveChannelSegment(event, channel) }))
+    .filter(({ segment }) => segment !== publishChannelSlug)
+    .map(({ channel, segment }) => {
       const publicLanguage = resolvePublicLanguageFields(channel)
 
       return {
@@ -446,9 +454,9 @@ export async function getMonitorableChannelsForEvent(
         languageCode: publicLanguage.languageCode,
         languageLabel: publicLanguage.languageLabel,
         listenerTokenMode: channel.listenerTokenMode,
-        listenerUrl: getListenerUrl(event.slug, channel.slug),
+        listenerUrl: getListenerUrl(eventSegment, segment),
         name: channel.name,
-        slug: channel.slug,
+        slug: segment,
         webrtcEnabled: channel.webrtcEnabled,
       }
     })

@@ -4,16 +4,20 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 
 import { canDeleteEvent, createEventAction } from '@/app/events/actions'
+import { DashboardActionCards } from '@/components/DashboardActionCards'
 import { EventForm } from '@/components/EventForm'
 import { EventsHubTable } from '@/components/EventsHubTable'
 import { Layout } from '@/components/Layout'
-import { PanelDrawer } from '@/components/PanelDrawer'
-import { getDashboardEvents } from '@/lib/dashboard-data'
+import { CollapsiblePanel } from '@/components/CollapsiblePanel'
+import { PendingJoinRequestsPanel } from '@/components/PendingJoinRequestsPanel'
+import { getDashboardActionItems, getDashboardEvents } from '@/lib/dashboard-data'
 import { assignGroupTints } from '@/lib/list-group-tints'
 import { getManageableOrganizations } from '@/lib/organization-data'
+import { hasOrganizationManagementAccess } from '@/lib/organizations'
 import { requireAppUser } from '@/lib/app-auth'
 import { pageMetadata } from '@/lib/branding'
 import { canCreateEvents } from '@/lib/permissions'
+import { getPendingJoinRequestsForHub } from '@/lib/users-hub-data'
 export const metadata: Metadata = pageMetadata('Events')
 
 export const dynamic = 'force-dynamic'
@@ -24,17 +28,22 @@ type PageProps = {
 
 export default async function EventsPage({ searchParams }: PageProps) {
   const { status } = await searchParams
-  const [events, user, organizations] = await Promise.all([
+  const [events, user, organizations, actionItems, pendingJoinRequests] = await Promise.all([
     getDashboardEvents(),
     requireAppUser(),
     getManageableOrganizations(),
+    getDashboardActionItems(),
+    getPendingJoinRequestsForHub(),
   ])
   const payload = await getPayload({ config: configPromise })
   const visibleEvents =
     status === 'active' || status === 'draft' || status === 'archived'
       ? events.filter((event) => event.status === status)
       : events
-  const canCreateEventsUser = await canCreateEvents({ payload, user } as never)
+  const [canCreateEventsUser, canManageUsers] = await Promise.all([
+    canCreateEvents({ payload, user } as never),
+    hasOrganizationManagementAccess({ payload, user } as never),
+  ])
 
   const sortedEvents = [...visibleEvents].sort((a, b) => {
     const orgCompare = (a.organizationTitle ?? '').localeCompare(b.organizationTitle ?? '')
@@ -58,6 +67,9 @@ export default async function EventsPage({ searchParams }: PageProps) {
   return (
     <Layout hideHeader title="Events">
       <section className="space-y-4">
+        <DashboardActionCards actionItems={actionItems} canManageUsers={canManageUsers} />
+        <PendingJoinRequestsPanel memberships={pendingJoinRequests} returnPath="/events" />
+
         <div className="us-panel flex flex-wrap items-center gap-2 px-6 py-5">
           {[
             ['All', '/events'],
@@ -86,19 +98,18 @@ export default async function EventsPage({ searchParams }: PageProps) {
               </Link>
             )
           })}
-          {canCreateEventsUser ? (
-            <div className="ml-auto">
-              <PanelDrawer description="Choose an organization and create a new event." title="Create event">
-                <EventForm
-                  action={createEventAction}
-                  organizations={organizations}
-                  submitLabel="Create event"
-                  variant="drawer"
-                />
-              </PanelDrawer>
-            </div>
-          ) : null}
         </div>
+
+        {canCreateEventsUser ? (
+          <CollapsiblePanel description="Choose an organization and create a new event." title="Create event">
+            <EventForm
+              action={createEventAction}
+              organizations={organizations}
+              submitLabel="Create event"
+              variant="drawer"
+            />
+          </CollapsiblePanel>
+        ) : null}
 
         {tintedEvents.length > 0 ? (
           <EventsHubTable
@@ -131,14 +142,14 @@ export default async function EventsPage({ searchParams }: PageProps) {
                 Open settings
               </Link>
             ) : canCreateEventsUser ? (
-              <PanelDrawer description="Choose an organization and create a new event." title="Create event">
+              <CollapsiblePanel description="Choose an organization and create a new event." title="Create event">
                 <EventForm
                   action={createEventAction}
                   organizations={organizations}
                   submitLabel="Create event"
                   variant="drawer"
                 />
-              </PanelDrawer>
+              </CollapsiblePanel>
             ) : null}
           </div>
         )}

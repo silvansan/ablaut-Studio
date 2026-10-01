@@ -460,7 +460,7 @@ export async function bulkChannelsAction(formData: FormData) {
   const user = await requireAppUser()
   const payload = await getPayload({ config: configPromise })
   const bulkAction = stringValue(formData, 'bulkAction')
-  const returnPath = stringValue(formData, 'returnPath') ?? '/channels'
+  const returnPath = stringValue(formData, 'returnPath') ?? '/events'
   const keys = channelKeys(formData)
 
   if (!bulkAction) {

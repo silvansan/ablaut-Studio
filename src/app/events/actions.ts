@@ -8,7 +8,8 @@ import { getPayload, type Payload } from 'payload'
 import { requireAppUser } from '@/lib/app-auth'
 import { getManageableOrganizationIDs } from '@/lib/organizations'
 import { revalidateOrganizationPaths } from '@/lib/revalidate-organization-paths'
-import { canCreateEvents, isSuperAdminUser } from '@/lib/permissions'
+import { canCreateEvents, canUserManageEventByID, isSuperAdminUser } from '@/lib/permissions'
+import { ensurePrivateLinkIds, regeneratePrivateLinkIds } from '@/lib/private-links'
 import {
   errorFeedback,
   successFeedback,
@@ -160,7 +161,7 @@ export async function createEventAction(formData: FormData) {
 
   await assertCanCreateEventInOrganization(payload, user, organizationId)
 
-  await payload.create({
+  const createdEvent = await payload.create({
     collection: 'events',
     data: {
       dateEnd: dateValue(formData, 'dateEnd'),
@@ -171,6 +172,7 @@ export async function createEventAction(formData: FormData) {
       listenerPassword: stringValue(formData, 'listenerPassword'),
       listenerPasswordEnabled: booleanValue(formData, 'listenerPasswordEnabled'),
       organization: organizationId,
+      privateLinksEnabled: booleanValue(formData, 'privateLinksEnabled'),
       publicListenerEnabled: booleanValue(formData, 'publicListenerEnabled'),
       unifiedListenerQrEnabled: booleanValue(formData, 'unifiedListenerQrEnabled'),
       slug: slugify(stringValue(formData, 'slug') ?? title),
@@ -182,6 +184,10 @@ export async function createEventAction(formData: FormData) {
     overrideAccess: false,
     user,
   })
+
+  if (createdEvent.privateLinksEnabled) {
+    await ensurePrivateLinkIds(payload, createdEvent.id)
+  }
 
   revalidatePath('/dashboard')
   revalidatePath('/events')
@@ -231,6 +237,7 @@ export async function updateEventSettingsAction(
         listenerPassword: stringValue(formData, 'listenerPassword'),
         listenerPasswordEnabled: booleanValue(formData, 'listenerPasswordEnabled'),
         organization: organizationId,
+        privateLinksEnabled: booleanValue(formData, 'privateLinksEnabled'),
         publicListenerEnabled: booleanValue(formData, 'publicListenerEnabled'),
         unifiedListenerQrEnabled: booleanValue(formData, 'unifiedListenerQrEnabled'),
         slug: slugify(stringValue(formData, 'slug') ?? title),
@@ -242,6 +249,10 @@ export async function updateEventSettingsAction(
       overrideAccess: false,
       user,
     })
+
+    if (event.privateLinksEnabled) {
+      await ensurePrivateLinkIds(payload, event.id)
+    }
 
     revalidatePath('/dashboard')
     revalidatePath('/events')
@@ -294,6 +305,7 @@ export async function updateEventAction(formData: FormData) {
       listenerPassword: stringValue(formData, 'listenerPassword'),
       listenerPasswordEnabled: booleanValue(formData, 'listenerPasswordEnabled'),
       organization: organizationId,
+      privateLinksEnabled: booleanValue(formData, 'privateLinksEnabled'),
       publicListenerEnabled: booleanValue(formData, 'publicListenerEnabled'),
       unifiedListenerQrEnabled: booleanValue(formData, 'unifiedListenerQrEnabled'),
       slug: slugify(stringValue(formData, 'slug') ?? title),
@@ -305,6 +317,10 @@ export async function updateEventAction(formData: FormData) {
     overrideAccess: false,
     user,
   })
+
+  if (event.privateLinksEnabled) {
+    await ensurePrivateLinkIds(payload, event.id)
+  }
 
   revalidatePath('/dashboard')
   revalidatePath('/events')
@@ -320,6 +336,33 @@ export async function updateEventAction(formData: FormData) {
   })
   revalidateOrganizationPaths(organization.slug)
   redirect(`/events/${event.slug}?settings=open`)
+}
+
+export async function regeneratePrivateLinksAction(formData: FormData) {
+  const user = await requireAppUser()
+  const payload = await getPayload({ config: configPromise })
+  const id = stringValue(formData, 'id')
+
+  if (!id) {
+    throw new Error('Event ID is required.')
+  }
+
+  const canManage = await canUserManageEventByID({ payload, user } as never, id)
+
+  if (!canManage) {
+    throw new Error('You do not have permission to manage this event.')
+  }
+
+  const event = await payload.findByID({ collection: 'events', id, overrideAccess: true })
+
+  if (!event.privateLinksEnabled) {
+    throw new Error('Turn on Private links before regenerating.')
+  }
+
+  await regeneratePrivateLinkIds(payload, id)
+
+  revalidatePath(`/events/${event.slug}`)
+  revalidatePath(`/events/${event.slug}/share`)
 }
 
 export async function deleteEventAction(formData: FormData) {

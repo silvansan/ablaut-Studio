@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 
 import { resolvePublicLanguageFields } from '@/lib/channel-identity'
+import { effectiveChannelSegment, effectiveEventSegment } from '@/lib/private-links'
+import { getPublicEventBySlug } from '@/lib/public-channel'
 
 type RouteContext = {
   params: Promise<{ eventSlug: string }>
@@ -11,20 +13,7 @@ type RouteContext = {
 export async function GET(_request: Request, { params }: RouteContext) {
   const { eventSlug } = await params
   const payload = await getPayload({ config: configPromise })
-
-  const events = await payload.find({
-    collection: 'events',
-    depth: 0,
-    limit: 1,
-    overrideAccess: true,
-    pagination: false,
-    where: {
-      slug: {
-        equals: eventSlug,
-      },
-    },
-  })
-  const event = events.docs[0]
+  const event = await getPublicEventBySlug(eventSlug)
 
   if (!event || event.status !== 'active') {
     return NextResponse.json({ error: 'Event not found' }, { status: 404 })
@@ -66,7 +55,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
         listenerPageEnabled: channel.listenerPageEnabled,
         listenerTokenMode: channel.listenerTokenMode,
         name: channel.name,
-        slug: channel.slug,
+        slug: effectiveChannelSegment(event, channel),
         speakerPageEnabled: channel.speakerPageEnabled,
         webrtcEnabled: channel.webrtcEnabled,
       }
@@ -74,7 +63,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     event: {
       defaultLanguage: event.defaultLanguage,
       publicListenerEnabled: event.publicListenerEnabled,
-      slug: event.slug,
+      slug: effectiveEventSegment(event),
       title: event.title,
     },
   })

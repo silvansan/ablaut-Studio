@@ -37,7 +37,7 @@ export default async function FeedbackPage() {
           <div className="mt-6">
             <FeedbackForm defaultContactEmail={user?.email} defaultPageUrl={referer} />
           </div>
-          <Link className="mt-5 inline-flex text-sm font-medium" href={user ? '/dashboard' : '/'} style={{ color: 'var(--us-blue-dark)' }}>
+          <Link className="mt-5 inline-flex text-sm font-medium" href={user ? '/events' : '/'} style={{ color: 'var(--us-blue-dark)' }}>
             {user ? 'Back to dashboard' : 'Back to login'}
           </Link>
         </article>

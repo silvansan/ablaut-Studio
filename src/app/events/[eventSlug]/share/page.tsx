@@ -15,6 +15,7 @@ import {
   buildUnifiedEventListenerQr,
   getEventSharePayload,
 } from '@/lib/event-share'
+import { effectiveEventSegment } from '@/lib/private-links'
 
 type PageProps = {
   params: Promise<{ eventSlug: string }>
@@ -61,7 +62,7 @@ export default async function EventSharePrintPage({ params }: PageProps) {
   if (fullEvent?.unifiedListenerQrEnabled === true) {
     items.unshift(
       await buildUnifiedEventListenerQr({
-        eventSlug,
+        eventSlug: effectiveEventSegment(share.event),
         eventTitle: share.event.title,
         organizationTitle: share.event.organizationTitle,
         publicBaseUrl: share.publicBaseUrl,

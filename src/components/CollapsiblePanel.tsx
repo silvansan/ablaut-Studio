@@ -4,14 +4,14 @@ import { useState, type ReactNode } from 'react'
 
 import { MinusIcon, PlusIcon } from '@/components/ActionIcons'
 
-type PanelDrawerProps = {
+type CollapsiblePanelProps = {
   children: ReactNode
   defaultOpen?: boolean
   description?: string
   title: string
 }
 
-export function PanelDrawer({ children, defaultOpen = false, description, title }: PanelDrawerProps) {
+export function CollapsiblePanel({ children, defaultOpen = false, description, title }: CollapsiblePanelProps) {
   const [open, setOpen] = useState(defaultOpen)
 
   return (
@@ -21,7 +21,7 @@ export function PanelDrawer({ children, defaultOpen = false, description, title 
         className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left"
         onClick={() => setOpen((value) => !value)}
         style={{
-          background: 'linear-gradient(135deg, rgba(47, 143, 99, 0.08), rgba(38, 167, 242, 0.06))',
+          background: 'var(--us-tint-gradient)',
           color: 'var(--us-green-dark)',
         }}
         type="button"
@@ -39,7 +39,7 @@ export function PanelDrawer({ children, defaultOpen = false, description, title 
         <span
           aria-hidden
           className="flex h-9 w-9 flex-none items-center justify-center rounded-full"
-          style={{ backgroundColor: 'rgba(255,255,255,0.72)', color: 'var(--us-blue-dark)' }}
+          style={{ backgroundColor: 'color-mix(in srgb, white 72%, transparent)', color: 'var(--us-blue-dark)' }}
         >
           {open ? <MinusIcon /> : <PlusIcon />}
         </span>

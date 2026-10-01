@@ -14,7 +14,7 @@ export default async function HomePage() {
   const user = await getCurrentAppUser()
 
   if (user) {
-    redirect('/dashboard')
+    redirect('/events')
   }
 
   return (

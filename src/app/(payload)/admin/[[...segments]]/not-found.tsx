@@ -24,19 +24,19 @@ export const generateMetadata = ({ params, searchParams }: Args): Promise<Metada
 
 function getSafeReturnPath(referer: string | null): string {
   if (!referer) {
-    return '/dashboard'
+    return '/events'
   }
 
   try {
     const url = new URL(referer)
 
     if (url.pathname.startsWith('/admin')) {
-      return '/dashboard'
+      return '/events'
     }
 
     return `${url.pathname}${url.search}`
   } catch {
-    return '/dashboard'
+    return '/events'
   }
 }
 

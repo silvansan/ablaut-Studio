@@ -388,7 +388,7 @@ export async function approveMembershipAction(formData: FormData) {
     if (approvedUser.email && organization?.name) {
       await payload.sendEmail({
         html: generateOrganizationMembershipApprovedEmailHTML({
-          dashboardUrl: joinUrl(getBaseUrl(), '/dashboard'),
+          dashboardUrl: joinUrl(getBaseUrl(), '/events'),
           organizationName: organization.name,
           recipientEmail: approvedUser.email,
         }),

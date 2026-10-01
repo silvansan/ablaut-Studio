@@ -9,6 +9,7 @@ import {
   dataUrlToPngBuffer,
   getEventSharePayload,
 } from '@/lib/event-share'
+import { effectiveEventSegment } from '@/lib/private-links'
 
 type RouteContext = {
   params: Promise<{ eventSlug: string }>
@@ -45,10 +46,12 @@ export async function GET(_request: Request, context: RouteContext) {
   const items = [...share.items]
   const fullEvent = eventRecord.docs[0]
 
+  const eventSegment = effectiveEventSegment(share.event)
+
   if (fullEvent?.unifiedListenerQrEnabled === true) {
     items.unshift(
       await buildUnifiedEventListenerQr({
-        eventSlug,
+        eventSlug: eventSegment,
         eventTitle: share.event.title,
         organizationTitle: share.event.organizationTitle,
         publicBaseUrl: share.publicBaseUrl,
@@ -80,7 +83,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
   return new NextResponse(new Uint8Array(zipBuffer), {
     headers: {
-      'Content-Disposition': `attachment; filename="${eventSlug}-qrs.zip"`,
+      'Content-Disposition': `attachment; filename="${eventSegment}-qrs.zip"`,
       'Content-Type': 'application/zip',
       'Cache-Control': 'no-store',
     },

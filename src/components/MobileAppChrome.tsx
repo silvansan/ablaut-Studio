@@ -7,10 +7,11 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { UserCircleIcon } from '@/components/ActionIcons'
 import { AppNav } from '@/components/AppNav'
 import { Logo } from '@/components/Logo'
+import type { NavChild } from '@/features/types'
 
 type MobileNavItem = {
   badge?: number
-  children?: Array<{ href: string; label: string }>
+  children?: NavChild[]
   href: string
   label: string
 }
@@ -23,10 +24,6 @@ type MobileAppChromeProps = {
 }
 
 function tabMatches(pathname: string, href: string): boolean {
-  if (href === '/dashboard') {
-    return pathname === '/dashboard'
-  }
-
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
@@ -57,7 +54,7 @@ export function MobileAppChrome({ children, email, items, showSidebar }: MobileA
   }, [drawerOpen])
 
   const bottomTabs = items
-    .filter((item) => ['/dashboard', '/events', '/channels', '/organizations', '/settings', '/users'].includes(item.href))
+    .filter((item) => ['/events', '/organizations', '/settings', '/users'].includes(item.href))
     .slice(0, 5)
 
   if (!showSidebar) {
@@ -80,9 +77,7 @@ export function MobileAppChrome({ children, email, items, showSidebar }: MobileA
           >
             Menu
           </button>
-          <Link className="min-w-0 flex-1" href="/dashboard">
-            <Logo />
-          </Link>
+          <Logo className="min-w-0 flex-1" href="/events" />
           <Link aria-label="My profile" className="us-button-secondary inline-flex h-10 w-10 items-center justify-center" href="/profile">
             <UserCircleIcon />
           </Link>
@@ -92,7 +87,7 @@ export function MobileAppChrome({ children, email, items, showSidebar }: MobileA
           <div className="fixed inset-0 z-[10040] xl:hidden">
             <button
               aria-label="Close menu overlay"
-              className="absolute inset-0 bg-black/40"
+              className="us-scrim absolute inset-0"
               onClick={() => setDrawerOpen(false)}
               type="button"
             />
@@ -100,30 +95,19 @@ export function MobileAppChrome({ children, email, items, showSidebar }: MobileA
               className="us-panel absolute left-3 right-3 top-3 max-h-[calc(100vh-6rem)] overflow-y-auto"
               style={{ top: 'max(0.75rem, env(safe-area-inset-top))' }}
             >
-              <div
-                className="us-hero-glow flex flex-col gap-5 rounded-[inherit] px-5 py-5"
-                style={{
-                  background:
-                    'linear-gradient(180deg, rgba(22, 63, 53, 0.98) 0%, rgba(18, 107, 182, 0.94) 100%)',
-                }}
-              >
+              <div className="us-nav-surface us-hero-glow flex flex-col gap-5 rounded-[inherit] px-5 py-5">
                 <Logo theme="light" />
                 <AppNav items={items} />
                 <Link
-                  className="flex min-w-0 items-center gap-3 rounded-2xl border px-4 py-4 text-sm font-semibold"
+                  className="us-nav-profile flex min-w-0 items-center gap-3 rounded-2xl px-4 py-4 text-sm font-semibold"
                   href="/profile"
-                  style={{
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    borderColor: 'rgba(255,255,255,0.24)',
-                    color: 'rgba(255,255,255,0.96)',
-                  }}
                 >
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white">
                     <UserCircleIcon />
                   </span>
                   <span className="min-w-0">
                     <span className="block">My profile</span>
-                    <span className="block truncate text-xs font-normal opacity-75">{email}</span>
+                    <span className="us-nav-profile__email block truncate text-xs font-normal">{email}</span>
                   </span>
                 </Link>
               </div>
@@ -150,7 +134,7 @@ export function MobileAppChrome({ children, email, items, showSidebar }: MobileA
 
               return (
                 <Link
-                  className={`flex flex-col items-center gap-1 px-2 py-2.5 text-center text-[0.68rem] font-semibold leading-tight ${active ? 'us-mobile-tabbar__link--active' : ''}`}
+                  className={`us-mobile-tabbar__link flex flex-col items-center gap-1 px-2 py-2.5 text-center font-semibold leading-tight ${active ? 'us-mobile-tabbar__link--active' : ''}`}
                   href={item.href}
                   key={item.href}
                   style={{ color: active ? 'var(--us-blue-dark)' : 'var(--us-muted)' }}

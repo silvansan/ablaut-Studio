@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 
 import { Layout } from '@/components/Layout'
 import { RouteActionCluster } from '@/components/RouteActionCluster'
@@ -37,18 +38,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function SpeakPage({ params }: PageProps) {
   const { eventSlug, channelSlug } = await params
   const context = await getPublicChannelContext(eventSlug, channelSlug)
-  const speakerAvailable = context ? isSpeakerPubliclyAvailable(context) : true
-  const passwordRequired = context ? speakerPasswordRequired(context) : false
+
+  if (!context) {
+    notFound()
+  }
+
+  const speakerAvailable = isSpeakerPubliclyAvailable(context)
+  const passwordRequired = speakerPasswordRequired(context)
   const speakerCookies = await cookies()
   const sessionCookie = speakerCookies.get(getSpeakerSessionCookieName(eventSlug, channelSlug))?.value
   const hasSpeakerSession =
     !passwordRequired || verifySpeakerSessionToken(eventSlug, channelSlug, sessionCookie)
-  const eventTitle = context?.event.title ?? eventSlug
-  const channelDisplayName = context?.channel.name ?? channelSlug
+  const eventTitle = context.event.title
+  const channelDisplayName = context.channel.name
   const publicBaseUrl = await getRequestBaseUrl()
   const listenerUrl = getListenerUrl(eventSlug, channelSlug, publicBaseUrl)
-  const organization =
-    context && typeof context.event.organization === 'object' ? context.event.organization : null
+  const organization = typeof context.event.organization === 'object' ? context.event.organization : null
   const organizationName = resolveBrandedQrOrganizationTitle(organization?.name)
   const channelName = resolveBrandedQrChannelTitle(channelDisplayName, channelSlug)
   const listenerQrDataUrl = await generateBrandedRouteQrDataUrl({
@@ -57,7 +62,7 @@ export default async function SpeakPage({ params }: PageProps) {
     url: listenerUrl,
     variant: 'listener',
   })
-  const monitorChannels = context ? await getMonitorableChannelsForEvent(eventSlug, channelSlug) : []
+  const monitorChannels = await getMonitorableChannelsForEvent(eventSlug, channelSlug)
 
   return (
     <Layout hideHeader requireAuth={false} title="Speak">

@@ -44,7 +44,7 @@ export function DashboardActionCards({ actionItems, canManageUsers }: DashboardA
     actionItems.channelsNeedingSetup.length > 0
       ? {
           body: `${actionItems.channelsNeedingSetup.length} channels need attention`,
-          href: '/channels',
+          href: '/events',
           label: 'Channel setup',
           title: 'Channels needing setup',
         }

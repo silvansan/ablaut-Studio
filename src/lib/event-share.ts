@@ -5,6 +5,7 @@ import {
 } from '@/lib/branded-qrcode-labels'
 import { getEventListenerUrl, getListenerUrl, getRequestBaseUrl, getSpeakerUrl } from '@/lib/links'
 import { generateBrandedRouteQrDataUrl, type BrandedQrStyle } from '@/lib/branded-qrcode'
+import { effectiveChannelSegment, effectiveEventSegment } from '@/lib/private-links'
 import { getDefaultQrStyle } from '@/lib/qr-settings'
 
 export type EventShareQrItem = {
@@ -45,10 +46,12 @@ export async function getEventSharePayload(
   const organizationName = resolveBrandedQrOrganizationTitle(event.organizationTitle)
   const sortedChannels = [...channels].sort((a, b) => a.name.localeCompare(b.name))
   const items: EventShareQrItem[] = []
+  const eventSegment = effectiveEventSegment(event)
 
   for (const channel of sortedChannels) {
+    const channelSegment = effectiveChannelSegment(event, channel)
     const channelName = resolveBrandedQrChannelTitle(channel.name, channel.slug)
-    const listenerUrl = getListenerUrl(eventSlug, channel.slug, publicBaseUrl)
+    const listenerUrl = getListenerUrl(eventSegment, channelSegment, publicBaseUrl)
     const listenerQrDataUrl = await generateBrandedRouteQrDataUrl({
       channelName,
       organizationName,
@@ -59,7 +62,7 @@ export async function getEventSharePayload(
 
     items.push({
       channelSlug: channel.slug,
-      fileName: `${eventSlug}-${channel.slug}-listener.png`,
+      fileName: `${eventSegment}-${channelSegment}-listener.png`,
       kind: 'listener',
       label: 'Listener QR',
       name: channel.name,
@@ -68,7 +71,7 @@ export async function getEventSharePayload(
     })
 
     if (includeSpeaker) {
-      const speakerUrl = getSpeakerUrl(eventSlug, channel.slug, publicBaseUrl)
+      const speakerUrl = getSpeakerUrl(eventSegment, channelSegment, publicBaseUrl)
       const speakerQrDataUrl = await generateBrandedRouteQrDataUrl({
         channelName,
         organizationName,
@@ -79,7 +82,7 @@ export async function getEventSharePayload(
 
       items.push({
         channelSlug: channel.slug,
-        fileName: `${eventSlug}-${channel.slug}-speaker.png`,
+        fileName: `${eventSegment}-${channelSegment}-speaker.png`,
         kind: 'speaker',
         label: 'Speaker / translator QR',
         name: channel.name,

@@ -4,7 +4,8 @@ export function revalidateOrganizationPaths(orgSlug?: string | null) {
   revalidatePath('/organizations')
   revalidatePath('/users')
   revalidatePath('/events')
-  revalidatePath('/dashboard')
+  revalidatePath('/profile')
+  revalidatePath('/settings')
 
   if (orgSlug) {
     revalidatePath(`/organizations/${orgSlug}`)

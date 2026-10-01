@@ -4,7 +4,7 @@ import {
   createOrganizationAction,
   requestOrganizationMembershipAction,
 } from '@/app/organizations/actions'
-import { PanelDrawer } from '@/components/PanelDrawer'
+import { CollapsiblePanel } from '@/components/CollapsiblePanel'
 
 type OrganizationsManagementProps = {
   isSuperAdmin: boolean
@@ -13,7 +13,7 @@ type OrganizationsManagementProps = {
 export function OrganizationsManagement({ isSuperAdmin }: OrganizationsManagementProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <PanelDrawer description="Request access by organization slug." title="Join organization">
+      <CollapsiblePanel description="Request access by organization slug." title="Join organization">
         <form action={requestOrganizationMembershipAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <label className="block flex-1 text-sm font-medium" style={{ color: 'var(--us-text)' }}>
             Organization slug
@@ -29,10 +29,10 @@ export function OrganizationsManagement({ isSuperAdmin }: OrganizationsManagemen
             Submit request
           </button>
         </form>
-      </PanelDrawer>
+      </CollapsiblePanel>
 
       {isSuperAdmin ? (
-        <PanelDrawer description="Add a new organization for events and members." title="Create organization">
+        <CollapsiblePanel description="Add a new organization for events and members." title="Create organization">
           <form action={createOrganizationAction} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
             <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
               Name
@@ -56,7 +56,7 @@ export function OrganizationsManagement({ isSuperAdmin }: OrganizationsManagemen
               Create
             </button>
           </form>
-        </PanelDrawer>
+        </CollapsiblePanel>
       ) : null}
     </div>
   )

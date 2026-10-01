@@ -4,18 +4,20 @@ import { LogoImage } from './LogoImage'
 
 type LogoProps = {
   className?: string
+  href?: string
   theme?: 'default' | 'light'
 }
 
-export function Logo({ className = '', theme = 'default' }: LogoProps) {
+export function Logo({ className = '', href = '/', theme = 'default' }: LogoProps) {
   const titleColor = theme === 'light' ? 'white' : 'var(--us-green-dark)'
-  const subtitleColor = theme === 'light' ? 'rgba(255,255,255,0.78)' : 'var(--us-blue-dark)'
+  const subtitleColor =
+    theme === 'light' ? 'color-mix(in srgb, white 78%, transparent)' : 'var(--us-blue-dark)'
 
   return (
-    <Link href="/" className={`inline-flex items-center gap-3 font-semibold ${className}`}>
+    <Link href={href} className={`inline-flex items-center gap-3 font-semibold ${className}`}>
       <span
-        className="overflow-hidden rounded-2xl border border-white/40 shadow-lg"
-        style={{ boxShadow: '0 10px 30px rgba(18, 107, 182, 0.14)' }}
+        className="overflow-hidden rounded-2xl border border-white/40"
+        style={{ boxShadow: 'var(--us-shadow)' }}
       >
         <LogoImage />
       </span>

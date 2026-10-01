@@ -122,6 +122,23 @@ export const Events: CollectionConfig = {
               },
             },
             {
+              name: 'privateLinksEnabled',
+              type: 'checkbox',
+              defaultValue: false,
+              admin: {
+                description:
+                  'Replace readable listener/speaker URLs with random opaque links for this event and its channels. Existing readable links stop working once enabled.',
+              },
+            },
+            {
+              name: 'publicId',
+              type: 'text',
+              unique: true,
+              admin: {
+                hidden: true,
+              },
+            },
+            {
               name: 'listenerPasswordEnabled',
               type: 'checkbox',
               defaultValue: false,

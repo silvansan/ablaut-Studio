@@ -1,4 +1,4 @@
-import type { CollectionConfig, PayloadRequest } from 'payload'
+import { APIError, type CollectionConfig, type PayloadRequest } from 'payload'
 
 import { canCreateChannel } from '@/access/canCreateChannel'
 import { canManageChannel } from '@/access/canManageChannel'
@@ -87,6 +87,14 @@ export const Channels: CollectionConfig = {
               type: 'text',
               required: true,
               index: true,
+            },
+            {
+              name: 'publicId',
+              type: 'text',
+              unique: true,
+              admin: {
+                hidden: true,
+              },
             },
             {
               type: 'row',
@@ -300,7 +308,7 @@ export const Channels: CollectionConfig = {
       },
     ],
     beforeChange: [
-      async ({ data, operation, req }) => {
+      async ({ data, operation, originalDoc, req }) => {
         const nextData = { ...data }
 
         if (typeof nextData.name === 'string' && !nextData.slug) {
@@ -321,7 +329,32 @@ export const Channels: CollectionConfig = {
 
         delete nextData.speakerPassword
 
-        const eventID = normalizeRelationshipID(nextData.event)
+        const eventID = normalizeRelationshipID(nextData.event) ?? normalizeRelationshipID(originalDoc?.event)
+
+        if (eventID && typeof nextData.slug === 'string') {
+          const duplicates = await req.payload.find({
+            collection: 'channels',
+            depth: 0,
+            limit: 1,
+            overrideAccess: true,
+            pagination: false,
+            req,
+            where: {
+              and: [
+                { event: { equals: eventID } },
+                { slug: { equals: nextData.slug } },
+                ...(originalDoc?.id ? [{ id: { not_equals: originalDoc.id } }] : []),
+              ],
+            },
+          })
+
+          if (duplicates.docs.length > 0) {
+            throw new APIError(
+              `Another channel in this event already uses the URL name "${nextData.slug}". Choose a different one.`,
+              400,
+            )
+          }
+        }
 
         if (eventID && (!nextData.roomName || !nextData.livekitRoomName)) {
           const event = await req.payload.findByID({

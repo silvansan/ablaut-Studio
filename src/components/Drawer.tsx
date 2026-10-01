@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 
 import { ModalPortal } from '@/components/ModalPortal'
 
-type SideDrawerProps = {
+type DrawerProps = {
   children: ReactNode
   description?: string
   onClose: () => void
@@ -12,7 +12,7 @@ type SideDrawerProps = {
   title: string
 }
 
-export function SideDrawer({ children, description, onClose, open, title }: SideDrawerProps) {
+export function Drawer({ children, description, onClose, open, title }: DrawerProps) {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -49,23 +49,27 @@ export function SideDrawer({ children, description, onClose, open, title }: Side
       <div className="fixed inset-0 z-50 flex justify-end" role="presentation">
         <button
           aria-label="Close drawer"
-          className="absolute inset-0 bg-slate-950/42"
+          className="us-scrim absolute inset-0"
           onClick={onClose}
           type="button"
         />
         <aside
           aria-label={title}
           aria-modal="true"
-          className={`relative flex h-full w-full max-w-md flex-col border-l bg-white shadow-2xl transition-transform duration-200 ease-out ${
+          className={`relative flex h-full w-full max-w-md flex-col border-l transition-transform duration-200 ease-out ${
             visible ? 'translate-x-0' : 'translate-x-full'
           }`}
           role="dialog"
-          style={{ borderColor: 'var(--us-border)' }}
+          style={{
+            backgroundColor: 'var(--us-card)',
+            borderColor: 'var(--us-border)',
+            boxShadow: 'var(--us-shadow-strong)',
+          }}
         >
           <div
             className="flex items-start justify-between gap-4 border-b px-5 py-5"
             style={{
-              background: 'linear-gradient(135deg, rgba(47, 143, 99, 0.08), rgba(38, 167, 242, 0.06))',
+              background: 'var(--us-tint-gradient)',
               borderColor: 'var(--us-border)',
             }}
           >

@@ -13,7 +13,7 @@ export function LogoImage() {
       height={54}
       priority
       unoptimized
-      className="h-[54px] w-[54px] object-contain"
+      className="object-contain"
     />
   )
 }

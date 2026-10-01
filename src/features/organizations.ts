@@ -5,15 +5,14 @@ export const organizationsFeature: AblautFeature = {
   enabled: () => isFeatureEnabled('organizations'),
   id: 'organizations',
   label: 'Organizations',
-  navItems: ({ isAdmin, isOrganizationManager, pendingJoinRequestCount, showMultiOrganizationNav }) => {
-    if (!isAdmin && !isOrganizationManager) {
+  navItems: ({ pendingJoinRequestCount, showMultiOrganizationNav }) => {
+    if (!showMultiOrganizationNav) {
       return []
     }
 
     return [
       {
         badge: pendingJoinRequestCount > 0 ? pendingJoinRequestCount : undefined,
-        children: showMultiOrganizationNav ? [{ href: '/users', label: 'Users' }] : [{ href: '/users', label: 'Users' }],
         featureId: 'organizations',
         href: '/organizations',
         label: 'Organizations',
