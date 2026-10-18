@@ -21,6 +21,7 @@ import {
   getCurrentOrganization,
   getRequestScope,
   getRequestUrl,
+  getSidebarOrganization,
   resolveCanonicalOrganization,
 } from '@/lib/org-context'
 import { isOrgScopedInternalPath, toPublicPath } from '@/lib/org-paths'
@@ -35,6 +36,8 @@ import { getDefaultQrStyle } from '@/lib/qr-settings'
 import { getEventNavFlyout } from '@/lib/recent-events'
 
 type LayoutProps = {
+  /** Trail after "Organization / Events"; use real titles for dynamic pages (event, channel). */
+  breadcrumbs?: { href?: string; label: string }[]
   children: ReactNode
   hideBetaBanner?: boolean
   hideHeader?: boolean
@@ -70,6 +73,7 @@ async function canonicalRedirectTarget(user: NonNullable<Awaited<ReturnType<type
 }
 
 export async function Layout({
+  breadcrumbs,
   children,
   hideBetaBanner = false,
   hideHeader = false,
@@ -114,7 +118,8 @@ export async function Layout({
     : false
   const canManage = isAdmin || isOrganizationManager
   const accessibleOrganizations = user ? await getAccessibleOrganizations(user) : []
-  const eventFlyout = user ? await getEventNavFlyout(user) : null
+  const sidebarOrganization = user ? await getSidebarOrganization(user) : null
+  const eventFlyout = user ? await getEventNavFlyout(user, sidebarOrganization?.id ?? null) : null
   const pendingJoinRequestCount =
     user && isOrganizationManager ? await countPendingJoinRequestsForUser(payload, user) : 0
   const suppressBetaBanner = user ? await shouldHideBetaBannerForUser(payload, user) : false
@@ -152,15 +157,18 @@ export async function Layout({
     .filter((organization): organization is typeof organization & { publicKey: string } => Boolean(organization.publicKey))
     .map((organization) => ({ key: organization.publicKey, name: organization.name }))
 
+  // The sidebar always links into the organization it shows, even on Platform pages that have none in the URL.
   const sidebar = (
-    <AppSidebar
-      currentKey={currentOrganization?.publicKey ?? null}
-      email={user?.email ?? ''}
-      navItems={navItems}
-      organizations={organizationOptions}
-      platformItems={platformItems}
-      recentItems={recentItems}
-    />
+    <OrgProvider orgKey={sidebarOrganization?.publicKey ?? null}>
+      <AppSidebar
+        currentKey={sidebarOrganization?.publicKey ?? null}
+        email={user?.email ?? ''}
+        navItems={navItems}
+        organizations={organizationOptions}
+        platformItems={platformItems}
+        recentItems={recentItems}
+      />
+    </OrgProvider>
   )
 
   return (
@@ -172,9 +180,10 @@ export async function Layout({
 
         <div className="flex min-w-0 flex-1 flex-col">
           <MobileAppChrome
-            orgName={currentOrganization?.name ?? null}
+            orgName={sidebarOrganization?.name ?? null}
             showSidebar={showAppMenu}
             sidebar={sidebar}
+            tabOrgKey={sidebarOrganization?.publicKey ?? null}
             tabs={navItems}
           >
             {showAppMenu ? (
@@ -183,6 +192,7 @@ export async function Layout({
                   orgKey={currentOrganization?.publicKey ?? null}
                   orgName={currentOrganization?.name ?? null}
                   title={title}
+                  trail={breadcrumbs}
                 />
               </div>
             ) : null}

@@ -4,7 +4,6 @@ import Link from '@/components/OrgLink'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { AppBreadcrumbs } from '@/components/AppBreadcrumbs'
 import { ChannelAdvancedSettings } from '@/components/ChannelAdvancedSettings'
 import { InlineEditField } from '@/components/InlineEditField'
 import { Layout } from '@/components/Layout'
@@ -145,17 +144,15 @@ export default async function ChannelDetailPage({ params, searchParams }: PagePr
   const channelStatus = channelEnabledChip(channel.enabled)
 
   return (
-    <Layout hideHeader title={channel.name}>
+    <Layout
+      breadcrumbs={[
+        { href: `/events/${eventSlug}`, label: event?.title ?? eventSlug },
+        { label: channel.name },
+      ]}
+      hideHeader
+      title={channel.name}
+    >
       <section className="mx-auto max-w-6xl space-y-4">
-        <AppBreadcrumbs
-          segments={[
-            ...(event?.organizationSlug
-              ? [{ href: `/organizations/${event.organizationSlug}`, label: event.organizationTitle ?? 'Organization' }]
-              : []),
-            { href: `/events/${eventSlug}`, label: event?.title ?? eventSlug },
-            { label: channel.name },
-          ]}
-        />
 
         <div className="flex flex-wrap items-center gap-2">
           <span className={`us-chip ${channelStatus.className}`}>{channelStatus.label}</span>

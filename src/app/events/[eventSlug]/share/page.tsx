@@ -4,7 +4,6 @@ import Link from '@/components/OrgLink'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { AppBreadcrumbs } from '@/components/AppBreadcrumbs'
 import { Layout } from '@/components/Layout'
 import { PrintShareButton } from '@/components/PrintShareButton'
 import { ShareZipButton } from '@/components/ShareZipButton'
@@ -72,22 +71,15 @@ export default async function EventSharePrintPage({ params }: PageProps) {
   }
 
   return (
-    <Layout hideHeader title={`Share · ${share.event.title}`}>
+    <Layout
+      breadcrumbs={[
+        { href: `/events/${eventSlug}`, label: share.event.title },
+        { label: 'Share & print' },
+      ]}
+      hideHeader
+      title={`Share · ${share.event.title}`}
+    >
       <section className="us-print-share space-y-5">
-        <AppBreadcrumbs
-          segments={[
-            ...(share.event.organizationSlug
-              ? [
-                  {
-                    href: `/organizations/${share.event.organizationSlug}`,
-                    label: share.event.organizationTitle ?? 'Organization',
-                  },
-                ]
-              : []),
-            { href: `/events/${eventSlug}`, label: share.event.title },
-            { label: 'Share & print' },
-          ]}
-        />
 
         <div className="us-print-share__toolbar flex flex-wrap items-center gap-3">
           <div className="min-w-0 flex-1">

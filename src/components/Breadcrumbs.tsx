@@ -10,6 +10,8 @@ type BreadcrumbsProps = {
   orgName: null | string
   /** Page title; becomes the last crumb when it adds information beyond the section name. */
   title?: string
+  /** Explicit trail after "Organization / Events", from pages that know real titles. */
+  trail?: Crumb[]
 }
 
 const SECTION_LABELS: Record<string, string> = {
@@ -28,7 +30,7 @@ const SECTION_LABELS: Record<string, string> = {
 type Crumb = { href?: string; label: string }
 
 /** Organization / Section / Page, derived from the URL so every page gets one for free. */
-export function Breadcrumbs({ orgKey, orgName, title }: BreadcrumbsProps) {
+export function Breadcrumbs({ orgKey, orgName, title, trail }: BreadcrumbsProps) {
   const pathname = usePathname()
   const crumbs: Crumb[] = []
 
@@ -36,6 +38,10 @@ export function Breadcrumbs({ orgKey, orgName, title }: BreadcrumbsProps) {
     crumbs.push({ label: 'Platform' })
   } else if (orgKey && orgName) {
     crumbs.push({ href: `/o/${orgKey}/events`, label: orgName })
+  }
+
+  if (trail && trail.length > 0) {
+    return <CrumbTrail crumbs={[...crumbs, { href: '/events', label: 'Events' }, ...trail]} />
   }
 
   const sub = pathname.startsWith('/platform') ? pathname.replace(/^\/platform/, '') : publicSubpath(pathname)
@@ -58,6 +64,10 @@ export function Breadcrumbs({ orgKey, orgName, title }: BreadcrumbsProps) {
     }
   })
 
+  return <CrumbTrail crumbs={crumbs} />
+}
+
+function CrumbTrail({ crumbs }: { crumbs: Crumb[] }) {
   if (crumbs.length === 0) {
     return null
   }

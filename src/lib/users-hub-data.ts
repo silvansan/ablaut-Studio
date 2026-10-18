@@ -2,6 +2,7 @@ import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 
 import { requireAppUser } from '@/lib/app-auth'
+import { getScopedOrganizationId } from '@/lib/org-context'
 import { getManageableOrganizations } from '@/lib/organization-data'
 import { hasOrganizationManagementAccess, hasPlatformWideOrganizationAccess } from '@/lib/organizations'
 import { getGloballyUnassignedUserIDs } from '@/lib/user-hub-access'
@@ -76,7 +77,9 @@ export async function getUsersHubData(): Promise<UsersHubData> {
   const payload = await getPayload({ config: configPromise })
   const organizations = await getManageableOrganizations()
   const organizationIDs = organizations.map((organization) => organization.id)
-  const showOrganizationColumn = hasPlatformWideOrganizationAccess(currentUser) || organizations.length > 1
+  const scopedOrganizationID = await getScopedOrganizationId()
+  const showOrganizationColumn =
+    !scopedOrganizationID && (hasPlatformWideOrganizationAccess(currentUser) || organizations.length > 1)
 
   if (organizationIDs.length === 0) {
     return {
@@ -100,11 +103,21 @@ export async function getUsersHubData(): Promise<UsersHubData> {
             in: organizationIDs,
           },
         },
-        {
-          status: {
-            equals: 'active',
-          },
-        },
+        scopedOrganizationID
+          ? {
+              // Inside one organization: its members plus people it invited who have not activated yet.
+              or: [
+                { status: { equals: 'active' } },
+                {
+                  and: [
+                    { status: { equals: 'pending' } },
+                    { invitedBy: { exists: true } },
+                    { requestedBy: { exists: false } },
+                  ],
+                },
+              ],
+            }
+          : { status: { equals: 'active' } },
       ],
     },
   })
@@ -125,7 +138,8 @@ export async function getUsersHubData(): Promise<UsersHubData> {
     }
   }
 
-  if (await hasOrganizationManagementAccess({ payload, user: currentUser } as never)) {
+  // The pool of people without an organization belongs to the platform view, not to one organization.
+  if (!scopedOrganizationID && (await hasOrganizationManagementAccess({ payload, user: currentUser } as never))) {
     const memberUserIDs = new Set(entries.map((entry) => entry.userId))
 
     if (hasPlatformWideOrganizationAccess(currentUser)) {

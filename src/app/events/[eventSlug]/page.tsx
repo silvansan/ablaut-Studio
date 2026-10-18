@@ -7,7 +7,6 @@ import { getPayload } from 'payload'
 
 import { canManageChannels } from '@/app/events/[eventSlug]/channels/actions'
 import { canManageAssignment } from '@/app/events/[eventSlug]/settings/actions'
-import { AppBreadcrumbs } from '@/components/AppBreadcrumbs'
 import { ChannelRow } from '@/components/ChannelRow'
 import { GoLiveWizard } from '@/components/GoLiveWizard'
 import { TruncatedList } from '@/components/TruncatedList'
@@ -182,16 +181,8 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
   const eventStatus = eventStatusChip(event.status)
 
   return (
-    <Layout hideHeader title={event.title}>
+    <Layout breadcrumbs={[{ label: event.title }]} hideHeader title={event.title}>
       <section className="space-y-4">
-        <AppBreadcrumbs
-          segments={[
-            ...(event.organizationSlug
-              ? [{ href: `/organizations/${event.organizationSlug}`, label: event.organizationTitle ?? 'Organization' }]
-              : []),
-            { label: event.title },
-          ]}
-        />
 
         <div className="flex flex-wrap items-center gap-2">
           <span className={`us-chip ${eventStatus.className}`}>{eventStatus.label}</span>

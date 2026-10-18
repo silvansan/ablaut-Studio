@@ -125,6 +125,33 @@ export async function getScopedOrganizationId(): Promise<null | number> {
 }
 
 /**
+ * The organization the sidebar presents: the one in the URL, else the last one visited, else the
+ * first available. Keeps the sidebar steady on Platform pages, which have no organization in the URL.
+ */
+export async function getSidebarOrganization(user: Pick<User, 'id' | 'role'>): Promise<null | Organization> {
+  const current = await getCurrentOrganization()
+
+  if (current) {
+    return current
+  }
+
+  const organizations = await getAccessibleOrganizations(user)
+
+  try {
+    const remembered = (await cookies()).get(ORG_COOKIE)?.value
+    const match = organizations.find((organization) => organization.publicKey === remembered)
+
+    if (match) {
+      return match
+    }
+  } catch {
+    // cookies() unavailable: fall through.
+  }
+
+  return organizations[0] ?? null
+}
+
+/**
  * Where an old, unscoped URL (`/events/x`, a bookmark, a server-action redirect) should land.
  * Prefers the organization that owns the event in the URL, then the last one visited, then the first.
  */

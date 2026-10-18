@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { UserCircleIcon } from '@/components/ActionIcons'
-import Link, { useOrgKey } from '@/components/OrgLink'
+import Link from '@/components/OrgLink'
 import { toPublicPath } from '@/lib/org-paths'
 
 type MobileTab = {
@@ -17,6 +17,8 @@ type MobileAppChromeProps = {
   children: ReactNode
   orgName: null | string
   showSidebar: boolean
+  /** Organization the tab links point into (the sidebar's), which can differ from the page's on Platform pages. */
+  tabOrgKey: null | string
   /** The same sidebar the desktop shows, rendered inside the slide-down menu. */
   sidebar: ReactNode
   tabs: MobileTab[]
@@ -26,9 +28,8 @@ function tabMatches(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
-export function MobileAppChrome({ children, orgName, showSidebar, sidebar, tabs }: MobileAppChromeProps) {
+export function MobileAppChrome({ children, orgName, showSidebar, sidebar, tabOrgKey, tabs }: MobileAppChromeProps) {
   const pathname = usePathname()
-  const orgKey = useOrgKey()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
@@ -112,12 +113,13 @@ export function MobileAppChrome({ children, orgName, showSidebar, sidebar, tabs 
         >
           <div className="mx-auto grid max-w-lg" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
             {tabs.map((tab) => {
-              const active = tabMatches(pathname, toPublicPath(tab.href, orgKey))
+              const tabHref = toPublicPath(tab.href, tabOrgKey)
+              const active = tabMatches(pathname, tabHref)
 
               return (
                 <Link
                   className={`us-mobile-tabbar__link flex flex-col items-center gap-1 px-2 py-2.5 text-center font-semibold leading-tight ${active ? 'us-mobile-tabbar__link--active' : ''}`}
-                  href={tab.href}
+                  href={tabHref}
                   key={tab.href}
                   style={{ color: active ? 'var(--us-green-dark)' : 'var(--us-muted)' }}
                 >

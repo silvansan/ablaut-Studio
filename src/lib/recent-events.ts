@@ -69,12 +69,17 @@ export async function recordEventAccess(user: Pick<User, 'id' | 'recentEvents'> 
   }
 }
 
-export async function getEventNavFlyout(user: Pick<User, 'recentEvents'> | null | undefined): Promise<EventNavFlyout> {
+export async function getEventNavFlyout(
+  user: Pick<User, 'recentEvents'> | null | undefined,
+  organizationId?: null | number,
+): Promise<EventNavFlyout> {
   if (!user) {
     return { items: [], totalCount: 0, isEmpty: true }
   }
 
-  const events = await getDashboardEvents(1000)
+  const allEvents = await getDashboardEvents(1000)
+  // On pages without an organization in the URL the caller passes the sidebar's organization.
+  const events = organizationId ? allEvents.filter((event) => event.organizationId === organizationId) : allEvents
   const byId = new Map(events.map((event) => [event.id, event]))
   const nonArchived = events.filter((event) => event.status !== 'archived')
 
