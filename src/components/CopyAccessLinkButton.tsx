@@ -46,7 +46,7 @@ export function CopyAccessLinkButton({ label, organizationId, userId }: CopyAcce
     <div className="space-y-2">
       <button
         aria-busy={pending}
-        className="us-button-secondary px-4 py-2.5 text-sm font-medium"
+        className="us-button-secondary px-3 py-1.5 text-sm font-medium"
         disabled={pending}
         onClick={handleClick}
         type="button"

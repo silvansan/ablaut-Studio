@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 
 import { bulkEventsAction } from '@/app/events/actions'
 import {
@@ -10,8 +9,8 @@ import {
   useBulkSelection,
   useVisibleBulkKeys,
 } from '@/components/ListBulkActionsPanel'
-import { TruncatedList } from '@/components/TruncatedList'
-import { rowTintClass, type ListRowTint } from '@/lib/list-group-tints'
+import { ChannelsIcon } from '@/components/ActionIcons'
+import { Chip, ChipGrid, ListBody, ListPanel, ListRow, OpenIconButton, RowTitle } from '@/components/ListKit'
 import { eventStatusChip } from '@/lib/active-status'
 
 type EventListItem = {
@@ -22,7 +21,6 @@ type EventListItem = {
   eventId: number
   location?: string | null
   organizationTitle?: string | null
-  rowTint?: ListRowTint
   slug: string
   status?: string | null
   title: string
@@ -31,6 +29,8 @@ type EventListItem = {
 type EventsHubTableProps = {
   events: EventListItem[]
   returnPath: string
+  /** Show the organization under each event; only useful when the list spans several. */
+  showOrganization?: boolean
 }
 
 function formatDate(value?: string | null): string | null {
@@ -44,8 +44,7 @@ function formatDate(value?: string | null): string | null {
   }).format(new Date(value))
 }
 
-export function EventsHubTable({ events, returnPath }: EventsHubTableProps) {
-  const router = useRouter()
+export function EventsHubTable({ events, returnPath, showOrganization = false }: EventsHubTableProps) {
   const { selectedCount, selectedKeys, toggleAll, toggleKey } = useBulkSelection<number>()
   const [bulkAction, setBulkAction] = useState('set-status')
   const [bulkStatus, setBulkStatus] = useState('active')
@@ -120,93 +119,53 @@ export function EventsHubTable({ events, returnPath }: EventsHubTableProps) {
         </form>
       </ListBulkActionsPanel>
 
-      <div className="us-panel overflow-hidden px-4 py-4">
-        <div className="us-data-row us-data-row-header us-data-row--cols-4 px-4" style={{ color: 'var(--us-muted)' }}>
-          <span className="us-data-row__lead flex items-center gap-3">
+      <ListPanel
+        leading={
+          <label className="flex items-center gap-2 text-xs" style={{ color: 'var(--us-muted)' }}>
             <input
               aria-label="Select all visible events"
               checked={allVisibleSelected}
               onChange={() => toggleAll(visibleKeys)}
               type="checkbox"
             />
-            <span>Event</span>
-          </span>
-          <span className="us-data-row__chips">Status</span>
-          <span className="us-data-row__detail">When / where</span>
-          <span className="us-data-row__actions">Open</span>
-        </div>
-        <TruncatedList as="ul" itemLabel="events" listClassName="space-y-2">
+            Select all
+          </label>
+        }
+      >
+        <ListBody itemLabel="events">
           {events.map((event) => {
-            const formattedDate = formatDate(event.dateStart)
-            const href = `/events/${event.slug}`
+            const statusChip = eventStatusChip(event.status)
             const selectable = bulkAction !== 'delete' || event.canDelete
+            const subtitle = showOrganization ? event.organizationTitle : event.description
 
             return (
-              <li
+              <ListRow
+                actions={<OpenIconButton href={`/events/${event.slug}`} label={`Open ${event.title}`} />}
+                chips={
+                  <ChipGrid columns="5.5rem 6.5rem">
+                    <Chip className={statusChip.className} dot>
+                      {statusChip.label}
+                    </Chip>
+                    <Chip icon={<ChannelsIcon />} title="Channels" tone="blue">
+                      {event.channelCount} {event.channelCount === 1 ? 'channel' : 'channels'}
+                    </Chip>
+                  </ChipGrid>
+                }
+                detail={event.location || formatDate(event.dateStart) || 'No date'}
+                href={`/events/${event.slug}`}
                 key={event.slug}
-                className={`us-data-row us-data-row--cols-4 cursor-pointer rounded-2xl border px-4 py-4 transition hover:-translate-y-0.5 hover:shadow-md ${rowTintClass(event.rowTint ?? 'white')}`}
-                onClick={() => router.push(href)}
-                onKeyDown={(keyboardEvent) => {
-                  if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
-                    keyboardEvent.preventDefault()
-                    router.push(href)
-                  }
+                lead={<RowTitle subtitle={subtitle} title={event.title} />}
+                selection={{
+                  checked: selectedKeys.has(event.eventId),
+                  disabled: !selectable,
+                  label: `Select ${event.title}`,
+                  onChange: () => toggleKey(event.eventId),
                 }}
-                role="link"
-                style={{ borderColor: 'var(--us-border)' }}
-                tabIndex={0}
-              >
-                <div className="us-data-row__lead flex items-start gap-3">
-                  <input
-                    aria-label={`Select ${event.title}`}
-                    checked={selectedKeys.has(event.eventId)}
-                    disabled={!selectable}
-                    onChange={() => toggleKey(event.eventId)}
-                    onClick={(clickEvent) => clickEvent.stopPropagation()}
-                    type="checkbox"
-                  />
-                  <div>
-                    <span className="font-semibold" style={{ color: 'var(--us-green-dark)' }}>
-                      {event.title}
-                    </span>
-                    {event.description ? (
-                      <p className="mt-1 line-clamp-2 text-sm leading-5" style={{ color: 'var(--us-muted)' }}>
-                        {event.description}
-                      </p>
-                    ) : null}
-                    {event.organizationTitle ? (
-                      <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em]" style={{ color: 'var(--us-blue-dark)' }}>
-                        {event.organizationTitle}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="us-data-row__chips">
-                  {(() => {
-                    const statusChip = eventStatusChip(event.status)
-
-                    return <span className={`us-chip ${statusChip.className}`}>{statusChip.label}</span>
-                  })()}
-                  <span className="us-chip us-chip-blue">
-                    {event.channelCount} {event.channelCount === 1 ? 'channel' : 'channels'}
-                  </span>
-                </div>
-
-                <div className="us-data-row__detail text-sm leading-6" style={{ color: 'var(--us-muted)' }}>
-                  {event.location || formattedDate || 'No date'}
-                </div>
-
-                <div className="us-data-row__actions">
-                  <span className="text-sm font-medium" style={{ color: 'var(--us-blue-dark)' }}>
-                    Open
-                  </span>
-                </div>
-              </li>
+              />
             )
           })}
-        </TruncatedList>
-      </div>
+        </ListBody>
+      </ListPanel>
     </div>
   )
 }

@@ -7,7 +7,7 @@ import { AddChannelButton } from '@/components/ChannelDrawer'
 import { ChannelRow } from '@/components/ChannelRow'
 import { EventWorkspaceHeader } from '@/components/EventWorkspaceHeader'
 import { Layout } from '@/components/Layout'
-import { TruncatedList } from '@/components/TruncatedList'
+import { ListBody, ListEmpty, ListPanel } from '@/components/ListKit'
 import { getDashboardChannels, getDashboardEvent } from '@/lib/dashboard-data'
 import { getEventSharePayload } from '@/lib/event-share'
 import { loadEventWorkspace } from '@/lib/event-workspace'
@@ -87,15 +87,9 @@ export default async function EventChannelsTab({ params, searchParams }: PagePro
       <section className="space-y-4">
         <EventWorkspaceHeader canManage={canManageAssignments} event={event} eventSlug={eventSlug} />
 
-        <section className="us-panel overflow-hidden">
-          <div className="flex items-center justify-between gap-3 border-b px-3 py-2" style={{ borderColor: 'var(--us-border)' }}>
-            <p className="text-sm font-semibold" style={{ color: 'var(--us-green-dark)' }}>
-              Channels{' '}
-              <span className="font-normal" style={{ color: 'var(--us-muted)' }}>
-                {rows.length}
-              </span>
-            </p>
-            <div className="flex items-center gap-2">
+        <ListPanel
+          actions={
+            <>
               {rows.length > 0
                 ? ([
                     ['listener', 'Print listener QRs', 'One QR per page for your audience, plus the Android app QR.'],
@@ -123,11 +117,13 @@ export default async function EventChannelsTab({ params, searchParams }: PagePro
                   eventSlug={eventSlug}
                 />
               ) : null}
-            </div>
-          </div>
-
+            </>
+          }
+          count={rows.length}
+          title="Channels"
+        >
           {rows.length > 0 ? (
-            <TruncatedList as="ul" itemLabel="channels" listClassName="">
+            <ListBody itemLabel="channels">
               {rows.map((item) => (
                 <ChannelRow
                   canDelete={canManageChannelsUser}
@@ -154,15 +150,15 @@ export default async function EventChannelsTab({ params, searchParams }: PagePro
                   }}
                 />
               ))}
-            </TruncatedList>
+            </ListBody>
           ) : (
-            <p className="px-3 py-5 text-sm" style={{ color: 'var(--us-muted)' }}>
+            <ListEmpty>
               {canManageChannelsUser
                 ? 'No channels yet. Add one for each language or audio feed.'
                 : 'No channels yet. Ask an organization manager to add them for this event.'}
-            </p>
+            </ListEmpty>
           )}
-        </section>
+        </ListPanel>
       </section>
     </Layout>
   )

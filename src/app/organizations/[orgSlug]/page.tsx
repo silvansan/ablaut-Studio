@@ -7,7 +7,9 @@ import { getPayload } from 'payload'
 import { OrganizationEventsPanel } from '@/components/OrganizationEventsPanel'
 import { OrganizationSettingsPanel } from '@/components/OrganizationSettingsPanel'
 import { OrganizationUsersPanel } from '@/components/OrganizationUsersPanel'
+import { FilterTabs } from '@/components/ListKit'
 import { Layout } from '@/components/Layout'
+import { WorkspaceHeader } from '@/components/WorkspaceHeader'
 import { requireAppUser } from '@/lib/app-auth'
 import { getOrganizationBySlug, getOrganizationSummary } from '@/lib/organization-data'
 import { getOrganizationUsersData } from '@/lib/organization-users-data'
@@ -59,54 +61,35 @@ export default async function OrganizationDetailPage({ params, searchParams }: P
   return (
     <Layout hideHeader title={organization.name}>
       <section className="space-y-4">
-        <div className="us-panel px-6 py-5">
-          <div className="flex flex-wrap gap-2">
-            <span className="us-chip us-chip-muted">{organization.slug}</span>
-            <span className="us-chip us-chip-blue">
-              {summary.eventCount} {summary.eventCount === 1 ? 'event' : 'events'}
-            </span>
-            <span className="us-chip us-chip-muted">
-              {summary.memberCount} {summary.memberCount === 1 ? 'member' : 'members'}
-            </span>
-            {organization.active === false ? <span className="us-chip us-chip-warning">Inactive</span> : null}
-          </div>
-          {organization.description ? (
-            <p className="mt-4 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              {organization.description}
-            </p>
-          ) : null}
-        </div>
-
-        <div className="us-panel flex flex-wrap items-center gap-2 px-6 py-5">
-          {[
-            ['Events', `${tabBase}?tab=events`],
-            ['Users', `${tabBase}?tab=users`],
-            ['Settings', `${tabBase}?tab=settings`],
-          ].map(([label, href]) => {
-            const active =
-              (label === 'Events' && tab === 'events') ||
-              (label === 'Users' && tab === 'users') ||
-              (label === 'Settings' && tab === 'settings')
-
-            return (
-              <Link
-                key={label}
-                className="rounded-2xl border px-4 py-2 text-sm font-medium"
-                href={href}
-                style={{
-                  backgroundColor: active ? 'var(--us-green-dark)' : 'white',
-                  borderColor: active ? 'var(--us-green-dark)' : 'var(--us-border)',
-                  color: active ? 'white' : 'var(--us-text)',
-                }}
-              >
-                {label}
-              </Link>
-            )
-          })}
-          <Link className="us-button-secondary ml-auto px-4 py-2.5 text-sm font-medium" href="/organizations">
-            All organizations
-          </Link>
-        </div>
+        <WorkspaceHeader
+          actions={
+            <Link className="us-button-secondary px-3 py-1.5 text-sm font-medium" href="/organizations">
+              All organizations
+            </Link>
+          }
+          chips={
+            <>
+              <span className="us-chip us-chip-blue">
+                {summary.eventCount} {summary.eventCount === 1 ? 'event' : 'events'}
+              </span>
+              <span className="us-chip us-chip-muted">
+                {summary.memberCount} {summary.memberCount === 1 ? 'member' : 'members'}
+              </span>
+              {organization.active === false ? <span className="us-chip us-chip-warning">Inactive</span> : null}
+            </>
+          }
+          description={organization.description}
+          title={organization.name}
+        >
+          <FilterTabs
+            items={[
+              { active: tab === 'events', href: `${tabBase}?tab=events`, label: 'Events' },
+              { active: tab === 'users', href: `${tabBase}?tab=users`, label: 'People' },
+              { active: tab === 'settings', href: `${tabBase}?tab=settings`, label: 'Settings' },
+            ]}
+            label="Organization sections"
+          />
+        </WorkspaceHeader>
 
         {tab === 'users' && usersData ? (
           <OrganizationUsersPanel

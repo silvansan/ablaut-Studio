@@ -7,6 +7,7 @@ import {
 } from '@/app/users/actions'
 import { ActionFeedbackForm } from '@/components/ActionFeedbackForm'
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
+import { TrashIcon } from '@/components/ActionIcons'
 import { CopyAccessLinkButton } from '@/components/CopyAccessLinkButton'
 import { SubmitButton } from '@/components/SubmitButton'
 import type { User } from '@/payload-types'
@@ -30,37 +31,38 @@ export function UserAccountActions({
   const isPending = targetUser.invitationStatus === 'pending'
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        <ActionFeedbackForm action={sendPasswordResetForUserAction} id={resetFormId}>
+    <div className="flex flex-wrap items-center gap-2 border-t pt-4" style={{ borderColor: 'var(--us-border)' }}>
+      <ActionFeedbackForm action={sendPasswordResetForUserAction} id={resetFormId}>
+        <input name="id" type="hidden" value={targetUser.id} />
+        {organizationId ? <input name="organizationId" type="hidden" value={organizationId} /> : null}
+        <SubmitButton idleLabel="Send password reset" pendingLabel="Sending..." />
+      </ActionFeedbackForm>
+      {isPending ? (
+        <ActionFeedbackForm action={resendInviteForUserAction} id={resendFormId}>
           <input name="id" type="hidden" value={targetUser.id} />
           {organizationId ? <input name="organizationId" type="hidden" value={organizationId} /> : null}
-          <SubmitButton idleLabel="Send password reset" pendingLabel="Sending..." />
+          <SubmitButton idleLabel="Resend invite" pendingLabel="Sending..." />
         </ActionFeedbackForm>
-        {isPending ? (
-          <ActionFeedbackForm action={resendInviteForUserAction} id={resendFormId}>
-            <input name="id" type="hidden" value={targetUser.id} />
-            {organizationId ? <input name="organizationId" type="hidden" value={organizationId} /> : null}
-            <SubmitButton idleLabel="Resend invite" pendingLabel="Sending..." />
-          </ActionFeedbackForm>
-        ) : null}
-        <CopyAccessLinkButton
-          label={isPending ? 'Copy invite link' : 'Copy reset link'}
-          organizationId={organizationId}
-          userId={targetUser.id}
-        />
-      </div>
+      ) : null}
+      <CopyAccessLinkButton
+        label={isPending ? 'Copy invite link' : 'Copy reset link'}
+        organizationId={organizationId}
+        userId={targetUser.id}
+      />
 
       {showDelete ? (
-        <form action={deleteUserAction} id={deleteFormId}>
+        <form action={deleteUserAction} className="ml-auto" id={deleteFormId}>
           <input name="id" type="hidden" value={targetUser.id} />
           {organizationId ? <input name="organizationId" type="hidden" value={organizationId} /> : null}
           <ConfirmSubmitButton
             action={deleteUserAction}
+            className="us-button-secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium"
+            confirmLabel="Delete user"
             confirmMessage={`Delete ${targetUser.name} permanently? This cannot be undone.`}
             formId={deleteFormId}
             title="Delete user"
           >
+            <TrashIcon />
             Delete user
           </ConfirmSubmitButton>
         </form>

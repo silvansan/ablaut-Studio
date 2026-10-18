@@ -1,6 +1,5 @@
 'use client'
 
-import Link from '@/components/OrgLink'
 import { useState } from 'react'
 
 import {
@@ -12,8 +11,8 @@ import { UserAccountActions } from '@/components/UserAccountActions'
 import { UserAccountForm } from '@/components/UserAccountForm'
 import { UserEventAssignmentsSection } from '@/components/UserEventAssignmentsSection'
 import { UserOrganizationMembershipsSection } from '@/components/UserOrganizationMembershipsSection'
-import { TruncatedList } from '@/components/TruncatedList'
-import { rowTintClass, type ListRowTint } from '@/lib/list-group-tints'
+import { BanIcon, ShieldIcon } from '@/components/ActionIcons'
+import { Chip, ChipGrid, EditIconButton, ListBody, ListEmpty, ListPanel, ListRow, OpenIconButton, RowTitle } from '@/components/ListKit'
 import { getUserEventSummary } from '@/lib/organization-user-utils'
 import type { OrganizationUsersData } from '@/lib/organization-users-data'
 import { isSuperAdminUser } from '@/lib/permissions'
@@ -29,7 +28,7 @@ type OrganizationMembersTableProps = {
   organization: Organization
   organizationMembershipsByUserID: OrganizationUsersData['organizationMembershipsByUserID']
   userEvents: OrganizationUsersData['userEvents']
-  users: Array<User & { rowTint?: ListRowTint }>
+  users: User[]
 }
 
 export function OrganizationMembersTable({
@@ -51,75 +50,47 @@ export function OrganizationMembersTable({
 
   return (
     <>
-      <article className="us-panel overflow-hidden px-4 py-4">
-        <h3 className="px-3 text-lg font-semibold" style={{ color: 'var(--us-green-dark)' }}>
-          Members
-        </h3>
-        <div className="us-data-row us-data-row-header us-data-row--cols-5 px-4 pt-4" style={{ color: 'var(--us-muted)' }}>
-          <span className="us-data-row__lead">Username</span>
-          <span className="us-data-row__detail">Email</span>
-          <span className="us-data-row__detail">Events</span>
-          <span className="us-data-row__detail">Active?</span>
-          <span className="us-data-row__actions" />
-        </div>
-
+      <ListPanel count={users.length} title="Members">
         {users.length === 0 ? (
-          <p className="px-3 py-4 text-sm" style={{ color: 'var(--us-muted)' }}>
-            No members yet. Invite someone to get started.
-          </p>
+          <ListEmpty>No members yet. Invite someone to get started.</ListEmpty>
         ) : (
-          <TruncatedList itemLabel="members" listClassName="space-y-3">
+          <ListBody itemLabel="members">
             {users.map((user) => {
               const membership = membershipByUserID.get(user.id)
+              const role = membership?.roleInOrganization ?? user.role
 
               return (
-                <div
-                  className={`us-data-row us-data-row--cols-5 rounded-3xl border px-4 py-4 ${rowTintClass(user.rowTint ?? 'white')}`}
+                <ListRow
+                  actions={
+                    <>
+                      {canManageOrgUsers ? (
+                        <EditIconButton label={`Edit ${user.name}`} onClick={() => setSelectedUserId(user.id)} />
+                      ) : null}
+                      <OpenIconButton href={`/users/${user.id}`} label={`Open ${user.name}`} />
+                    </>
+                  }
+                  chips={
+                    <ChipGrid columns="6.5rem 6rem">
+                      <Chip className="capitalize" icon={<ShieldIcon />} title="Role in this organization" tone="muted">
+                        {role?.replace('_', ' ') ?? 'user'}
+                      </Chip>
+                      {user.active === false ? (
+                        <Chip icon={<BanIcon />} title="Account is switched off" tone="warning">
+                          Inactive
+                        </Chip>
+                      ) : null}
+                    </ChipGrid>
+                  }
+                  detail={getUserEventSummary(user.id, userEvents)}
+                  href={`/users/${user.id}`}
                   key={user.id}
-                  style={{ borderColor: 'var(--us-border)' }}
-                >
-                  <div className="us-data-row__lead">
-                    <Link className="font-semibold hover:underline" href={`/users/${user.id}`} style={{ color: 'var(--us-green-dark)' }}>
-                      {user.name}
-                    </Link>
-                    <span className="ml-2 us-chip us-chip-muted min-[960px]:hidden">
-                      {membership?.roleInOrganization?.replace('_', ' ') ?? user.role?.replace('_', ' ') ?? 'user'}
-                    </span>
-                  </div>
-                  <div className="us-data-row__detail break-all text-sm" style={{ color: 'var(--us-muted)' }}>
-                    {user.email}
-                  </div>
-                  <div className="us-data-row__detail text-sm" style={{ color: 'var(--us-muted)' }}>
-                    {getUserEventSummary(user.id, userEvents)}
-                  </div>
-                  <div className="us-data-row__detail flex items-center gap-2">
-                    <span
-                      className={`inline-flex h-6 w-6 items-center justify-center rounded-lg border text-sm ${user.active === false ? 'opacity-35' : ''}`}
-                      style={{ borderColor: 'var(--us-green)', color: 'var(--us-green-dark)' }}
-                    >
-                      {user.active === false ? '' : '✓'}
-                    </span>
-                  </div>
-                  <div className="us-data-row__actions flex flex-wrap justify-end gap-2">
-                    <Link className="us-button-secondary px-3 py-2 text-sm font-medium" href={`/users/${user.id}`}>
-                      Open
-                    </Link>
-                    {canManageOrgUsers ? (
-                      <button
-                        className="us-button-primary px-3 py-2 text-sm font-medium"
-                        onClick={() => setSelectedUserId(user.id)}
-                        type="button"
-                      >
-                        Edit
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
+                  lead={<RowTitle subtitle={user.email} title={user.name} />}
+                />
               )
             })}
-          </TruncatedList>
+          </ListBody>
         )}
-      </article>
+      </ListPanel>
 
       <Drawer
         description={selectedUser ? `${selectedUser.email} · ${organization.name}` : undefined}

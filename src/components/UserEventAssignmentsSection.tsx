@@ -1,11 +1,11 @@
-import {
-  deleteUserEventAssignmentAction,
-  upsertUserEventAssignmentAction,
-} from '@/app/users/actions'
-import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
-import { ListGroupRow } from '@/components/ListGroupRow'
-import { TruncatedList } from '@/components/TruncatedList'
-import { assignGroupTints } from '@/lib/list-group-tints'
+import { deleteUserEventAssignmentAction, upsertUserEventAssignmentAction } from '@/app/users/actions'
+import { DrawerActionForm, DrawerTrigger } from '@/components/DrawerTrigger'
+import { EventPermissionFields } from '@/components/EventPermissionFields'
+import { EventPermissionIcon } from '@/components/EventPermissionIcon'
+import { Field } from '@/components/FormFields'
+import { ShieldIcon } from '@/components/ActionIcons'
+import { Chip, ChipGrid, DeleteIconButton, ListBody, ListEmpty, ListPanel, ListRow, RowTitle } from '@/components/ListKit'
+import { EVENT_PERMISSIONS, EVENT_ROLES } from '@/lib/event-permissions'
 import type { EventAssignment } from '@/payload-types'
 
 type AssignableEvent = {
@@ -22,20 +22,8 @@ type UserEventAssignmentsSectionProps = {
   targetUserID: number
 }
 
-function eventTitle(event: number | { title?: string | null } | null | undefined): string {
-  if (typeof event === 'number') {
-    return `Event ${event}`
-  }
-
-  return event?.title ?? 'Event'
-}
-
-function eventID(event: number | { id?: number } | null | undefined): string {
-  if (typeof event === 'number') {
-    return String(event)
-  }
-
-  return String(event?.id ?? '__none__')
+function eventTitle(event: EventAssignment['event']): string {
+  return typeof event === 'number' ? `Event ${event}` : (event?.title ?? 'Event')
 }
 
 export function UserEventAssignmentsSection({
@@ -45,120 +33,101 @@ export function UserEventAssignmentsSection({
   canSetAdminRole,
   targetUserID,
 }: UserEventAssignmentsSectionProps) {
-  const tintedAssignments = assignGroupTints(
-    [...assignments].sort((a, b) => eventTitle(a.event).localeCompare(eventTitle(b.event))),
-    (assignment) => eventID(assignment.event),
-  )
+  const sorted = [...assignments].sort((a, b) => eventTitle(a.event).localeCompare(eventTitle(b.event)))
 
-  if (!canManageAssignments) {
-    return tintedAssignments.length > 0 ? (
-      <div className="mt-4 rounded-2xl border px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-          Event access
-        </p>
-        <TruncatedList as="ul" className="mt-3" itemLabel="assignments" listClassName="space-y-2 text-sm" >
-          {tintedAssignments.map((assignment) => (
-            <ListGroupRow as="li" key={assignment.id} rowTint={assignment.rowTint} style={{ color: 'var(--us-muted)' }}>
-              {eventTitle(assignment.event)} · <span className="capitalize">{assignment.roleForEvent}</span>
-            </ListGroupRow>
-          ))}
-        </TruncatedList>
-      </div>
-    ) : null
+  if (!canManageAssignments && sorted.length === 0) {
+    return null
   }
 
+  const roles = EVENT_ROLES.filter((role) => canSetAdminRole || role.value !== 'admin')
+
   return (
-    <div className="mt-4 rounded-2xl border px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
-      <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-        Event access
-      </p>
+    <ListPanel
+      actions={
+        canManageAssignments && assignableEvents.length > 0 ? (
+          <DrawerTrigger buttonLabel="Add to event">
+            <DrawerActionForm action={upsertUserEventAssignmentAction} submitLabel="Save">
+              <input name="userID" type="hidden" value={targetUserID} />
+              <Field label="Event">
+                <select className="us-input" name="eventID" required>
+                  <option value="">Choose an event</option>
+                  {assignableEvents.map((event) => (
+                    <option key={event.id} value={event.id}>
+                      {event.title}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Role">
+                <select className="us-input" defaultValue="moderator" name="roleForEvent">
+                  {roles.map((role) => (
+                    <option key={role.value} value={role.value}>
+                      {role.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <EventPermissionFields />
+            </DrawerActionForm>
+          </DrawerTrigger>
+        ) : null
+      }
+      count={sorted.length}
+      title="Event access"
+    >
+      {sorted.length > 0 ? (
+        <ListBody itemLabel="events">
+          {sorted.map((assignment) => {
+            const roleLabel = EVENT_ROLES.find((role) => role.value === assignment.roleForEvent)?.label ?? assignment.roleForEvent
 
-      {tintedAssignments.length > 0 ? (
-        <TruncatedList className="mt-4" itemLabel="assignments" listClassName="space-y-3">
-          {tintedAssignments.map((assignment) => (
-            <ListGroupRow
-              className="rounded-2xl px-4 py-3 text-sm"
-              key={assignment.id}
-              rowTint={assignment.rowTint}
-              style={{ color: 'var(--us-text)' }}
-            >
-              <p className="font-semibold">{eventTitle(assignment.event)}</p>
-              <p className="mt-1 capitalize" style={{ color: 'var(--us-muted)' }}>
-                {assignment.roleForEvent} · edit {assignment.permissions?.canEditEvent ? 'yes' : 'no'} · channels{' '}
-                {assignment.permissions?.canCreateChannels ? 'create' : ''}
-                {assignment.permissions?.canDeleteChannels ? '/delete' : ''}
-              </p>
-              <form action={deleteUserEventAssignmentAction} className="mt-3" id={`remove-assignment-${assignment.id}`}>
-                <input name="assignmentID" type="hidden" value={assignment.id} />
-                <ConfirmSubmitButton
-                  action={deleteUserEventAssignmentAction}
-                  className="rounded-2xl border px-3 py-2 text-xs font-medium"
-                  confirmMessage="Remove this user from the event?"
-                  formId={`remove-assignment-${assignment.id}`}
-                  title="Remove event access"
-                >
-                  Remove
-                </ConfirmSubmitButton>
-              </form>
-            </ListGroupRow>
-          ))}
-        </TruncatedList>
+            return (
+              <ListRow
+                actions={
+                  canManageAssignments ? (
+                    <DeleteIconButton
+                      action={deleteUserEventAssignmentAction}
+                      confirmLabel="Remove"
+                      confirmMessage="Remove this person from the event?"
+                      fields={{ assignmentID: assignment.id }}
+                      label={`Remove from ${eventTitle(assignment.event)}`}
+                      title="Remove event access"
+                    />
+                  ) : null
+                }
+                chips={
+                  <ChipGrid columns="6.5rem 9rem">
+                    <Chip icon={<ShieldIcon />} title="Role in this event" tone={assignment.roleForEvent === 'admin' ? 'blue' : 'muted'}>
+                      {roleLabel}
+                    </Chip>
+                    <span className="inline-flex items-center gap-2" role="list">
+                      {EVENT_PERMISSIONS.map((permission) => {
+                        const granted = Boolean(assignment.permissions?.[permission.key])
+
+                        return (
+                          <span
+                            aria-label={`${permission.label}: ${granted ? 'yes' : 'no'}`}
+                            className="inline-flex"
+                            key={permission.key}
+                            role="listitem"
+                            style={{ color: granted ? 'var(--us-green-dark)' : 'var(--us-border-strong)' }}
+                            title={`${permission.label}: ${granted ? 'yes' : 'no'}`}
+                          >
+                            <EventPermissionIcon permission={permission.key} />
+                          </span>
+                        )
+                      })}
+                    </span>
+                  </ChipGrid>
+                }
+                key={assignment.id}
+                lead={<RowTitle title={eventTitle(assignment.event)} />}
+              />
+            )
+          })}
+        </ListBody>
       ) : (
-        <p className="mt-3 text-sm" style={{ color: 'var(--us-muted)' }}>
-          No event assignments yet.
-        </p>
+        <ListEmpty>No event access yet.</ListEmpty>
       )}
-
-      {assignableEvents.length > 0 ? (
-        <form action={upsertUserEventAssignmentAction} className="mt-5 space-y-4 border-t pt-5" style={{ borderColor: 'var(--us-border)' }}>
-          <p className="text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-            Add or update assignment
-          </p>
-          <input name="userID" type="hidden" value={targetUserID} />
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-              Event
-              <select
-                className="us-input mt-2"
-                name="eventID"
-                required
-              >
-                <option value="">Select event</option>
-                {assignableEvents.map((event) => (
-                  <option key={event.id} value={event.id}>
-                    {event.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-              Event role
-              <select className="us-input mt-2" name="roleForEvent" style={{ borderColor: 'var(--us-border)' }}>
-                {canSetAdminRole ? <option value="admin">Admin</option> : null}
-                <option value="moderator">Moderator</option>
-                <option value="viewer">Viewer</option>
-              </select>
-            </label>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {[
-              ['canEditEvent', 'Edit event', false],
-              ['canCreateChannels', 'Create channels', true],
-              ['canDeleteChannels', 'Delete channels', true],
-              ['canViewQR', 'View QR', true],
-              ['canManageSpeakerPassword', 'Manage speaker password', true],
-            ].map(([name, label, checked]) => (
-              <label key={String(name)} className="flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
-                <input className="mt-1" defaultChecked={Boolean(checked)} name={String(name)} type="checkbox" />
-                <span>{label}</span>
-              </label>
-            ))}
-          </div>
-          <button type="submit" className="us-button-secondary px-5 py-3 text-sm font-medium">
-            Save assignment
-          </button>
-        </form>
-      ) : null}
-    </div>
+    </ListPanel>
   )
 }

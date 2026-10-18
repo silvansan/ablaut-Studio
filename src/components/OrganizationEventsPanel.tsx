@@ -1,15 +1,13 @@
 import configPromise from '@payload-config'
-import Link from '@/components/OrgLink'
 import { getPayload } from 'payload'
 
 import { canDeleteEvent, createEventAction } from '@/app/events/actions'
+import { DrawerTrigger } from '@/components/DrawerTrigger'
 import { EventForm } from '@/components/EventForm'
 import { EventRow } from '@/components/EventRow'
-import { CollapsiblePanel } from '@/components/CollapsiblePanel'
-import { TruncatedList } from '@/components/TruncatedList'
+import { FilterTabs, ListBody, ListEmpty, ListPanel } from '@/components/ListKit'
 import { requireAppUser } from '@/lib/app-auth'
 import { getDashboardEventsForOrganization } from '@/lib/dashboard-data'
-import { assignGroupTints } from '@/lib/list-group-tints'
 import { canCreateEvents } from '@/lib/permissions'
 import type { Organization } from '@/payload-types'
 
@@ -28,66 +26,39 @@ export async function OrganizationEventsPanel({ organization, status }: Organiza
       : events
   const canCreateEventsUser = await canCreateEvents({ payload, user } as never)
 
-  const sortedEvents = [...visibleEvents].sort((a, b) => a.title.localeCompare(b.title))
   const eventsWithDelete = await Promise.all(
-    sortedEvents.map(async (event) => ({
-      ...event,
-      canDelete: await canDeleteEvent(payload, user, event),
-    })),
+    [...visibleEvents]
+      .sort((a, b) => a.title.localeCompare(b.title))
+      .map(async (event) => ({ ...event, canDelete: await canDeleteEvent(payload, user, event) })),
   )
-  const tintedEvents = assignGroupTints(eventsWithDelete, () => organization.slug)
 
   const tabBase = `/organizations/${organization.slug}?tab=events`
 
   return (
     <div className="space-y-4">
-      <div className="us-panel flex flex-wrap items-center gap-2 px-6 py-5">
-        {[
-          ['All', tabBase],
-          ['Active', `${tabBase}&status=active`],
-          ['Draft', `${tabBase}&status=draft`],
-          ['Archived', `${tabBase}&status=archived`],
-        ].map(([label, href]) => {
-          const active =
-            (label === 'All' && !status) ||
-            (label === 'Active' && status === 'active') ||
-            (label === 'Draft' && status === 'draft') ||
-            (label === 'Archived' && status === 'archived')
-
-          return (
-            <Link
-              key={label}
-              className="rounded-2xl border px-4 py-2 text-sm font-medium"
-              href={href}
-              style={{
-                backgroundColor: active ? 'var(--us-green-dark)' : 'white',
-                borderColor: active ? 'var(--us-green-dark)' : 'var(--us-border)',
-                color: active ? 'white' : 'var(--us-text)',
-              }}
-            >
-              {label}
-            </Link>
-          )
-        })}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <FilterTabs
+            items={[
+              { active: !status, href: tabBase, label: 'All' },
+              { active: status === 'active', href: `${tabBase}&status=active`, label: 'Active' },
+              { active: status === 'draft', href: `${tabBase}&status=draft`, label: 'Draft' },
+              { active: status === 'archived', href: `${tabBase}&status=archived`, label: 'Archived' },
+            ]}
+            label="Filter events"
+          />
+        </div>
         {canCreateEventsUser ? (
-          <div className="ml-auto">
-            <CollapsiblePanel description="Create an event in this organization." title="Create event">
-              <EventForm action={createEventAction} organizationId={organization.id} submitLabel="Create event" variant="drawer" />
-            </CollapsiblePanel>
-          </div>
+          <DrawerTrigger buttonLabel="New event">
+            <EventForm action={createEventAction} organizationId={organization.id} submitLabel="Create event" variant="drawer" />
+          </DrawerTrigger>
         ) : null}
       </div>
 
-      {tintedEvents.length > 0 ? (
-        <div className="us-panel overflow-hidden px-4 py-4">
-          <div className="us-data-row us-data-row-header us-data-row--cols-4 px-4" style={{ color: 'var(--us-muted)' }}>
-            <span className="us-data-row__lead">Event</span>
-            <span className="us-data-row__chips">Status</span>
-            <span className="us-data-row__detail">When / where</span>
-            <span className="us-data-row__actions">{tintedEvents.some((event) => event.canDelete) ? 'Delete' : ''}</span>
-          </div>
-          <TruncatedList as="ul" itemLabel="events" listClassName="space-y-2">
-            {tintedEvents.map((event) => (
+      <ListPanel>
+        {eventsWithDelete.length > 0 ? (
+          <ListBody itemLabel="events">
+            {eventsWithDelete.map((event) => (
               <EventRow
                 canDelete={event.canDelete}
                 channelCount={event.channelCount}
@@ -96,28 +67,16 @@ export async function OrganizationEventsPanel({ organization, status }: Organiza
                 eventId={event.id}
                 key={event.slug}
                 location={event.location}
-                rowTint={event.rowTint}
                 slug={event.slug}
                 status={event.status ?? 'draft'}
                 title={event.title}
               />
             ))}
-          </TruncatedList>
-        </div>
-      ) : (
-        <div className="us-panel px-6 py-6">
-          <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-            No events in this organization yet.
-          </p>
-          {canCreateEventsUser ? (
-            <div className="mt-4">
-              <CollapsiblePanel description="Create an event in this organization." title="Create event">
-                <EventForm action={createEventAction} organizationId={organization.id} submitLabel="Create event" variant="drawer" />
-              </CollapsiblePanel>
-            </div>
-          ) : null}
-        </div>
-      )}
+          </ListBody>
+        ) : (
+          <ListEmpty>No events in this organization yet.</ListEmpty>
+        )}
+      </ListPanel>
     </div>
   )
 }

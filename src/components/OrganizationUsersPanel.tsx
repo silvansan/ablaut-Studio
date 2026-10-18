@@ -1,20 +1,13 @@
-import Link from '@/components/OrgLink'
-
-import {
-  approveMembershipAction,
-  rejectMembershipAction,
-  resendInviteForUserAction,
-  upsertUserOrganizationMembershipAction,
-} from '@/app/users/actions'
+import { resendInviteForUserAction, upsertUserOrganizationMembershipAction } from '@/app/users/actions'
 import { ActionFeedbackForm } from '@/components/ActionFeedbackForm'
-import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
 import { CopyAccessLinkButton } from '@/components/CopyAccessLinkButton'
+import { DrawerActionForm, DrawerTrigger } from '@/components/DrawerTrigger'
+import { Field } from '@/components/FormFields'
 import { InviteUserPanel } from '@/components/InviteUserPanel'
-import { ListGroupRow } from '@/components/ListGroupRow'
+import { JoinRequestRow } from '@/components/JoinRequestRow'
+import { ListBody, ListPanel, ListRow, RowTitle } from '@/components/ListKit'
 import { OrganizationMembersTable } from '@/components/OrganizationMembersTable'
 import { SubmitButton } from '@/components/SubmitButton'
-import { TruncatedList } from '@/components/TruncatedList'
-import { assignGroupTints, assignZebraTints } from '@/lib/list-group-tints'
 import { userID, userLabel } from '@/lib/organization-user-utils'
 import type { OrganizationUsersData } from '@/lib/organization-users-data'
 import { INVITABLE_ORGANIZATION_ROLES } from '@/lib/organizations'
@@ -47,39 +40,47 @@ export function OrganizationUsersPanel({
     users,
   } = data
 
-  const tintedPendingRequests = assignZebraTints(
-    [...pendingRequests].sort((a, b) => userLabel(a.user).localeCompare(userLabel(b.user))),
-  )
-  const tintedPendingInvites = assignZebraTints(
-    [...pendingInvites].sort((a, b) => userLabel(a.user).localeCompare(userLabel(b.user))),
-  )
-  const tintedUsers = assignGroupTints(
-    [...users].sort((a, b) => {
-      const roleA = membershipByUserID.get(a.id)?.roleInOrganization ?? ''
-      const roleB = membershipByUserID.get(b.id)?.roleInOrganization ?? ''
-      const roleCompare = roleA.localeCompare(roleB)
+  const byLabel = <T extends { user: Parameters<typeof userLabel>[0] }>(a: T, b: T) =>
+    userLabel(a.user).localeCompare(userLabel(b.user))
+  const sortedRequests = [...pendingRequests].sort(byLabel)
+  const sortedInvites = [...pendingInvites].sort(byLabel)
+  const sortedUsers = [...users].sort((a, b) => {
+    const roleCompare = (membershipByUserID.get(a.id)?.roleInOrganization ?? '').localeCompare(
+      membershipByUserID.get(b.id)?.roleInOrganization ?? '',
+    )
 
-      if (roleCompare !== 0) {
-        return roleCompare
-      }
-
-      return a.name.localeCompare(b.name)
-    }),
-    (member) => membershipByUserID.get(member.id)?.roleInOrganization ?? '__none__',
-  )
+    return roleCompare !== 0 ? roleCompare : a.name.localeCompare(b.name)
+  })
 
   return (
     <div className="space-y-4">
-      <div className="us-panel flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-        <div>
-          <Link
-            className="mt-2 inline-block text-sm font-medium hover:underline"
-            href={`/users?organization=${encodeURIComponent(organization.slug)}`}
-            style={{ color: 'var(--us-blue-dark)' }}
-          >
-            Open in users hub
-          </Link>
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {assignableUsers.length > 0 ? (
+          <DrawerTrigger buttonLabel="Add existing user" variant="secondary">
+            <DrawerActionForm action={upsertUserOrganizationMembershipAction} submitLabel="Add">
+              <input name="organizationId" type="hidden" value={organization.id} />
+              <Field label="Person">
+                <select className="us-input" name="userID" required>
+                  <option value="">Choose a person</option>
+                  {assignableUsers.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} ({user.email})
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Role">
+                <select className="us-input" defaultValue="moderator" name="roleInOrganization">
+                  {INVITABLE_ORGANIZATION_ROLES.map((role) => (
+                    <option key={role.value} title={role.description} value={role.value}>
+                      {role.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </DrawerActionForm>
+          </DrawerTrigger>
+        ) : null}
         <InviteUserPanel
           canCreateOrganization={false}
           canSetPlatformRole={isSuperAdminUser(currentUser)}
@@ -89,135 +90,49 @@ export function OrganizationUsersPanel({
         />
       </div>
 
-      {assignableUsers.length > 0 ? (
-        <article className="us-panel px-5 py-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-            Add existing user
-          </p>
-          <form action={upsertUserOrganizationMembershipAction} className="mt-4 grid gap-4 md:grid-cols-[1fr_220px_auto] md:items-end">
-            <input name="organizationId" type="hidden" value={organization.id} />
-            <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-              User
-              <select
-                className="us-input mt-2"
-                name="userID"
-                required
-              >
-                <option value="">Select user</option>
-                {assignableUsers.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name} ({user.email})
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-              Org role
-              <select className="us-input mt-2" defaultValue="moderator" name="roleInOrganization" style={{ borderColor: 'var(--us-border)' }}>
-                {INVITABLE_ORGANIZATION_ROLES.map((role) => (
-                  <option key={role.value} value={role.value}>
-                    {role.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button type="submit" className="us-button-secondary px-5 py-3 text-sm font-medium">
-              Add user
-            </button>
-          </form>
-        </article>
-      ) : null}
-
-      {pendingRequests.length > 0 ? (
-        <article className="us-panel px-6 py-6">
-          <h3 className="text-lg font-semibold" style={{ color: 'var(--us-green-dark)' }}>
-            Pending join requests
-          </h3>
-          <TruncatedList className="mt-4" itemLabel="requests" listClassName="space-y-3">
-            {tintedPendingRequests.map((membership) => (
-              <ListGroupRow
-                className="flex flex-col gap-3 rounded-3xl border px-4 py-4 md:flex-row md:items-center md:justify-between"
+      {sortedRequests.length > 0 ? (
+        <ListPanel count={sortedRequests.length} title="Join requests">
+          <ListBody itemLabel="requests">
+            {sortedRequests.map((membership) => (
+              <JoinRequestRow
                 key={membership.id}
-                rowTint={membership.rowTint}
-                style={{ borderColor: 'var(--us-border)' }}
-              >
-                <div>
-                  <p className="font-semibold" style={{ color: 'var(--us-green-dark)' }}>
-                    {userLabel(membership.user)}
-                  </p>
-                  <p className="text-sm" style={{ color: 'var(--us-muted)' }}>
-                    Requested access to {organization.name}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <form action={approveMembershipAction} id={`approve-membership-${membership.id}`}>
-                    <input name="membershipId" type="hidden" value={membership.id} />
-                    <input name="organizationId" type="hidden" value={organization.id} />
-                  </form>
-                  <form action={rejectMembershipAction} id={`reject-membership-${membership.id}`}>
-                    <input name="membershipId" type="hidden" value={membership.id} />
-                    <input name="organizationId" type="hidden" value={organization.id} />
-                  </form>
-                  <button className="us-button-primary px-4 py-2.5 text-sm font-medium" form={`approve-membership-${membership.id}`} type="submit">
-                    Approve
-                  </button>
-                  <ConfirmSubmitButton
-                    action={rejectMembershipAction}
-                    className="rounded-2xl border px-4 py-2.5 text-sm font-medium"
-                    confirmMessage="Reject this join request? The user will remain outside the organization."
-                    formId={`reject-membership-${membership.id}`}
-                    title="Reject request"
-                  >
-                    Reject
-                  </ConfirmSubmitButton>
-                </div>
-              </ListGroupRow>
+                membership={membership}
+                subtitle={`Requested access to ${organization.name}`}
+              />
             ))}
-          </TruncatedList>
-        </article>
+          </ListBody>
+        </ListPanel>
       ) : null}
 
-      {pendingInvites.length > 0 ? (
-        <article className="us-panel px-6 py-6">
-          <h3 className="text-lg font-semibold" style={{ color: 'var(--us-green-dark)' }}>
-            Pending invites
-          </h3>
-          <TruncatedList className="mt-4" itemLabel="invites" listClassName="space-y-3">
-            {tintedPendingInvites.map((membership) => {
+      {sortedInvites.length > 0 ? (
+        <ListPanel count={sortedInvites.length} title="Pending invites">
+          <ListBody itemLabel="invites">
+            {sortedInvites.map((membership) => {
               const invitedUserID = userID(membership.user)
 
               return (
-                <ListGroupRow
-                  className="flex flex-col gap-3 rounded-3xl border px-4 py-4 md:flex-row md:items-center md:justify-between"
+                <ListRow
+                  actions={
+                    <>
+                      <ActionFeedbackForm action={resendInviteForUserAction} id={`resend-invite-${invitedUserID}`}>
+                        <input name="id" type="hidden" value={invitedUserID} />
+                        <input name="organizationId" type="hidden" value={organization.id} />
+                        <SubmitButton
+                          className="us-button-secondary px-3 py-1.5 text-sm font-medium"
+                          idleLabel="Resend invite"
+                          pendingLabel="Sending..."
+                        />
+                      </ActionFeedbackForm>
+                      <CopyAccessLinkButton label="Copy invite link" organizationId={organization.id} userId={invitedUserID} />
+                    </>
+                  }
                   key={membership.id}
-                  rowTint={membership.rowTint}
-                  style={{ borderColor: 'var(--us-border)' }}
-                >
-                  <div>
-                    <p className="font-semibold" style={{ color: 'var(--us-green-dark)' }}>
-                      {userLabel(membership.user)}
-                    </p>
-                    <p className="text-sm" style={{ color: 'var(--us-muted)' }}>
-                      Waiting for activation in {organization.name}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-start gap-2">
-                    <ActionFeedbackForm action={resendInviteForUserAction} id={`resend-invite-${invitedUserID}`}>
-                      <input name="id" type="hidden" value={invitedUserID} />
-                      <input name="organizationId" type="hidden" value={organization.id} />
-                      <SubmitButton idleLabel="Resend invite" pendingLabel="Sending..." />
-                    </ActionFeedbackForm>
-                    <CopyAccessLinkButton
-                      label="Copy invite link"
-                      organizationId={organization.id}
-                      userId={invitedUserID}
-                    />
-                  </div>
-                </ListGroupRow>
+                  lead={<RowTitle subtitle="Waiting for activation" title={userLabel(membership.user)} />}
+                />
               )
             })}
-          </TruncatedList>
-        </article>
+          </ListBody>
+        </ListPanel>
       ) : null}
 
       <OrganizationMembersTable
@@ -230,7 +145,7 @@ export function OrganizationUsersPanel({
         organization={organization}
         organizationMembershipsByUserID={organizationMembershipsByUserID}
         userEvents={userEvents}
-        users={tintedUsers}
+        users={sortedUsers}
       />
     </div>
   )

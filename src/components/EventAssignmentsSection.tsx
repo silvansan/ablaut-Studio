@@ -1,8 +1,8 @@
 import { deleteEventAssignmentAction } from '@/app/events/[eventSlug]/settings/actions'
-import { TrashIcon } from '@/components/ActionIcons'
-import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
 import { EventAssignmentDrawer, type AssignableUserOption } from '@/components/EventAssignmentDrawer'
 import { EventPermissionIcon } from '@/components/EventPermissionIcon'
+import { ShieldIcon } from '@/components/ActionIcons'
+import { Chip, ChipGrid, DeleteIconButton, ListBody, ListEmpty, ListPanel, ListRow, RowTitle } from '@/components/ListKit'
 import { EVENT_PERMISSIONS, EVENT_ROLES, type EventPermissions } from '@/lib/event-permissions'
 import type { EventAssignment, User } from '@/payload-types'
 
@@ -27,7 +27,7 @@ function permissionsOf(assignment: EventAssignment): EventPermissions {
   ) as EventPermissions
 }
 
-/** The event's team: one hairline row per person, with add and edit in a drawer. */
+/** The event's team. Add and edit open in a drawer. */
 export function EventAssignmentsSection({
   assignments,
   assignableUsers,
@@ -43,102 +43,89 @@ export function EventAssignmentsSection({
   const sorted = [...assignments].sort((a, b) => personOf(a.user).name.localeCompare(personOf(b.user).name))
 
   return (
-    <section>
-      <div className="flex items-center justify-between gap-3 pb-3">
-        <p className="text-sm font-semibold" style={{ color: 'var(--us-green-dark)' }}>
-          Team{' '}
-          <span className="font-normal" style={{ color: 'var(--us-muted)' }}>
-            {sorted.length}
-          </span>
-        </p>
-        {canManageAssignments && assignableUsers.length > 0 ? (
+    <ListPanel
+      actions={
+        canManageAssignments && assignableUsers.length > 0 ? (
           <EventAssignmentDrawer
             assignableUsers={assignableUsers}
             canSetAdminRole={canSetAdminRole}
             eventID={eventID}
             eventSlug={eventSlug}
           />
-        ) : null}
-      </div>
-
+        ) : null
+      }
+      count={sorted.length}
+      title="Team"
+    >
       {sorted.length > 0 ? (
-        <ul className="overflow-hidden border" style={{ borderColor: 'var(--us-border)', borderRadius: 'var(--us-r-control)' }}>
+        <ListBody itemLabel="people">
           {sorted.map((assignment) => {
             const person = personOf(assignment.user)
             const permissions = permissionsOf(assignment)
             const roleLabel = EVENT_ROLES.find((role) => role.value === assignment.roleForEvent)?.label ?? assignment.roleForEvent
-            const removeFormId = `remove-event-assignment-${assignment.id}`
 
             return (
-              <li className="us-list-row flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2.5" key={assignment.id}>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold" style={{ color: 'var(--us-green-dark)' }}>
-                    {person.name}
-                  </p>
-                  <p className="truncate text-xs" style={{ color: 'var(--us-muted)' }}>
-                    {person.email}
-                  </p>
-                </div>
-
-                <span className={`us-chip ${assignment.roleForEvent === 'admin' ? 'us-chip-blue' : 'us-chip-muted'}`}>
-                  {roleLabel}
-                </span>
-
-                <span className="inline-flex items-center gap-2" role="list">
-                  {EVENT_PERMISSIONS.map((permission) => (
-                    <span
-                      aria-label={`${permission.label}: ${permissions[permission.key] ? 'yes' : 'no'}`}
-                      className="inline-flex"
-                      key={permission.key}
-                      role="listitem"
-                      style={{ color: permissions[permission.key] ? 'var(--us-green-dark)' : 'var(--us-border-strong)' }}
-                      title={`${permission.label}: ${permissions[permission.key] ? 'yes' : 'no'}`}
-                    >
-                      <EventPermissionIcon permission={permission.key} />
-                    </span>
-                  ))}
-                </span>
-
-                {canManageAssignments ? (
-                  <span className="inline-flex items-center gap-1.5">
-                    <EventAssignmentDrawer
-                      assignableUsers={assignableUsers}
-                      canSetAdminRole={canSetAdminRole}
-                      editing={{
-                        permissions,
-                        roleForEvent: assignment.roleForEvent,
-                        userId: person.id,
-                        userName: person.name,
-                      }}
-                      eventID={eventID}
-                      eventSlug={eventSlug}
-                    />
-                    <form action={deleteEventAssignmentAction} id={removeFormId}>
-                      <input name="assignmentID" type="hidden" value={assignment.id} />
-                      <input name="eventSlug" type="hidden" value={eventSlug} />
-                      <ConfirmSubmitButton
+              <ListRow
+                actions={
+                  canManageAssignments ? (
+                    <>
+                      <EventAssignmentDrawer
+                        assignableUsers={assignableUsers}
+                        canSetAdminRole={canSetAdminRole}
+                        editing={{
+                          permissions,
+                          roleForEvent: assignment.roleForEvent,
+                          userId: person.id,
+                          userName: person.name,
+                        }}
+                        eventID={eventID}
+                        eventSlug={eventSlug}
+                      />
+                      <DeleteIconButton
                         action={deleteEventAssignmentAction}
-                        className="us-button-secondary inline-flex h-8 w-8 items-center justify-center"
                         confirmLabel="Remove"
                         confirmMessage={`Remove ${person.name} from this event?`}
-                        formId={removeFormId}
+                        fields={{ assignmentID: assignment.id, eventSlug }}
+                        label={`Remove ${person.name}`}
                         title="Remove from event"
-                        triggerLabel={`Remove ${person.name}`}
-                      >
-                        <TrashIcon />
-                      </ConfirmSubmitButton>
-                    </form>
-                  </span>
-                ) : null}
-              </li>
+                      />
+                    </>
+                  ) : null
+                }
+                chips={
+                  <ChipGrid columns="6.5rem 9rem">
+                    <Chip icon={<ShieldIcon />} title="Role in this event" tone={assignment.roleForEvent === 'admin' ? 'blue' : 'muted'}>
+                      {roleLabel}
+                    </Chip>
+                    <span className="inline-flex items-center gap-2" role="list">
+                      {EVENT_PERMISSIONS.map((permission) => {
+                        const granted = Boolean(assignment.permissions?.[permission.key])
+
+                        return (
+                          <span
+                            aria-label={`${permission.label}: ${granted ? 'yes' : 'no'}`}
+                            className="inline-flex"
+                            key={permission.key}
+                            role="listitem"
+                            style={{ color: granted ? 'var(--us-green-dark)' : 'var(--us-border-strong)' }}
+                            title={`${permission.label}: ${granted ? 'yes' : 'no'}`}
+                          >
+                            <EventPermissionIcon permission={permission.key} />
+                          </span>
+                        )
+                      })}
+                    </span>
+                  </ChipGrid>
+                }
+                key={assignment.id}
+                lead={<RowTitle subtitle={person.email} title={person.name} />}
+              />
             )
           })}
-        </ul>
+        </ListBody>
       ) : (
-        <p className="text-sm" style={{ color: 'var(--us-muted)' }}>
-          No one yet.
-        </p>
+        <ListEmpty>No one yet.</ListEmpty>
       )}
-    </section>
+    </ListPanel>
   )
 }

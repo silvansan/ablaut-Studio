@@ -42,8 +42,7 @@ export default async function EventPeopleTab({ params }: PageProps) {
     >
       <section className="space-y-4">
         <EventWorkspaceHeader canManage event={event} eventSlug={eventSlug} />
-        <article className="us-panel px-5 py-5">
-          <EventAssignmentsSection
+        <EventAssignmentsSection
             assignableUsers={assignableUsers}
             assignments={assignments.docs}
             canManageAssignments={canManageAssignments}
@@ -51,7 +50,6 @@ export default async function EventPeopleTab({ params }: PageProps) {
             eventID={event.id}
             eventSlug={event.slug}
           />
-        </article>
       </section>
     </Layout>
   )

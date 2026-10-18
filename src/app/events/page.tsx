@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import configPromise from '@payload-config'
-import Link from '@/components/OrgLink'
 import { getPayload } from 'payload'
 
 import { canDeleteEvent, createEventAction } from '@/app/events/actions'
@@ -8,10 +7,11 @@ import { DashboardActionCards } from '@/components/DashboardActionCards'
 import { EventForm } from '@/components/EventForm'
 import { EventsHubTable } from '@/components/EventsHubTable'
 import { Layout } from '@/components/Layout'
-import { CollapsiblePanel } from '@/components/CollapsiblePanel'
+import { DrawerTrigger } from '@/components/DrawerTrigger'
+import { FilterTabs, ListEmpty, ListPanel } from '@/components/ListKit'
+import { PageHeader } from '@/components/PageHeader'
 import { PendingJoinRequestsPanel } from '@/components/PendingJoinRequestsPanel'
 import { getDashboardActionItems, getDashboardEvents } from '@/lib/dashboard-data'
-import { assignGroupTints } from '@/lib/list-group-tints'
 import { getManageableOrganizations } from '@/lib/organization-data'
 import { hasOrganizationManagementAccess } from '@/lib/organizations'
 import { requireAppUser } from '@/lib/app-auth'
@@ -61,63 +61,42 @@ export default async function EventsPage({ searchParams }: PageProps) {
       canDelete: await canDeleteEvent(payload, user, event),
     })),
   )
-  const tintedEvents = assignGroupTints(eventsWithDelete, (event) => String(event.organizationId ?? '__none__'))
   const returnPath = status ? `/events?status=${status}` : '/events'
-  const createEventDescription =
-    organizations.length === 1
-      ? `Create a new event in ${organizations[0]?.name}.`
-      : 'Choose an organization and create a new event.'
 
   return (
     <Layout hideHeader title="Events">
       <section className="space-y-4">
+        <PageHeader
+          actions={
+            canCreateEventsUser ? (
+              <DrawerTrigger buttonLabel="New event">
+                <EventForm
+                  action={createEventAction}
+                  organizations={organizations}
+                  submitLabel="Create event"
+                  variant="drawer"
+                />
+              </DrawerTrigger>
+            ) : null
+          }
+          title="Events"
+        />
         <DashboardActionCards actionItems={actionItems} canManageUsers={canManageUsers} />
         <PendingJoinRequestsPanel memberships={pendingJoinRequests} returnPath="/events" />
 
-        <div className="us-panel flex flex-wrap items-center gap-2 px-6 py-5">
-          {[
-            ['All', '/events'],
-            ['Active', '/events?status=active'],
-            ['Draft', '/events?status=draft'],
-            ['Archived', '/events?status=archived'],
-          ].map(([label, href]) => {
-            const active =
-              (label === 'All' && !status) ||
-              (label === 'Active' && status === 'active') ||
-              (label === 'Draft' && status === 'draft') ||
-              (label === 'Archived' && status === 'archived')
+        <FilterTabs
+          items={[
+            { active: !status, href: '/events', label: 'All' },
+            { active: status === 'active', href: '/events?status=active', label: 'Active' },
+            { active: status === 'draft', href: '/events?status=draft', label: 'Draft' },
+            { active: status === 'archived', href: '/events?status=archived', label: 'Archived' },
+          ]}
+          label="Filter events"
+        />
 
-            return (
-              <Link
-                key={label}
-                className="rounded-2xl border px-4 py-2 text-sm font-medium"
-                href={href}
-                style={{
-                  backgroundColor: active ? 'var(--us-green-dark)' : 'white',
-                  borderColor: active ? 'var(--us-green-dark)' : 'var(--us-border)',
-                  color: active ? 'white' : 'var(--us-text)',
-                }}
-              >
-                {label}
-              </Link>
-            )
-          })}
-        </div>
-
-        {canCreateEventsUser ? (
-          <CollapsiblePanel description={createEventDescription} title="Create event">
-            <EventForm
-              action={createEventAction}
-              organizations={organizations}
-              submitLabel="Create event"
-              variant="drawer"
-            />
-          </CollapsiblePanel>
-        ) : null}
-
-        {tintedEvents.length > 0 ? (
+        {eventsWithDelete.length > 0 ? (
           <EventsHubTable
-            events={tintedEvents.map((event) => ({
+            events={eventsWithDelete.map((event) => ({
               canDelete: event.canDelete,
               channelCount: event.channelCount,
               dateStart: event.dateStart,
@@ -125,28 +104,23 @@ export default async function EventsPage({ searchParams }: PageProps) {
               eventId: event.id,
               location: event.location,
               organizationTitle: event.organizationTitle,
-              rowTint: event.rowTint,
               slug: event.slug,
               status: event.status ?? 'active',
               title: event.title,
             }))}
             returnPath={returnPath}
+            showOrganization={organizations.length > 1}
           />
         ) : (
-          <div className="us-panel px-6 py-6">
-            <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
+          <ListPanel>
+            <ListEmpty>
               {canCreateEventsUser
                 ? organizations.length === 0
-                  ? 'No events yet. Join an organization under Settings, then create your first event.'
-                  : `No events yet${organizations.length === 1 ? ` in ${organizations[0]?.name}` : ''}. Open "Create event" above to add your first.`
+                  ? 'No events yet. Join an organization first, then create your first event.'
+                  : 'No events yet. Use New event to add your first.'
                 : 'No events are available for your account yet.'}
-            </p>
-            {organizations.length === 0 && canCreateEventsUser ? (
-              <Link className="us-button-primary mt-4 inline-flex px-4 py-2.5 text-sm font-medium" href="/settings">
-                Open settings
-              </Link>
-            ) : null}
-          </div>
+            </ListEmpty>
+          </ListPanel>
         )}
       </section>
     </Layout>

@@ -8,6 +8,8 @@ type TruncatedListProps = {
   as?: ElementType
   children: ReactNode
   className?: string
+  /** Classes for the "Showing N of M" / "Show more" area, e.g. padding inside a panel. */
+  footerClassName?: string
   initialCount?: number
   itemLabel?: string
   listClassName?: string
@@ -17,6 +19,7 @@ export function TruncatedList({
   as: ListTag = 'div',
   children,
   className,
+  footerClassName,
   initialCount = DEFAULT_LIST_PAGE_SIZE,
   itemLabel = 'items',
   listClassName,
@@ -31,6 +34,7 @@ export function TruncatedList({
   return (
     <div className={className}>
       <ListTag className={listClassName}>{shown}</ListTag>
+      <div className={footerClassName}>
       {needsTruncation ? (
         <p className="mt-2 text-xs" style={{ color: 'var(--us-muted)' }}>
           Showing {Math.min(visibleCount, total)} of {total} {itemLabel}
@@ -55,6 +59,7 @@ export function TruncatedList({
           Show less
         </button>
       ) : null}
+      </div>
     </div>
   )
 }

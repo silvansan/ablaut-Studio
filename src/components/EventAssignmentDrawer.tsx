@@ -6,8 +6,8 @@ import { saveEventAssignmentFeedbackAction } from '@/app/events/[eventSlug]/sett
 import { PencilIcon, PlusIcon } from '@/components/ActionIcons'
 import { useActionFeedback } from '@/components/AppToastProvider'
 import { Drawer } from '@/components/Drawer'
-import { EventPermissionIcon } from '@/components/EventPermissionIcon'
-import { EVENT_PERMISSIONS, EVENT_ROLES, type EventPermissions, type EventRole } from '@/lib/event-permissions'
+import { EventPermissionFields } from '@/components/EventPermissionFields'
+import { EVENT_ROLES, type EventPermissions, type EventRole } from '@/lib/event-permissions'
 
 export type AssignableUserOption = {
   email: string
@@ -112,24 +112,7 @@ export function EventAssignmentDrawer({
             </select>
           </label>
 
-          <fieldset>
-            <legend className="mb-2 text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-              Can
-            </legend>
-            <div className="flex flex-wrap gap-2">
-              {EVENT_PERMISSIONS.map((permission) => (
-                <label className="us-perm" key={permission.key}>
-                  <input
-                    defaultChecked={editing ? editing.permissions[permission.key] : permission.defaultOn}
-                    name={permission.key}
-                    type="checkbox"
-                  />
-                  <EventPermissionIcon permission={permission.key} />
-                  {permission.label}
-                </label>
-              ))}
-            </div>
-          </fieldset>
+          <EventPermissionFields values={editing?.permissions} />
 
           <button className="us-button-primary px-4 py-2 text-sm font-medium" type="submit">
             {pending ? 'Saving...' : editing ? 'Save' : 'Add'}

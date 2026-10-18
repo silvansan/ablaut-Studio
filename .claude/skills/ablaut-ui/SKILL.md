@@ -2,7 +2,7 @@
 name: ablaut-ui
 description: >-
   ablaut-Studio design system — the --us-* CSS tokens, the us-panel / us-chip /
-  us-button-* / us-data-row component classes, the active-status.ts status-chip
+  us-button-* classes, the ListKit / FormFields / PageHeader building blocks, the active-status.ts status-chip
   helpers, the shared overlay primitives, and the user-facing copy rules from
   CONTEXT.md. Use whenever creating or editing any React/Tailwind UI under
   ablaut-studio/src (.tsx components or app pages), or editing
@@ -55,11 +55,16 @@ style here and is fine. Raw hex or ad-hoc `rgba()` in a `.tsx` file is not.
   explanatory paragraphs.
 - **`us-chip`** + one of `us-chip-muted` / `us-chip-blue` / `us-chip-warning` /
   `us-chip-active` / `us-chip-inactive` — labels, tags, counts, statuses.
-- **`us-data-row`** with `__lead` / `__chips` / `__detail` / `__actions`, plus
-  `us-data-row-header` and `us-data-row--cols-{2,3,4}` — the list-row layout used by every
-  hub table. Reuse it for new lists; don't hand-roll a flex row.
-- **`us-row-tint-green` / `-blue` / `-white`** — group tinting (assigned by
-  `src/lib/list-group-tints.ts`).
+- **Lists: `@/components/ListKit`.** Every list in the app is a `ListPanel` (header bar: title, count,
+  select-all, actions) holding a `ListBody` of `ListRow`s. A row has named slots: `lead` (`RowTitle`:
+  name + quiet second line), `chips`, `detail`, `actions`, optional `selection`, and `href` or `onActivate`.
+  Row buttons are icon buttons (`EditIconButton`, `OpenIconButton`, `DeleteIconButton` with built-in
+  confirmation). Filter links are `FilterTabs`; empty lists are `ListEmpty`. **Never hand-roll a row, a
+  tint, or a delete button**: change `ListKit.tsx` and every list changes.
+- **Page tops:** `PageHeader` (title + main actions) for list pages, `WorkspaceHeader` (title, chips,
+  actions, tabs) for an event, organization or user. "Add" and "New" buttons open a drawer:
+  `DrawerTrigger` + `DrawerActionForm`, which closes itself on success.
+- **Needs attention:** `DashboardActionCards` (small outlined items; red = needs action, amber = follow up).
 - **`us-hero-glow`** — legacy no-op positioning helper; do not use for new work.
 - **`us-neu-toggle`** — the (flat) toggle switch. **`us-toast`** — toasts, via `AppToastProvider`.
 
@@ -139,7 +144,7 @@ icon-only hunting).
 - Gradients, glow blobs, neumorphic shadows, `translateY` hover lift.
 - Radii above 6px, or pill buttons/chips.
 - Arbitrary Tailwind values (`w-[347px]`, `mt-[13px]`, `text-[13px]`) → the scale.
-- Re-implementing `us-panel` / `us-chip` / `us-data-row` with raw Tailwind.
+- Re-implementing `us-panel` / `us-chip` or a list row / delete button / page heading with raw Tailwind.
 - Hand-rolled status pills instead of `active-status.ts`.
 - A new overlay/drawer/modal primitive instead of `CollapsiblePanel` / `Drawer` / `ModalPortal`.
 - Icon-only buttons with no visible label and no `aria-label`.

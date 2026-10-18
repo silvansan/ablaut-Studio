@@ -141,6 +141,50 @@ a:focus-visible {
   line-height: 1;
 }
 
+.us-chip {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.us-chip svg {
+  flex: none;
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.us-chip__dot {
+  flex: none;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+/* Chips in fixed columns so the same kind of chip lines up from row to row (set --cols per list). */
+.us-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.us-chip-grid > :empty {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .us-chip-grid {
+    display: grid;
+    grid-template-columns: var(--cols);
+    gap: 0.5rem;
+    justify-items: start;
+  }
+
+  .us-chip-grid > :empty {
+    display: block;
+  }
+}
+
 .us-chip-muted {
   background: rgba(47, 143, 99, 0.08);
   color: var(--us-green-dark);
@@ -445,6 +489,56 @@ textarea.us-input {
   background: rgba(255, 255, 255, 0.75);
 }
 
+/* Attention strip item: small, outlined; red = needs action, amber = follow up, plain = FYI. */
+.us-attn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  padding: 0.3125rem 0.625rem;
+  border: 1px solid var(--us-border-strong);
+  border-radius: var(--us-r-control);
+  background: var(--us-card);
+  font-size: 0.8125rem;
+  color: var(--us-text);
+}
+
+.us-attn:hover {
+  background: color-mix(in srgb, var(--us-green) 5%, white 95%);
+}
+
+.us-attn--danger {
+  border-color: var(--us-danger);
+}
+
+.us-attn--danger .us-attn__icon {
+  color: var(--us-danger);
+}
+
+.us-attn--warning {
+  border-color: var(--us-warning);
+}
+
+.us-attn--warning .us-attn__icon {
+  color: var(--us-warning-ink);
+}
+
+.us-attn__icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--us-muted);
+}
+
+/* List kit (components/ListKit.tsx): header bar of a list panel. */
+.us-list-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--us-border);
+}
+
 /* Flat hairline-divided list row (replaces card-per-row). */
 .us-list-row {
   border-bottom: 1px solid var(--us-border);
@@ -456,113 +550,6 @@ textarea.us-input {
 
 .us-list-row:hover {
   background: color-mix(in srgb, var(--us-green) 5%, white 95%);
-}
-
-.us-data-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  column-gap: 1rem;
-  row-gap: 0.75rem;
-  min-width: 0;
-}
-
-.us-data-row__lead {
-  flex: 1 1 11rem;
-  min-width: min(100%, 11rem);
-}
-
-.us-data-row__chips {
-  display: flex;
-  flex: 0 1 auto;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.us-data-row__detail {
-  flex: 0 1 auto;
-  white-space: nowrap;
-}
-
-.us-data-row__actions {
-  display: flex;
-  flex: 0 0 auto;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-left: auto;
-}
-
-.us-data-row-header {
-  padding-bottom: 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-@media (min-width: 640px) {
-  .us-data-row--cols-4 {
-    display: grid;
-    grid-template-columns: minmax(11rem, 1fr) minmax(10rem, auto) minmax(8rem, auto) minmax(5rem, auto);
-    align-items: center;
-    column-gap: 1rem;
-    row-gap: 0.75rem;
-  }
-
-  .us-data-row--cols-3 {
-    display: grid;
-    grid-template-columns: minmax(11rem, 1fr) minmax(6rem, auto) minmax(18rem, 2fr);
-    align-items: center;
-    column-gap: 1rem;
-    row-gap: 0.75rem;
-  }
-
-  .us-data-row--cols-5 {
-    display: grid;
-    grid-template-columns: minmax(11rem, 1fr) minmax(8rem, auto) minmax(4.5rem, auto) minmax(5rem, auto) minmax(2.5rem, auto);
-    align-items: center;
-    column-gap: 1rem;
-    row-gap: 0.75rem;
-  }
-
-  .us-data-row--cols-4 .us-data-row__lead,
-  .us-data-row--cols-3 .us-data-row__lead,
-  .us-data-row--cols-5 .us-data-row__lead {
-    flex: none;
-    min-width: 0;
-  }
-
-  .us-data-row--cols-4 .us-data-row__chips,
-  .us-data-row--cols-3 .us-data-row__chips,
-  .us-data-row--cols-5 .us-data-row__chips,
-  .us-data-row--cols-4 .us-data-row__detail,
-  .us-data-row--cols-3 .us-data-row__detail,
-  .us-data-row--cols-5 .us-data-row__detail {
-    flex: none;
-    min-width: 0;
-  }
-
-  .us-data-row--cols-4 .us-data-row__actions,
-  .us-data-row--cols-3 .us-data-row__actions,
-  .us-data-row--cols-5 .us-data-row__actions {
-    margin-left: 0;
-    flex: none;
-    min-width: 0;
-  }
-
-  .us-data-row-header.us-data-row--cols-4 .us-data-row__chips,
-  .us-data-row-header.us-data-row--cols-4 .us-data-row__detail,
-  .us-data-row-header.us-data-row--cols-4 .us-data-row__actions,
-  .us-data-row-header.us-data-row--cols-3 .us-data-row__chips,
-  .us-data-row-header.us-data-row--cols-3 .us-data-row__actions,
-  .us-data-row-header.us-data-row--cols-5 .us-data-row__detail,
-  .us-data-row-header.us-data-row--cols-5 .us-data-row__actions {
-    justify-content: center;
-    text-align: center;
-  }
 }
 
 /* App shell: sidebar, organization switcher, top bar */

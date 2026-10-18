@@ -2,7 +2,9 @@ import Link from '@/components/OrgLink'
 
 import { UserAccountActions } from '@/components/UserAccountActions'
 import { UserAccountForm } from '@/components/UserAccountForm'
+import { UserEventAssignmentsSection } from '@/components/UserEventAssignmentsSection'
 import { UserOrganizationMembershipsSection } from '@/components/UserOrganizationMembershipsSection'
+import { WorkspaceHeader } from '@/components/WorkspaceHeader'
 import { formatTtl, getAccessLinkTtlMs } from '@/lib/access-tokens'
 import { formatGlobalRole } from '@/lib/organization-user-utils'
 import { isSelfUser, type UserDetailData } from '@/lib/user-detail-data'
@@ -15,109 +17,65 @@ type UserDetailPanelProps = {
 }
 
 export function UserDetailPanel({ canManageUsers, currentUser, data }: UserDetailPanelProps) {
-  const { assignments, manageableOrganizations, memberships, targetUser, userEvents } = data
+  const { assignments, manageableOrganizations, memberships, targetUser } = data
   const isSelf = isSelfUser(currentUser, targetUser)
+  const invitePending = targetUser.invitationStatus === 'pending'
+  const inviteNote =
+    invitePending && targetUser.invitedAt
+      ? `Last invite sent ${new Date(targetUser.invitedAt).toLocaleString()}. Links work for ${formatTtl(getAccessLinkTtlMs('invite'))}.`
+      : undefined
 
   return (
     <section className="space-y-4">
-      <div className="us-panel flex flex-wrap items-center gap-2 px-6 py-5">
-        <Link className="us-button-secondary px-4 py-2.5 text-sm font-medium" href="/users">
-          Back to users
-        </Link>
-        {isSelf ? (
-          <Link className="us-button-primary px-4 py-2.5 text-sm font-medium" href="/profile">
-            Open my profile
-          </Link>
-        ) : null}
-      </div>
-
-      <article className="us-panel px-6 py-6">
-        <div className="flex flex-wrap items-start gap-3">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
-              {targetUser.name}
-            </h2>
-            <p className="mt-2 text-sm" style={{ color: 'var(--us-muted)' }}>
-              {targetUser.email}
-            </p>
-            {targetUser.invitationStatus === 'pending' && targetUser.invitedAt ? (
-              <p className="mt-1 text-xs" style={{ color: 'var(--us-muted)' }}>
-                Last invite sent {new Date(targetUser.invitedAt).toLocaleString()}. Links work for {formatTtl(getAccessLinkTtlMs('invite'))}.
-              </p>
-            ) : null}
-          </div>
-          <div className="ml-auto flex flex-wrap gap-2">
-            <span className="us-chip us-chip-blue capitalize">{formatGlobalRole(targetUser.role)}</span>
+      <WorkspaceHeader
+        actions={
+          isSelf ? (
+            <Link className="us-button-primary px-3 py-1.5 text-sm font-medium" href="/profile">
+              My profile
+            </Link>
+          ) : null
+        }
+        chips={
+          <>
+            {/* Platform role only when it is special; the organization role is shown in the lists below. */}
+            {targetUser.role === 'moderator' ? null : (
+              <span className="us-chip us-chip-blue capitalize" title="Platform role: works across all organizations">
+                {formatGlobalRole(targetUser.role)}
+              </span>
+            )}
             {targetUser.active === false ? <span className="us-chip us-chip-warning">Inactive</span> : null}
-            {targetUser.invitationStatus === 'pending' ? (
-              <span className="us-chip us-chip-warning">Invite pending</span>
+            {invitePending ? (
+              <span className="us-chip us-chip-warning" title={inviteNote}>
+                Invite pending
+              </span>
             ) : null}
-          </div>
-        </div>
-
-        {userEvents.length === 0 ? (
-          <p className="mt-4 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-            No assigned events in your organizations.
-          </p>
-        ) : null}
-      </article>
+          </>
+        }
+        description={targetUser.email}
+        title={targetUser.name}
+      />
 
       {canManageUsers && !isSelf ? (
-        <article className="us-panel px-6 py-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-            Account
-          </p>
+        <article className="us-panel space-y-4 px-6 py-5">
           <UserAccountForm currentUser={currentUser} layout="panel" targetUser={targetUser} />
           <UserAccountActions formIdPrefix="user-detail" targetUser={targetUser} />
         </article>
       ) : null}
 
-      {canManageUsers ? (
-        <article className="us-panel px-6 py-6">
-          <UserOrganizationMembershipsSection
-            canManageMemberships={canManageUsers}
-            memberships={memberships}
-            organizations={manageableOrganizations}
-            targetUserID={targetUser.id}
-          />
-        </article>
-      ) : (
-        <article className="us-panel px-6 py-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-            Organization access
-          </p>
-          {memberships.length > 0 ? (
-            <ul className="mt-4 space-y-2 text-sm" style={{ color: 'var(--us-text)' }}>
-              {memberships.map((membership) => (
-                <li key={membership.id}>
-                  {typeof membership.organization === 'object' ? membership.organization.name : 'Organization'} ·{' '}
-                  <span className="capitalize">{membership.roleInOrganization}</span> · {membership.status}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-3 text-sm" style={{ color: 'var(--us-muted)' }}>
-              Not assigned to any of your organizations yet.
-            </p>
-          )}
-        </article>
-      )}
+      <UserOrganizationMembershipsSection
+        canManageMemberships={canManageUsers}
+        memberships={memberships}
+        organizations={manageableOrganizations}
+        targetUserID={targetUser.id}
+      />
 
-      {assignments.length > 0 ? (
-        <article className="us-panel px-6 py-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-            Event assignments
-          </p>
-          <ul className="mt-4 space-y-2 text-sm" style={{ color: 'var(--us-text)' }}>
-            {assignments.map((assignment) => (
-              <li key={assignment.id}>
-                {typeof assignment.event === 'object' ? assignment.event.title : `Event ${assignment.event}`} ·{' '}
-                <span className="capitalize">{assignment.roleForEvent}</span>
-              </li>
-            ))}
-          </ul>
-        </article>
-      ) : null}
+      <UserEventAssignmentsSection
+        assignableEvents={[]}
+        assignments={assignments}
+        canManageAssignments={false}
+        canSetAdminRole={false}
+        targetUserID={targetUser.id}
+      />
     </section>
   )
 }

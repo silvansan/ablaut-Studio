@@ -5,12 +5,12 @@ import { getPayload } from 'payload'
 
 import { InviteUserPanel } from '@/components/InviteUserPanel'
 import { Layout } from '@/components/Layout'
+import { PageHeader } from '@/components/PageHeader'
 import { PendingJoinRequestsPanel } from '@/components/PendingJoinRequestsPanel'
 import { UsersHubFilters } from '@/components/UsersHubFilters'
 import { UsersHubTable } from '@/components/UsersHubTable'
 import { pageMetadata } from '@/lib/branding'
 import { requireAppUser } from '@/lib/app-auth'
-import { assignZebraTints } from '@/lib/list-group-tints'
 import { hasOrganizationManagementAccess } from '@/lib/organizations'
 import { isSuperAdminUser } from '@/lib/permissions'
 import { getPendingJoinRequestsForHub, getUsersHubData } from '@/lib/users-hub-data'
@@ -52,7 +52,6 @@ export default async function UsersPage({ searchParams }: PageProps) {
   const { entries, organizations, showOrganizationColumn } = await getUsersHubData()
   const pendingJoinRequests = await getPendingJoinRequestsForHub()
   const filteredEntries = filterUserHubEntries(entries, { organization, q, status })
-  const tintedEntries = assignZebraTints(filteredEntries)
   const selectedOrganization = organization
     ? organizations.find((item) => item.slug === organization)
     : undefined
@@ -75,20 +74,20 @@ export default async function UsersPage({ searchParams }: PageProps) {
   return (
     <Layout hideHeader title="Users">
       <section className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
-            {showOrganizationColumn ? 'All users' : 'People'}
-          </h2>
-          <InviteUserPanel
-            canCreateOrganization={isSuperAdminUser(currentUser)}
-            canSetPlatformRole={isSuperAdminUser(currentUser)}
-            defaultOrganizationId={
-              selectedOrganization?.id ?? (organizations.length === 1 ? organizations[0]?.id : undefined)
-            }
-            hideOrganizationSelector={Boolean(selectedOrganization) || organizations.length === 1}
-            organizations={organizations}
-          />
-        </div>
+        <PageHeader
+          actions={
+            <InviteUserPanel
+              canCreateOrganization={isSuperAdminUser(currentUser)}
+              canSetPlatformRole={isSuperAdminUser(currentUser)}
+              defaultOrganizationId={
+                selectedOrganization?.id ?? (organizations.length === 1 ? organizations[0]?.id : undefined)
+              }
+              hideOrganizationSelector={Boolean(selectedOrganization) || organizations.length === 1}
+              organizations={organizations}
+            />
+          }
+          title={showOrganizationColumn ? 'All users' : 'People'}
+        />
 
         <PendingJoinRequestsPanel memberships={pendingJoinRequests} returnPath={returnPath} />
 
@@ -104,9 +103,9 @@ export default async function UsersPage({ searchParams }: PageProps) {
               totalCount={entries.length}
             />
 
-            {tintedEntries.length > 0 ? (
+            {filteredEntries.length > 0 ? (
               <UsersHubTable
-                entries={tintedEntries}
+                entries={filteredEntries}
                 filterOrganizationId={selectedOrganization?.id ?? null}
                 isSuperAdmin={isSuperAdminUser(currentUser)}
                 organizations={organizations}

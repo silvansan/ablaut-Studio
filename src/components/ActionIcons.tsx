@@ -122,6 +122,84 @@ export function InfoIcon({ className = 'h-3.5 w-3.5' }: IconProps) {
   )
 }
 
+export function ArrowRightIcon({ className = 'h-4 w-4' }: IconProps) {
+  return (
+    <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  )
+}
+
+export function CalendarIcon({ className = 'h-4 w-4' }: IconProps) {
+  return (
+    <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24">
+      <rect height="16" rx="2" width="16" x="4" y="5" />
+      <path d="M4 10h16M8 3v4M16 3v4" />
+    </svg>
+  )
+}
+
+export function AlertIcon({ className = 'h-4 w-4' }: IconProps) {
+  return (
+    <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24">
+      <path d="M12 4 3 20h18L12 4Z" />
+      <path d="M12 10v4M12 17h.01" />
+    </svg>
+  )
+}
+
+const strokeProps = { fill: 'none', stroke: 'currentColor', strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: 1.8, viewBox: '0 0 24 24' } as const
+
+export function BuildingIcon({ className = 'h-4 w-4' }: IconProps) {
+  return (
+    <svg aria-hidden="true" className={className} {...strokeProps}>
+      <path d="M4 20V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v15M14 9h5a1 1 0 0 1 1 1v10M3 20h18M8 8h2M8 12h2M8 16h2" />
+    </svg>
+  )
+}
+
+export function ShieldIcon({ className = 'h-4 w-4' }: IconProps) {
+  return (
+    <svg aria-hidden="true" className={className} {...strokeProps}>
+      <path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6l-7-3Z" />
+    </svg>
+  )
+}
+
+export function StarIcon({ className = 'h-4 w-4' }: IconProps) {
+  return (
+    <svg aria-hidden="true" className={className} {...strokeProps}>
+      <path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z" />
+    </svg>
+  )
+}
+
+export function ChannelsIcon({ className = 'h-4 w-4' }: IconProps) {
+  return (
+    <svg aria-hidden="true" className={className} {...strokeProps}>
+      <path d="M5 10v4M9 6v12M13 9v6M17 4v16M21 11v2" />
+    </svg>
+  )
+}
+
+export function MailIcon({ className = 'h-4 w-4' }: IconProps) {
+  return (
+    <svg aria-hidden="true" className={className} {...strokeProps}>
+      <rect height="14" rx="2" width="18" x="3" y="5" />
+      <path d="m4 7 8 6 8-6" />
+    </svg>
+  )
+}
+
+export function BanIcon({ className = 'h-4 w-4' }: IconProps) {
+  return (
+    <svg aria-hidden="true" className={className} {...strokeProps}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m5.6 5.6 12.8 12.8" />
+    </svg>
+  )
+}
+
 export function SearchIcon({ className = 'h-4 w-4' }: IconProps) {
   return (
     <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
