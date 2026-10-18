@@ -15,27 +15,26 @@ export function ListBulkActionsPanel({
   selectedCount,
   title = 'Bulk actions',
 }: ListBulkActionsPanelProps) {
-  if (selectedCount === 0) {
-    return (
-      <div
-        className="rounded-3xl border border-dashed px-4 py-3 text-sm leading-6"
-        style={{ borderColor: 'var(--us-border)', color: 'var(--us-muted)' }}
-      >
-        Select rows to enable bulk actions.
-      </div>
-    )
-  }
-
+  // One bar, always the same height: idle text and the active toolbar swap in place,
+  // so selecting rows never pushes the list down.
   return (
-    <div className="us-panel px-6 py-5">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-        {title}
-      </p>
-      <p className="mt-2 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-        {selectedCount} selected · {description}
-      </p>
-      <div className="mt-4">{children}</div>
-    </div>
+    <section
+      aria-label={title}
+      className="us-panel flex min-h-14 items-center gap-4 px-4 py-2"
+    >
+      {selectedCount === 0 ? (
+        <p className="text-sm" style={{ color: 'var(--us-muted)' }}>
+          Select rows to enable bulk actions.
+        </p>
+      ) : (
+        <>
+          <p className="whitespace-nowrap text-sm font-semibold" style={{ color: 'var(--us-green-dark)' }} title={description}>
+            {selectedCount} selected
+          </p>
+          <div className="min-w-0 flex-1 overflow-x-auto">{children}</div>
+        </>
+      )}
+    </section>
   )
 }
 
@@ -47,10 +46,10 @@ type BulkActionSelectProps = {
 
 export function BulkActionSelect({ action, onActionChange, options }: BulkActionSelectProps) {
   return (
-    <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-      Action
+    <label className="flex items-center">
+      <span className="sr-only">Action</span>
       <select
-        className="us-input mt-2"
+        className="us-input us-input--inline"
         onChange={(event) => onActionChange(event.target.value)}
         value={action}
       >

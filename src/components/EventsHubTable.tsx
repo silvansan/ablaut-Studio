@@ -70,7 +70,7 @@ export function EventsHubTable({ events, returnPath }: EventsHubTableProps) {
         description="Update status or delete multiple events at once."
         selectedCount={selectedCount}
       >
-        <form action={bulkEventsAction} className="grid gap-3 xl:grid-cols-[220px_220px_auto] xl:items-end">
+        <form action={bulkEventsAction} className="flex w-max items-center gap-2">
           <input name="returnPath" type="hidden" value={returnPath} />
           <input name="bulkAction" type="hidden" value={bulkAction} />
           <input name="bulkStatus" type="hidden" value={bulkStatus} />
@@ -88,10 +88,10 @@ export function EventsHubTable({ events, returnPath }: EventsHubTableProps) {
           />
 
           {bulkAction === 'set-status' ? (
-            <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-              Status
+            <label className="flex items-center">
+              <span className="sr-only">Status</span>
               <select
-                className="us-input mt-2"
+                className="us-input us-input--inline"
                 onChange={(event) => setBulkStatus(event.target.value)}
                 value={bulkStatus}
               >
@@ -101,7 +101,7 @@ export function EventsHubTable({ events, returnPath }: EventsHubTableProps) {
               </select>
             </label>
           ) : (
-            <div className="flex items-end text-sm leading-6" style={{ color: 'var(--us-muted)' }}>
+            <div className="text-xs" style={{ color: 'var(--us-muted)' }}>
               {canDeleteAnySelected
                 ? 'Deletes channels and event assignments for each selected event.'
                 : 'Only events you can delete are selectable for this action.'}
@@ -109,7 +109,7 @@ export function EventsHubTable({ events, returnPath }: EventsHubTableProps) {
           )}
 
           <button
-            className={`px-5 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
+            className={`px-3 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
               bulkAction === 'delete' ? 'us-button-secondary' : 'us-button-primary'
             }`}
             disabled={selectedCount === 0 || (bulkAction === 'delete' && !canDeleteAnySelected)}

@@ -290,6 +290,13 @@ a:focus-visible {
   outline: none;
 }
 
+/* Compact, content-width variant for toolbars (bulk actions). Not `w-auto`: unlayered .us-input beats utilities. */
+.us-input--inline {
+  width: auto;
+  min-width: 9rem;
+  padding: 0.375rem 0.625rem;
+}
+
 .us-input:focus {
   border-color: var(--us-blue-dark);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--us-blue) 28%, transparent);

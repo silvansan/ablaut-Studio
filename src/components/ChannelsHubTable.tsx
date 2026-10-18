@@ -59,7 +59,7 @@ export function ChannelsHubTable({ channels, returnPath }: ChannelsHubTableProps
         description="Enable, disable, or delete multiple channels at once."
         selectedCount={selectedCount}
       >
-        <form action={bulkChannelsAction} className="grid gap-3 xl:grid-cols-[260px_auto] xl:items-end">
+        <form action={bulkChannelsAction} className="flex w-max items-center gap-2">
           <input name="returnPath" type="hidden" value={returnPath} />
           <input name="bulkAction" type="hidden" value={bulkAction} />
           {selectedChannels.map((channel) => (
@@ -86,7 +86,7 @@ export function ChannelsHubTable({ channels, returnPath }: ChannelsHubTableProps
           />
 
           <button
-            className={`px-5 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
+            className={`px-3 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
               bulkAction === 'delete' ? 'us-button-secondary' : 'us-button-primary'
             }`}
             disabled={selectedCount === 0}

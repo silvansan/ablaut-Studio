@@ -102,7 +102,7 @@ export function UsersHubTable({
         description="Choose an action, then apply it to the selected users."
         selectedCount={selectedCount}
       >
-        <form action={bulkUsersAction} className="grid gap-3 xl:grid-cols-[220px_220px_220px_auto] xl:items-end">
+        <form action={bulkUsersAction} className="flex w-max items-center gap-2">
           <input name="returnPath" type="hidden" value={returnPath} />
           <input name="bulkAction" type="hidden" value={bulkAction} />
           {selectedUserIDs.map((userID) => (
@@ -115,10 +115,10 @@ export function UsersHubTable({
           <BulkActionSelect action={bulkAction} onActionChange={setBulkAction} options={bulkOptions} />
 
           {needsOrganization ? (
-            <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-              Organization
+            <label className="flex items-center">
+              <span className="sr-only">Organization</span>
               <select
-                className="us-input mt-2"
+                className="us-input us-input--inline"
                 defaultValue={filterOrganizationId ?? (organizations.length === 1 ? organizations[0]?.id : '')}
                 name="organizationId"
                 required
@@ -133,15 +133,13 @@ export function UsersHubTable({
                 ))}
               </select>
             </label>
-          ) : (
-            <div />
-          )}
+          ) : null}
 
           {needsRole ? (
-            <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-              Org role
+            <label className="flex items-center">
+              <span className="sr-only">Org role</span>
               <select
-                className="us-input mt-2"
+                className="us-input us-input--inline"
                 defaultValue="moderator"
                 name="roleInOrganization"
               >
@@ -152,12 +150,10 @@ export function UsersHubTable({
                 ))}
               </select>
             </label>
-          ) : (
-            <div />
-          )}
+          ) : null}
 
           <button
-            className={`px-5 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
+            className={`px-3 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
               isDestructive ? 'us-button-secondary' : 'us-button-primary'
             }`}
             disabled={selectedCount === 0}
