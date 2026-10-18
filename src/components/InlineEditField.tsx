@@ -47,20 +47,18 @@ export function InlineEditField({
           {inputLabel}
           {multiline ? (
             <textarea
-              className="mt-2 min-h-24 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+              className="us-input mt-2 min-h-24"
               defaultValue={value}
               name={fieldName}
               placeholder={placeholder}
-              style={{ borderColor: 'var(--us-border)' }}
             />
           ) : (
             <input
-              className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+              className="us-input mt-2"
               defaultValue={value}
               name={fieldName}
               placeholder={placeholder}
               required
-              style={{ borderColor: 'var(--us-border)' }}
             />
           )}
         </label>

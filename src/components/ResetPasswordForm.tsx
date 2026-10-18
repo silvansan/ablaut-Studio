@@ -126,7 +126,7 @@ export function ResetPasswordForm({ email, kind, token }: ResetPasswordFormProps
         <input
           autoComplete="new-password"
           autoFocus
-          className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+          className="us-input mt-2"
           minLength={MIN_PASSWORD_LENGTH}
           onChange={(event) => setPassword(event.target.value)}
           required
@@ -140,7 +140,7 @@ export function ResetPasswordForm({ email, kind, token }: ResetPasswordFormProps
         Confirm password
         <input
           autoComplete="new-password"
-          className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+          className="us-input mt-2"
           onChange={(event) => setConfirmPassword(event.target.value)}
           required
           style={{ borderColor: 'var(--us-border)', color: 'var(--us-text)' }}

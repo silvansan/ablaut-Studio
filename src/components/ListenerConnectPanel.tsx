@@ -683,9 +683,8 @@ export function ListenerConnectPanel({
           <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
             Listener password
             <input
-              className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+              className="us-input mt-2"
               onChange={(event) => setPassword(event.target.value)}
-              style={{ borderColor: 'var(--us-border)' }}
               type="password"
               value={password}
             />

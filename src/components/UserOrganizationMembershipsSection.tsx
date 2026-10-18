@@ -100,10 +100,9 @@ export function UserOrganizationMembershipsSection({
               <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
                 Organization
                 <select
-                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                  className="us-input mt-2"
                   name="organizationId"
                   required
-                  style={{ borderColor: 'var(--us-border)' }}
                 >
                   <option value="">Select organization</option>
                   {organizations.map((organization) => (
@@ -115,7 +114,7 @@ export function UserOrganizationMembershipsSection({
               </label>
               <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
                 Org role
-                <select className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none" defaultValue="moderator" name="roleInOrganization" style={{ borderColor: 'var(--us-border)' }}>
+                <select className="us-input mt-2" defaultValue="moderator" name="roleInOrganization" style={{ borderColor: 'var(--us-border)' }}>
                   {INVITABLE_ORGANIZATION_ROLES.map((role) => (
                     <option key={role.value} value={role.value}>
                       {role.label}

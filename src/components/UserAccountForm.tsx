@@ -30,20 +30,18 @@ export function UserAccountForm({
       <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
         Name
         <input
-          className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+          className="us-input mt-2"
           defaultValue={targetUser.name}
           name="name"
           required
-          style={{ borderColor: 'var(--us-border)' }}
         />
       </label>
       <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
         Language
         <input
-          className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+          className="us-input mt-2"
           defaultValue={targetUser.preferredLanguage ?? 'en'}
           name="preferredLanguage"
-          style={{ borderColor: 'var(--us-border)' }}
         />
       </label>
       {isSuperAdminUser(currentUser) ? (
@@ -51,10 +49,9 @@ export function UserAccountForm({
           <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
             Platform role
             <select
-              className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+              className="us-input mt-2"
               defaultValue={targetUser.role ?? 'moderator'}
               name="role"
-              style={{ borderColor: 'var(--us-border)' }}
             >
               <option value="super_admin">Super admin</option>
               <option value="admin">Admin</option>

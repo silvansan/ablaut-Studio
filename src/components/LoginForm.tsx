@@ -75,7 +75,7 @@ export function LoginForm() {
         Email
         <input
           autoComplete="email"
-          className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+          className="us-input mt-2"
           onChange={(event) => setEmail(event.target.value)}
           required
           style={{ borderColor: 'var(--us-border)', color: 'var(--us-text)' }}
@@ -88,7 +88,7 @@ export function LoginForm() {
         Password
         <input
           autoComplete="current-password"
-          className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+          className="us-input mt-2"
           onChange={(event) => setPassword(event.target.value)}
           required
           style={{ borderColor: 'var(--us-border)', color: 'var(--us-text)' }}

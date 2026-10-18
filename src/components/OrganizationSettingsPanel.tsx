@@ -27,21 +27,19 @@ export function OrganizationSettingsPanel({ canDelete, organization }: Organizat
         <label className="block text-sm font-medium md:col-span-2" style={{ color: 'var(--us-text)' }}>
           Name
           <input
-            className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+            className="us-input mt-2"
             defaultValue={organization.name}
             name="name"
             required
-            style={{ borderColor: 'var(--us-border)' }}
           />
         </label>
         <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
           Slug
           <input
-            className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+            className="us-input mt-2"
             defaultValue={organization.slug}
             name="slug"
             required
-            style={{ borderColor: 'var(--us-border)' }}
           />
         </label>
         <label className="flex items-center gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
@@ -55,10 +53,9 @@ export function OrganizationSettingsPanel({ canDelete, organization }: Organizat
         <label className="block text-sm font-medium md:col-span-2" style={{ color: 'var(--us-text)' }}>
           Description
           <textarea
-            className="mt-2 min-h-28 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+            className="us-input mt-2 min-h-28"
             defaultValue={organization.description ?? ''}
             name="description"
-            style={{ borderColor: 'var(--us-border)' }}
           />
         </label>
         <div className="md:col-span-2">

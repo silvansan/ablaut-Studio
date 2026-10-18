@@ -119,10 +119,9 @@ export function EventAssignmentsSection({
               <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
                 User
                 <select
-                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                  className="us-input mt-2"
                   name="userID"
                   required
-                  style={{ borderColor: 'var(--us-border)' }}
                 >
                   <option value="">Select user</option>
                   {assignableUsers.map((user) => (
@@ -134,7 +133,7 @@ export function EventAssignmentsSection({
               </label>
               <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
                 Event role
-                <select className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none" name="roleForEvent" style={{ borderColor: 'var(--us-border)' }}>
+                <select className="us-input mt-2" name="roleForEvent" style={{ borderColor: 'var(--us-border)' }}>
                   {canSetAdminRole ? <option value="admin">Admin</option> : null}
                   <option value="moderator">Moderator</option>
                   <option value="viewer">Viewer</option>

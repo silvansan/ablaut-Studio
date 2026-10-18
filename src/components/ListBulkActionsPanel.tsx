@@ -50,9 +50,8 @@ export function BulkActionSelect({ action, onActionChange, options }: BulkAction
     <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
       Action
       <select
-        className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+        className="us-input mt-2"
         onChange={(event) => onActionChange(event.target.value)}
-        style={{ borderColor: 'var(--us-border)' }}
         value={action}
       >
         {options.map((option) => (

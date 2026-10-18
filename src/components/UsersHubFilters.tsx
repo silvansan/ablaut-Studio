@@ -41,11 +41,10 @@ export function UsersHubFilters({
         <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
           Search
           <input
-            className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+            className="us-input mt-2"
             defaultValue={q}
             name="q"
             placeholder="Name or email"
-            style={{ borderColor: 'var(--us-border)' }}
             type="search"
           />
         </label>
@@ -54,10 +53,9 @@ export function UsersHubFilters({
           <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
             Organization
             <select
-              className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+              className="us-input mt-2"
               defaultValue={organization}
               name="organization"
-              style={{ borderColor: 'var(--us-border)' }}
             >
               <option value="">All organizations</option>
               <option value="none">No organization</option>
@@ -73,10 +71,9 @@ export function UsersHubFilters({
         <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
           Status
           <select
-            className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+            className="us-input mt-2"
             defaultValue={status}
             name="status"
-            style={{ borderColor: 'var(--us-border)' }}
           >
             <option value="">Any status</option>
             <option value="active">Active</option>

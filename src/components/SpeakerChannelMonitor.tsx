@@ -372,13 +372,12 @@ export function SpeakerChannelMonitor({
       <label className="mt-4 block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
         Monitor channel
         <select
-          className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+          className="us-input mt-2"
           disabled={state === 'connecting'}
           onChange={(event) => {
             stopMonitor()
             setActiveChannelSlug(event.target.value)
           }}
-          style={{ borderColor: 'var(--us-border)' }}
           value={activeChannelSlug}
         >
           <option value={currentChannel.slug}>{monitorChannelLabel(currentChannel, true)}</option>

@@ -43,21 +43,19 @@ export default async function ProfilePage() {
               <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
                 Name
                 <input
-                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                  className="us-input mt-2"
                   defaultValue={user.name}
                   name="name"
                   required
-                  style={{ borderColor: 'var(--us-border)' }}
                 />
               </label>
 
               <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
                 Preferred language
                 <input
-                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                  className="us-input mt-2"
                   defaultValue={user.preferredLanguage ?? 'en'}
                   name="preferredLanguage"
-                  style={{ borderColor: 'var(--us-border)' }}
                 />
               </label>
             </div>
@@ -82,10 +80,9 @@ export default async function ProfilePage() {
               Current password
               <input
                 autoComplete="current-password"
-                className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                className="us-input mt-2"
                 name="currentPassword"
                 required
-                style={{ borderColor: 'var(--us-border)' }}
                 type="password"
               />
             </label>
@@ -95,10 +92,9 @@ export default async function ProfilePage() {
                 New password
                 <input
                   autoComplete="new-password"
-                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                  className="us-input mt-2"
                   name="newPassword"
                   required
-                  style={{ borderColor: 'var(--us-border)' }}
                   type="password"
                 />
               </label>
@@ -107,10 +103,9 @@ export default async function ProfilePage() {
                 Confirm new password
                 <input
                   autoComplete="new-password"
-                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                  className="us-input mt-2"
                   name="confirmPassword"
                   required
-                  style={{ borderColor: 'var(--us-border)' }}
                   type="password"
                 />
               </label>

@@ -18,11 +18,10 @@ export function JoinOrganizationForm({ organizations }: JoinOrganizationFormProp
       <label className="block flex-1 text-sm font-medium" style={{ color: 'var(--us-text)' }}>
         Join an organization
         <select
-          className="mt-2 w-full rounded-2xl border bg-white px-4 py-2.5 text-base outline-none"
+          className="us-input mt-2"
           defaultValue=""
           name="organizationSlug"
           required
-          style={{ borderColor: 'var(--us-border)' }}
         >
           <option disabled value="">
             Choose an organization

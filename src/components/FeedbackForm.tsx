@@ -27,21 +27,19 @@ export function FeedbackForm({ defaultContactEmail, defaultPageUrl }: FeedbackFo
       <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
         What happened?
         <textarea
-          className="mt-2 min-h-40 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+          className="us-input mt-2 min-h-40"
           name="message"
           placeholder="Describe what you tried, what you expected, and what went wrong."
           required
-          style={{ borderColor: 'var(--us-border)' }}
         />
       </label>
       <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
         Contact email (optional)
         <input
-          className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+          className="us-input mt-2"
           defaultValue={defaultContactEmail ?? ''}
           name="contactEmail"
           placeholder="Where we can reply"
-          style={{ borderColor: 'var(--us-border)' }}
           type="email"
         />
       </label>

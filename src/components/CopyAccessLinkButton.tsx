@@ -56,10 +56,9 @@ export function CopyAccessLinkButton({ label, organizationId, userId }: CopyAcce
       {manualUrl ? (
         <input
           aria-label="One-time link"
-          className="w-full rounded-2xl border bg-white px-3 py-2 text-xs"
+          className="us-input text-xs"
           onFocus={(event) => event.currentTarget.select()}
           readOnly
-          style={{ borderColor: 'var(--us-border)' }}
           value={manualUrl}
         />
       ) : null}

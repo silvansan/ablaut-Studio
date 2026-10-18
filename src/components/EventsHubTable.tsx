@@ -91,9 +91,8 @@ export function EventsHubTable({ events, returnPath }: EventsHubTableProps) {
             <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
               Status
               <select
-                className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                className="us-input mt-2"
                 onChange={(event) => setBulkStatus(event.target.value)}
-                style={{ borderColor: 'var(--us-border)' }}
                 value={bulkStatus}
               >
                 <option value="active">Active</option>

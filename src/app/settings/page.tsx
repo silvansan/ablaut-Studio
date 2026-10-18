@@ -70,21 +70,19 @@ export default async function SettingsPage() {
               <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
                 Site name
                 <input
-                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                  className="us-input mt-2"
                   defaultValue={settings.siteName ?? 'ablaut'}
                   name="siteName"
-                  style={{ borderColor: 'var(--us-border)' }}
                 />
               </label>
 
               <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
                 Support email
                 <input
-                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                  className="us-input mt-2"
                   defaultValue={settings.supportEmail ?? ''}
                   name="supportEmail"
                   placeholder="support@example.com"
-                  style={{ borderColor: 'var(--us-border)' }}
                   type="email"
                 />
               </label>
@@ -93,11 +91,10 @@ export default async function SettingsPage() {
             <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
               Public base URL
               <input
-                className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                className="us-input mt-2"
                 defaultValue={publicBaseUrl}
                 name="publicBaseUrl"
                 placeholder="https://studio.example.com"
-                style={{ borderColor: 'var(--us-border)' }}
                 type="url"
               />
               <span className="mt-1 block text-xs" style={{ color: 'var(--us-muted)' }}>
@@ -108,11 +105,10 @@ export default async function SettingsPage() {
             <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
               LiveKit public URL
               <input
-                className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                className="us-input mt-2"
                 defaultValue={livekitPublicUrl}
                 name="livekitPublicUrl"
                 placeholder="wss://livekit.example.com"
-                style={{ borderColor: 'var(--us-border)' }}
               />
               <span className="mt-1 block text-xs" style={{ color: 'var(--us-muted)' }}>
                 The browser-reachable LiveKit WebSocket URL. Set with <code>LIVEKIT_URL</code> or this field.
@@ -123,11 +119,10 @@ export default async function SettingsPage() {
               <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
                 Default token expiry, seconds
                 <input
-                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                  className="us-input mt-2"
                   defaultValue={settings.defaultTokenExpiry ?? 3600}
                   min={300}
                   name="defaultTokenExpiry"
-                  style={{ borderColor: 'var(--us-border)' }}
                   type="number"
                 />
               </label>
@@ -135,10 +130,9 @@ export default async function SettingsPage() {
               <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
                 Default QR style
                 <select
-                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                  className="us-input mt-2"
                   defaultValue={settings.defaultQrStyle ?? 'ablaut-default'}
                   name="defaultQrStyle"
-                  style={{ borderColor: 'var(--us-border)' }}
                 >
                   <option value="ablaut-default">ablaut default</option>
                   <option value="high-contrast">High Contrast</option>
@@ -258,9 +252,8 @@ export default async function SettingsPage() {
               <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
                 Import scope
                 <select
-                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                  className="us-input mt-2"
                   name="scope"
-                  style={{ borderColor: 'var(--us-border)' }}
                 >
                   <option value="events">Events</option>
                   <option value="channels">Channels</option>
@@ -271,10 +264,9 @@ export default async function SettingsPage() {
                 Config JSON
                 <input
                   accept="application/json,.json"
-                  className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                  className="us-input mt-2"
                   name="configFile"
                   required
-                  style={{ borderColor: 'var(--us-border)' }}
                   type="file"
                 />
               </label>

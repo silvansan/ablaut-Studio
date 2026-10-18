@@ -18,11 +18,10 @@ export function OrganizationsManagement({ isSuperAdmin }: OrganizationsManagemen
           <label className="block flex-1 text-sm font-medium" style={{ color: 'var(--us-text)' }}>
             Organization slug
             <input
-              className="mt-2 w-full rounded-2xl border bg-white px-4 py-2.5 text-base outline-none"
+              className="us-input mt-2"
               name="organizationSlug"
               placeholder="default"
               required
-              style={{ borderColor: 'var(--us-border)' }}
             />
           </label>
           <button className="us-button-secondary px-4 py-2.5 text-sm font-medium" type="submit">
@@ -37,19 +36,17 @@ export function OrganizationsManagement({ isSuperAdmin }: OrganizationsManagemen
             <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
               Name
               <input
-                className="mt-2 w-full rounded-2xl border bg-white px-4 py-2.5 text-base outline-none"
+                className="us-input mt-2"
                 name="name"
                 required
-                style={{ borderColor: 'var(--us-border)' }}
               />
             </label>
             <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
               Slug
               <input
-                className="mt-2 w-full rounded-2xl border bg-white px-4 py-2.5 text-base outline-none"
+                className="us-input mt-2"
                 name="slug"
                 placeholder="optional"
-                style={{ borderColor: 'var(--us-border)' }}
               />
             </label>
             <button className="us-button-primary px-4 py-2.5 text-sm font-medium" type="submit">

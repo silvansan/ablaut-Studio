@@ -47,7 +47,7 @@ export function ForgotPasswordForm() {
         Account email
         <input
           autoComplete="email"
-          className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+          className="us-input mt-2"
           disabled={sent}
           onChange={(event) => setEmail(event.target.value)}
           required

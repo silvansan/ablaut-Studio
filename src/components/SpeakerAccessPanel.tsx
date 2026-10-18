@@ -293,7 +293,7 @@ export function SpeakerAccessPanel({
             Speaker password
             <input
               autoComplete="current-password"
-              className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+              className="us-input mt-2"
               onChange={(event) => setPassword(event.target.value)}
               required
               style={{ borderColor: 'var(--us-border)', color: 'var(--us-text)' }}
@@ -334,7 +334,7 @@ export function SpeakerAccessPanel({
       <label className="mt-5 block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
         Microphone
         <select
-          className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+          className="us-input mt-2"
           disabled={publishState === 'connecting' || publishState === 'publishing'}
           onChange={(event) => setSelectedDeviceID(event.target.value)}
           style={{ borderColor: 'var(--us-border)', color: 'var(--us-text)' }}

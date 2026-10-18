@@ -44,7 +44,7 @@ export function ChannelForm({
         <>
           <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
             Channel name
-            <input className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none" defaultValue={channel?.name ?? ''} name="name" required style={{ borderColor: 'var(--us-border)' }} />
+            <input className="us-input mt-2" defaultValue={channel?.name ?? ''} name="name" required style={{ borderColor: 'var(--us-border)' }} />
             <span className="mt-2 block text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
               The URL name is created from the channel name when it is first saved.
             </span>
@@ -53,13 +53,13 @@ export function ChannelForm({
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
               Sort order
-              <input className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none" defaultValue={channel?.sortOrder ?? 0} name="sortOrder" style={{ borderColor: 'var(--us-border)' }} type="number" />
+              <input className="us-input mt-2" defaultValue={channel?.sortOrder ?? 0} name="sortOrder" style={{ borderColor: 'var(--us-border)' }} type="number" />
             </label>
           </div>
 
           <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
             Description
-            <textarea className="mt-2 min-h-24 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none" defaultValue={channel?.description ?? ''} name="description" style={{ borderColor: 'var(--us-border)' }} />
+            <textarea className="us-input mt-2 min-h-24" defaultValue={channel?.description ?? ''} name="description" style={{ borderColor: 'var(--us-border)' }} />
           </label>
         </>
       ) : (
@@ -68,7 +68,7 @@ export function ChannelForm({
           <input name="sortOrder" type="hidden" value={channel?.sortOrder ?? 0} />
           <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
             URL name
-            <input className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none" defaultValue={channel?.slug ?? ''} name="slug" style={{ borderColor: 'var(--us-border)' }} />
+            <input className="us-input mt-2" defaultValue={channel?.slug ?? ''} name="slug" style={{ borderColor: 'var(--us-border)' }} />
             <span className="mt-2 block text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
               Changing the URL name breaks existing QR codes, bookmarks, and listener sessions.
             </span>
@@ -115,10 +115,9 @@ export function ChannelForm({
           New speaker password
           <input
             autoComplete="new-password"
-            className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+            className="us-input mt-2"
             name="speakerPassword"
             placeholder={channel?.speakerPasswordHash ? 'Leave blank to keep current password' : 'Set a speaker password'}
-            style={{ borderColor: 'var(--us-border)' }}
             type="password"
           />
         </label>
@@ -126,7 +125,7 @@ export function ChannelForm({
 
       <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
         Icecast fallback URL
-        <input className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none" defaultValue={channel?.icecastFallbackUrl ?? ''} name="icecastFallbackUrl" style={{ borderColor: 'var(--us-border)' }} />
+        <input className="us-input mt-2" defaultValue={channel?.icecastFallbackUrl ?? ''} name="icecastFallbackUrl" style={{ borderColor: 'var(--us-border)' }} />
       </label>
 
       <div className="grid gap-3 md:grid-cols-2">

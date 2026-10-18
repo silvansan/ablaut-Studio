@@ -118,11 +118,10 @@ export function UsersHubTable({
             <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
               Organization
               <select
-                className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                className="us-input mt-2"
                 defaultValue={filterOrganizationId ?? (organizations.length === 1 ? organizations[0]?.id : '')}
                 name="organizationId"
                 required
-                style={{ borderColor: 'var(--us-border)' }}
               >
                 {organizations.length > 1 && !filterOrganizationId ? (
                   <option value="">Choose organization</option>
@@ -142,10 +141,9 @@ export function UsersHubTable({
             <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
               Org role
               <select
-                className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                className="us-input mt-2"
                 defaultValue="moderator"
                 name="roleInOrganization"
-                style={{ borderColor: 'var(--us-border)' }}
               >
                 {INVITABLE_ORGANIZATION_ROLES.map((role) => (
                   <option key={role.value} value={role.value}>

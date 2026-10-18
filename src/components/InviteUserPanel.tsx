@@ -72,19 +72,17 @@ export function InviteUserPanel({
           <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--us-muted)' }}>
             Username
             <input
-              className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+              className="us-input mt-2"
               name="name"
               required
-              style={{ borderColor: 'var(--us-border)' }}
             />
           </label>
           <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--us-muted)' }}>
             Email
             <input
-              className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+              className="us-input mt-2"
               name="email"
               required
-              style={{ borderColor: 'var(--us-border)' }}
               type="email"
             />
           </label>
@@ -94,11 +92,10 @@ export function InviteUserPanel({
             <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--us-muted)' }}>
               Organization
               <select
-                className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                className="us-input mt-2"
                 name="organizationId"
                 onChange={(event) => setOrganizationChoice(event.target.value)}
                 required
-                style={{ borderColor: 'var(--us-border)' }}
                 value={organizationChoice}
               >
                 {canCreateOrganization ? (
@@ -116,21 +113,19 @@ export function InviteUserPanel({
             <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--us-muted)' }}>
               New organization name
               <input
-                className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                className="us-input mt-2"
                 name="newOrganizationName"
                 placeholder="e.g. Riverside Community Church"
                 required
-                style={{ borderColor: 'var(--us-border)' }}
               />
             </label>
           ) : null}
           <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--us-muted)' }}>
             Organization role
             <select
-              className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+              className="us-input mt-2"
               defaultValue="moderator"
               name="roleInOrganization"
-              style={{ borderColor: 'var(--us-border)' }}
             >
               {INVITABLE_ORGANIZATION_ROLES.map((role) => (
                 <option key={role.value} value={role.value}>
@@ -146,10 +141,9 @@ export function InviteUserPanel({
             <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--us-muted)' }}>
               Platform role
               <select
-                className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+                className="us-input mt-2"
                 defaultValue="moderator"
                 name="role"
-                style={{ borderColor: 'var(--us-border)' }}
               >
                 <option value="admin">Platform admin (cross-organization helper)</option>
                 <option value="moderator">Platform moderator (organization-scoped)</option>

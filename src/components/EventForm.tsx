@@ -67,21 +67,19 @@ export function EventForm({
         <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
           Title
           <input
-            className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+            className="us-input mt-2"
             defaultValue={event?.title ?? ''}
             name="title"
             required
-            style={{ borderColor: 'var(--us-border)' }}
           />
         </label>
 
         <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
           URL name
           <input
-            className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+            className="us-input mt-2"
             defaultValue={event?.slug ?? ''}
             name="slug"
-            style={{ borderColor: 'var(--us-border)' }}
           />
           <span className="mt-2 block text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
             Used in listen and speak links. Changing it breaks existing QR codes and bookmarks.
@@ -92,10 +90,9 @@ export function EventForm({
       <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
         Description
         <textarea
-          className="mt-2 min-h-28 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+          className="us-input mt-2 min-h-28"
           defaultValue={event?.description ?? ''}
           name="description"
-          style={{ borderColor: 'var(--us-border)' }}
         />
       </label>
 
@@ -103,10 +100,9 @@ export function EventForm({
         <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
           Status
           <select
-            className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+            className="us-input mt-2"
             defaultValue={event?.status ?? 'active'}
             name="status"
-            style={{ borderColor: 'var(--us-border)' }}
           >
             <option value="active">Active</option>
             <option value="draft">Draft (inactive)</option>
@@ -117,10 +113,9 @@ export function EventForm({
         <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
           Start
           <input
-            className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+            className="us-input mt-2"
             defaultValue={dateTimeValue(event?.dateStart)}
             name="dateStart"
-            style={{ borderColor: 'var(--us-border)' }}
             type="datetime-local"
           />
         </label>
@@ -128,10 +123,9 @@ export function EventForm({
         <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
           End
           <input
-            className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+            className="us-input mt-2"
             defaultValue={dateTimeValue(event?.dateEnd)}
             name="dateEnd"
-            style={{ borderColor: 'var(--us-border)' }}
             type="datetime-local"
           />
         </label>
@@ -139,10 +133,9 @@ export function EventForm({
         <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
           Default language
           <input
-            className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+            className="us-input mt-2"
             defaultValue={event?.defaultLanguage ?? 'en'}
             name="defaultLanguage"
-            style={{ borderColor: 'var(--us-border)' }}
           />
         </label>
       </div>
@@ -170,10 +163,9 @@ export function EventForm({
           Listener password
           <input
             autoComplete="new-password"
-            className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+            className="us-input mt-2"
             name="listenerPassword"
             placeholder={event?.listenerPasswordHash ? 'Leave blank to keep current password' : 'Set listener password'}
-            style={{ borderColor: 'var(--us-border)' }}
             type="password"
           />
         </label>
@@ -191,10 +183,9 @@ export function EventForm({
           Speaker password
           <input
             autoComplete="new-password"
-            className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+            className="us-input mt-2"
             name="speakerPassword"
             placeholder={event?.speakerPasswordHash ? 'Leave blank to keep current password' : 'Set speaker password'}
-            style={{ borderColor: 'var(--us-border)' }}
             type="password"
           />
         </label>

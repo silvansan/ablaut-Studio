@@ -30,10 +30,9 @@ export function ListenerAccessFields({
       <label className="mt-4 block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
         Listener token mode
         <select
-          className="mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none"
+          className="us-input mt-2"
           name="listenerTokenMode"
           onChange={(event) => setMode(event.target.value as ListenerTokenMode)}
-          style={{ borderColor: 'var(--us-border)' }}
           value={mode}
         >
           <option value="public">Public — anyone with the link can listen</option>
