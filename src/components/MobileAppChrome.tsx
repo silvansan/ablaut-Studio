@@ -99,7 +99,7 @@ export function MobileAppChrome({ children, orgName, showSidebar, sidebar, tabOr
         </div>
       ) : null}
 
-      <div className="pb-16 xl:pb-0">{children}</div>
+      <div className="flex flex-1 flex-col pb-16 xl:pb-0">{children}</div>
 
       {tabs.length > 0 ? (
         <nav

@@ -58,7 +58,7 @@ export function InviteUserPanel({
       </button>
 
       <Drawer
-        description="Send an activation email. Organization role controls what they can do inside that organization."
+        description="Sends an email invitation."
         onClose={() => setOpen(false)}
         open={open}
         title="Invite user"
@@ -128,14 +128,11 @@ export function InviteUserPanel({
               name="roleInOrganization"
             >
               {INVITABLE_ORGANIZATION_ROLES.map((role) => (
-                <option key={role.value} value={role.value}>
+                <option key={role.value} title={role.description} value={role.value}>
                   {role.label}
                 </option>
               ))}
             </select>
-            <span className="mt-2 block text-xs font-normal normal-case tracking-normal" style={{ color: 'var(--us-muted)' }}>
-              {INVITABLE_ORGANIZATION_ROLES.map((role) => `${role.label}: ${role.description}`).join(' ')}
-            </span>
           </label>
           {canSetPlatformRole ? (
             <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--us-muted)' }}>
@@ -149,7 +146,7 @@ export function InviteUserPanel({
                 <option value="moderator">Platform moderator (organization-scoped)</option>
               </select>
               <span className="mt-2 block text-xs font-normal normal-case tracking-normal" style={{ color: 'var(--us-muted)' }}>
-                Use platform admin only for trusted co-moderators who should help across organizations.
+                Platform admins work across all organizations.
               </span>
             </label>
           ) : (

@@ -72,9 +72,6 @@ export function UserEventAssignmentsSection({
       <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
         Event access
       </p>
-      <p className="mt-2 text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
-        Assign this user to events and set moderator permissions.
-      </p>
 
       {tintedAssignments.length > 0 ? (
         <TruncatedList className="mt-4" itemLabel="assignments" listClassName="space-y-3">

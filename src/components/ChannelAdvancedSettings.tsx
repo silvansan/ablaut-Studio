@@ -20,7 +20,7 @@ export function ChannelAdvancedSettings({
   return (
     <CollapsiblePanel
       defaultOpen={defaultOpen}
-      description="Listener/speaker access, passwords, WebRTC, HLS, and audio defaults."
+      description="Access, passwords, and audio."
       title="Advanced settings"
     >
       <ActionFeedbackForm action={updateChannelSettingsAction} className="space-y-5">

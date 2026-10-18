@@ -1,5 +1,7 @@
 'use client'
 
+import { PrinterIcon } from '@/components/ActionIcons'
+
 type PrintShareButtonProps = {
   className?: string
   label?: string
@@ -10,7 +12,8 @@ export function PrintShareButton({
   label = 'Print',
 }: PrintShareButtonProps) {
   return (
-    <button className={className} onClick={() => window.print()} type="button">
+    <button className={`${className} inline-flex items-center gap-1.5`} onClick={() => window.print()} type="button">
+      <PrinterIcon />
       {label}
     </button>
   )

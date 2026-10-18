@@ -175,7 +175,7 @@ export default async function SettingsPage() {
               Multiple organizations
             </h2>
             <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              You manage {manageableOrganizations.length} organizations. Edit each one from the organizations list.
+              You manage {manageableOrganizations.length} organizations.
             </p>
             <Link className="us-button-primary mt-5 inline-flex px-4 py-2.5 text-sm font-medium" href="/organizations">
               Open organizations

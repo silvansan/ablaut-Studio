@@ -1,12 +1,13 @@
 import configPromise from '@payload-config'
 import type { Metadata } from 'next'
-import Link from '@/components/OrgLink'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { EventWorkspaceHeader } from '@/components/EventWorkspaceHeader'
 import { Layout } from '@/components/Layout'
 import { PrintShareButton } from '@/components/PrintShareButton'
 import { ShareZipButton } from '@/components/ShareZipButton'
+import { canManageAssignment } from '@/app/events/[eventSlug]/settings/actions'
 import { requireAppUser } from '@/lib/app-auth'
 import { pageMetadata } from '@/lib/branding'
 import { getDashboardEvent } from '@/lib/dashboard-data'
@@ -56,6 +57,7 @@ export default async function EventSharePrintPage({ params }: PageProps) {
   }
 
   const fullEvent = eventRecord.docs[0]
+  const canManage = await canManageAssignment(payload, user, share.event.id)
   const items = [...share.items]
 
   if (fullEvent?.unifiedListenerQrEnabled === true) {
@@ -81,23 +83,12 @@ export default async function EventSharePrintPage({ params }: PageProps) {
     >
       <section className="us-print-share space-y-5">
 
+        <EventWorkspaceHeader canManage={canManage} event={share.event} eventSlug={eventSlug} hideShareAction />
+
         <div className="us-print-share__toolbar flex flex-wrap items-center gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-              Share &amp; print
-            </p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
-              {share.event.title}
-            </h1>
-            <p className="mt-2 text-sm leading-6" style={{ color: 'var(--us-muted)' }}>
-              Print this page for signage, or download every QR as a ZIP of PNG files.
-            </p>
-          </div>
+          <div className="flex-1" />
           <PrintShareButton />
           <ShareZipButton eventSlug={eventSlug} />
-          <Link className="us-button-secondary px-4 py-2.5 text-sm font-medium" href={`/events/${eventSlug}`}>
-            Back to event
-          </Link>
         </div>
 
         {items.length === 0 ? (

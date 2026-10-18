@@ -2,7 +2,6 @@
 
 import configPromise from '@payload-config'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { getPayload, type Payload } from 'payload'
 
 import { requireAppUser } from '@/lib/app-auth'
@@ -17,6 +16,7 @@ import {
 } from '@/lib/action-feedback'
 import { APP_NOTICES } from '@/lib/app-notices'
 import type { Event, User } from '@/payload-types'
+import { redirectInOrg } from '@/lib/org-redirect'
 
 function slugify(value: string): string {
   return value
@@ -200,7 +200,7 @@ export async function createEventAction(formData: FormData) {
     overrideAccess: true,
   })
   revalidateOrganizationPaths(organization.slug)
-  redirect(`/organizations/${organization.slug}?tab=events`)
+  await redirectInOrg(`/organizations/${organization.slug}?tab=events`)
 }
 
 export async function updateEventSettingsAction(
@@ -335,7 +335,7 @@ export async function updateEventAction(formData: FormData) {
     overrideAccess: true,
   })
   revalidateOrganizationPaths(organization.slug)
-  redirect(`/events/${event.slug}?settings=open`)
+  await redirectInOrg(`/events/${event.slug}/settings`)
 }
 
 export async function regeneratePrivateLinksAction(formData: FormData) {
@@ -447,7 +447,7 @@ export async function deleteEventAction(formData: FormData) {
     return
   }
 
-  redirect('/events')
+  await redirectInOrg('/events')
 }
 
 function numericValues(formData: FormData, key: string): number[] {
@@ -576,5 +576,5 @@ export async function bulkEventsAction(formData: FormData) {
   revalidatePath('/events')
   revalidatePath('/channels')
   revalidateOrganizationPaths()
-  redirect(returnPath)
+  await redirectInOrg(returnPath)
 }

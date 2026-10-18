@@ -75,7 +75,7 @@ export function AppDownloadFooterLink({
               </div>
 
               <p className="mt-4 text-sm leading-6" style={{ color: 'var(--us-muted)' }}>
-                Scan the card on your phone to download the latest ablaut Android listener app from this server.
+                Scan to download the Android app.
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2">

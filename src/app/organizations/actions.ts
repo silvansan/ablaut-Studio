@@ -1,7 +1,6 @@
 'use server'
 
 import configPromise from '@payload-config'
-import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { requireAppUser } from '@/lib/app-auth'
@@ -15,6 +14,7 @@ import { getManageableOrganizationIDs, hasOrganizationManagementAccess } from '@
 import { revalidateOrganizationPaths } from '@/lib/revalidate-organization-paths'
 import { isSuperAdminUser } from '@/lib/permissions'
 import type { User } from '@/payload-types'
+import { redirectInOrg } from '@/lib/org-redirect'
 
 function stringValue(formData: FormData, key: string): string | undefined {
   const value = formData.get(key)
@@ -129,7 +129,7 @@ export async function createOrganizationAction(formData: FormData) {
   })
 
   revalidateOrganizationPaths(organization.slug)
-  redirect(`/organizations/${organization.slug}?tab=events`)
+  await redirectInOrg(`/organizations/${organization.slug}?tab=events`)
 }
 
 export async function updateOrganizationAction(formData: FormData) {
@@ -169,7 +169,7 @@ export async function updateOrganizationAction(formData: FormData) {
     revalidateOrganizationPaths(organization.slug)
   }
 
-  redirect(`/organizations/${organization.slug}?tab=settings`)
+  await redirectInOrg(`/organizations/${organization.slug}?tab=settings`)
 }
 
 export async function deleteOrganizationAction(formData: FormData) {
@@ -221,7 +221,7 @@ export async function deleteOrganizationAction(formData: FormData) {
   })
 
   revalidateOrganizationPaths(organization.slug)
-  redirect('/organizations')
+  await redirectInOrg('/organizations')
 }
 
 export async function requestOrganizationMembershipAction(formData: FormData) {

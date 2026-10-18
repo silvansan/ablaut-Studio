@@ -5,6 +5,8 @@ import type { Channel } from '@/payload-types'
 type ChannelFormProps = {
   action?: (formData: FormData) => Promise<void>
   channel?: Channel
+  /** `none` drops the panel border/padding, for use inside a drawer. */
+  chrome?: 'none' | 'panel'
   embedded?: boolean
   eventListenerPasswordConfigured?: boolean
   eventSlug: string
@@ -15,6 +17,7 @@ type ChannelFormProps = {
 export function ChannelForm({
   action,
   channel,
+  chrome = 'panel',
   embedded = false,
   eventListenerPasswordConfigured = false,
   eventSlug,
@@ -24,7 +27,7 @@ export function ChannelForm({
   const isAdvanced = variant === 'advanced'
   const useEmbedded = embedded || (isAdvanced && !action)
   const Wrapper = useEmbedded ? 'div' : 'form'
-  const wrapperClassName = isAdvanced ? 'space-y-5' : 'us-panel space-y-5 px-6 py-6'
+  const wrapperClassName = isAdvanced || chrome === 'none' ? 'space-y-5' : 'us-panel space-y-5 px-6 py-6'
 
   return (
     <Wrapper
@@ -45,9 +48,6 @@ export function ChannelForm({
           <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
             Channel name
             <input className="us-input mt-2" defaultValue={channel?.name ?? ''} name="name" required style={{ borderColor: 'var(--us-border)' }} />
-            <span className="mt-2 block text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
-              The URL name is created from the channel name when it is first saved.
-            </span>
           </label>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -70,7 +70,7 @@ export function ChannelForm({
             URL name
             <input className="us-input mt-2" defaultValue={channel?.slug ?? ''} name="slug" style={{ borderColor: 'var(--us-border)' }} />
             <span className="mt-2 block text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
-              Changing the URL name breaks existing QR codes, bookmarks, and listener sessions.
+              Changing it breaks links and QR codes that use it. Private links are not affected.
             </span>
           </label>
         </>
@@ -105,7 +105,7 @@ export function ChannelForm({
           Speaker access
         </p>
         <p className="mt-2 text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
-          Channel speaker password overrides the event speaker password when both are enabled. Leave the password field empty to keep the current hash.
+          Overrides the event speaker password. Leave blank to keep the current one.
         </p>
         <label className="mt-4 flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
           <input className="mt-1" defaultChecked={channel?.speakerPasswordEnabled ?? false} name="speakerPasswordEnabled" type="checkbox" />
@@ -145,7 +145,7 @@ export function ChannelForm({
           Audio quality defaults
         </p>
         <p className="mt-2 text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
-          These defaults load on the speaker page. Keep them off for music and natural source audio.
+          Loaded on the speaker page. Leave off for music.
         </p>
         <div className="mt-4 space-y-3">
           <AudioEffectToggle

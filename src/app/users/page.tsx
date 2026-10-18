@@ -75,16 +75,10 @@ export default async function UsersPage({ searchParams }: PageProps) {
   return (
     <Layout hideHeader title="Users">
       <section className="space-y-4">
-        <div className="us-panel flex flex-wrap items-center justify-between gap-3 px-6 py-5">
-          <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-            {selectedOrganization
-              ? `Showing users in ${selectedOrganization.name}.`
-              : organization === 'none'
-                ? 'Showing users without an organization.'
-                : showOrganizationColumn
-                  ? 'Manage users across your organizations.'
-                  : `Manage users in ${organizations[0]?.name ?? 'your organization'}.`}
-          </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
+            {showOrganizationColumn ? 'All users' : 'People'}
+          </h2>
           <InviteUserPanel
             canCreateOrganization={isSuperAdminUser(currentUser)}
             canSetPlatformRole={isSuperAdminUser(currentUser)}

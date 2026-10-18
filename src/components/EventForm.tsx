@@ -82,7 +82,7 @@ export function EventForm({
             name="slug"
           />
           <span className="mt-2 block text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
-            Used in listen and speak links. Changing it breaks existing QR codes and bookmarks.
+            Changing it breaks links and QR codes that use it. Private links are not affected.
           </span>
         </label>
       </div>

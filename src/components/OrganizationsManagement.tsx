@@ -31,7 +31,7 @@ export function OrganizationsManagement({ isSuperAdmin }: OrganizationsManagemen
       </CollapsiblePanel>
 
       {isSuperAdmin ? (
-        <CollapsiblePanel description="Add a new organization for events and members." title="Create organization">
+        <CollapsiblePanel description="New organization." title="Create organization">
           <form action={createOrganizationAction} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
             <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
               Name

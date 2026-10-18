@@ -6,5 +6,5 @@ type PageProps = {
 
 export default async function EditEventPage({ params }: PageProps) {
   const { eventSlug } = await params
-  redirect(`/events/${eventSlug}?settings=open`)
+  redirect(`/events/${eventSlug}/settings`)
 }

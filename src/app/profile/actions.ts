@@ -3,10 +3,10 @@
 import configPromise from '@payload-config'
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { requireAppUser } from '@/lib/app-auth'
+import { redirectInOrg } from '@/lib/org-redirect'
 
 function stringValue(formData: FormData, key: string): string | undefined {
   const value = formData.get(key)
@@ -89,5 +89,5 @@ export async function logoutAction() {
   const cookieStore = await cookies()
 
   cookieStore.delete('payload-token')
-  redirect('/')
+  await redirectInOrg('/')
 }

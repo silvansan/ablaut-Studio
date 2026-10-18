@@ -118,11 +118,6 @@ export function LoginForm() {
           Forgot your password, or invitation link expired?
         </Link>
       </div>
-      {loading ? (
-        <p className="text-center text-xs" style={{ color: 'var(--us-muted)' }}>
-          First login after a rebuild can take a few seconds.
-        </p>
-      ) : null}
     </form>
   )
 }

@@ -1,105 +1,28 @@
-import configPromise from '@payload-config'
 import type { Metadata } from 'next'
-import Link from '@/components/OrgLink'
-import { notFound } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import { after } from 'next/server'
-import { getPayload } from 'payload'
 
-import { canManageChannels } from '@/app/events/[eventSlug]/channels/actions'
-import { canManageAssignment } from '@/app/events/[eventSlug]/settings/actions'
+import { PrinterIcon } from '@/components/ActionIcons'
+import { AddChannelButton } from '@/components/ChannelDrawer'
 import { ChannelRow } from '@/components/ChannelRow'
-import { GoLiveWizard } from '@/components/GoLiveWizard'
-import { TruncatedList } from '@/components/TruncatedList'
-import { EventSettingsDrawer } from '@/components/EventSettingsDrawer'
+import { EventWorkspaceHeader } from '@/components/EventWorkspaceHeader'
 import { Layout } from '@/components/Layout'
-import { requireAppUser } from '@/lib/app-auth'
-import { eventStatusChip } from '@/lib/active-status'
+import { TruncatedList } from '@/components/TruncatedList'
 import { getDashboardChannels, getDashboardEvent } from '@/lib/dashboard-data'
-import { assignGroupTints } from '@/lib/list-group-tints'
+import { getEventSharePayload } from '@/lib/event-share'
+import { loadEventWorkspace } from '@/lib/event-workspace'
+import { eventListenerPasswordConfigured } from '@/lib/listener-password'
 import { getListenerUrl, getRequestBaseUrl, getSpeakerUrl } from '@/lib/links'
-import { getManageableOrganizations } from '@/lib/organization-data'
-import { isSuperAdminUser } from '@/lib/permissions'
 import { effectiveChannelSegment, effectiveEventSegment } from '@/lib/private-links'
 import { recordEventAccess } from '@/lib/recent-events'
-import type { OrganizationMembership, User } from '@/payload-types'
+import type { Channel } from '@/payload-types'
 
 type PageProps = {
   params: Promise<{ eventSlug: string }>
-  searchParams: Promise<{ settings?: string }>
+  searchParams: Promise<{ addChannel?: string; settings?: string }>
 }
 
 export const dynamic = 'force-dynamic'
-
-type AssignableUser = {
-  email: string
-  id: number
-  membershipStatus?: string | null
-  name: string
-  role?: string | null
-}
-
-function userFromMembership(membership: OrganizationMembership): User | null {
-  return typeof membership.user === 'number' ? null : membership.user
-}
-
-async function getAssignableUsersForEvent(
-  payload: Awaited<ReturnType<typeof getPayload>>,
-  currentUser: User,
-  organizationID?: number | null,
-): Promise<AssignableUser[]> {
-  if (!organizationID) {
-    return []
-  }
-
-  const memberships = await payload.find({
-    collection: 'organization-memberships',
-    depth: 1,
-    limit: 500,
-    overrideAccess: false,
-    pagination: false,
-    sort: 'status',
-    user: currentUser,
-    where: {
-      and: [
-        {
-          organization: {
-            equals: organizationID,
-          },
-        },
-        {
-          status: {
-            in: ['active', 'pending'],
-          },
-        },
-      ],
-    },
-  })
-
-  const canAssignAnyRole = isSuperAdminUser(currentUser)
-  const usersByID = new Map<number, AssignableUser>()
-
-  for (const membership of memberships.docs) {
-    const member = userFromMembership(membership)
-
-    if (!member) {
-      continue
-    }
-
-    if (!canAssignAnyRole && member.role !== 'moderator') {
-      continue
-    }
-
-    usersByID.set(member.id, {
-      email: member.email,
-      id: member.id,
-      membershipStatus: membership.status,
-      name: member.name,
-      role: member.role,
-    })
-  }
-
-  return [...usersByID.values()].sort((a, b) => a.name.localeCompare(b.name))
-}
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { eventSlug } = await params
@@ -110,175 +33,136 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export default async function EventDetailPage({ params, searchParams }: PageProps) {
-  const { eventSlug } = await params
-  const { settings } = await searchParams
-  const [event, channels, organizations] = await Promise.all([
-    getDashboardEvent(eventSlug),
-    getDashboardChannels(eventSlug),
-    getManageableOrganizations(),
-  ])
+/** The browser gets the record to edit, never the stored speaker password hash. */
+function withoutSecrets(channel: Channel): Channel {
+  return { ...channel, speakerPassword: null, speakerPasswordHash: channel.speakerPasswordHash ? 'set' : null }
+}
 
-  if (!event) {
-    notFound()
+export default async function EventChannelsTab({ params, searchParams }: PageProps) {
+  const { eventSlug } = await params
+  const { addChannel, settings } = await searchParams
+
+  // Old links (?settings=open) now land on the Settings tab.
+  if (settings === 'open') {
+    redirect(`/events/${eventSlug}/settings`)
   }
 
-  const user = await requireAppUser()
+  const { canManageAssignments, canManageChannelsUser, event, fullEvent, payload, user } =
+    await loadEventWorkspace(eventSlug)
 
   after(() => recordEventAccess(user, event.id))
 
-  const payload = await getPayload({ config: configPromise })
-  const [eventRecord, assignments, canManageAssignments] = await Promise.all([
-    payload.find({
-      collection: 'events',
-      depth: 0,
-      limit: 1,
-      overrideAccess: false,
-      pagination: false,
-      user,
-      where: {
-        slug: {
-          equals: eventSlug,
-        },
-      },
-    }),
-    payload.find({
-      collection: 'event-assignments',
-      depth: 1,
-      limit: 100,
-      overrideAccess: false,
-      pagination: false,
-      sort: 'roleForEvent',
-      user,
-      where: {
-        event: {
-          equals: event.id,
-        },
-      },
-    }),
-    canManageAssignment(payload, user, event.id),
+  const [channels, channelRecords, publicBaseUrl, share] = await Promise.all([
+    getDashboardChannels(eventSlug),
+    canManageChannelsUser
+      ? payload.find({
+          collection: 'channels',
+          depth: 0,
+          limit: 200,
+          overrideAccess: false,
+          pagination: false,
+          user,
+          where: { event: { equals: event.id } },
+        })
+      : Promise.resolve({ docs: [] as Channel[] }),
+    getRequestBaseUrl(),
+    getEventSharePayload(eventSlug),
   ])
-  const fullEvent = eventRecord.docs[0]
-
-  if (!fullEvent) {
-    notFound()
-  }
-
-  const assignableUsers = canManageAssignments
-    ? await getAssignableUsersForEvent(payload, user, event.organizationId)
-    : []
-  const publicBaseUrl = await getRequestBaseUrl()
-  const canManageChannelsUser = await canManageChannels(payload, user, event.id)
-  const sortedChannels = [...channels].sort((a, b) => a.name.localeCompare(b.name))
-  const tintedChannels = assignGroupTints(sortedChannels, () => eventSlug)
+  const recordsByID = new Map(channelRecords.docs.map((channel) => [channel.id, withoutSecrets(channel)]))
+  const passwordConfigured = eventListenerPasswordConfigured(fullEvent)
+  const qrItems = share?.items ?? []
+  const qrFor = (channelSlug: string, kind: 'listener' | 'speaker') =>
+    qrItems.find((item) => item.channelSlug === channelSlug && item.kind === kind)
   const eventSegment = effectiveEventSegment(event)
-  const channelRows = tintedChannels.map((channel) => ({
-    channel,
-    listenerUrl: getListenerUrl(eventSegment, effectiveChannelSegment(event, channel), publicBaseUrl),
-    rowTint: channel.rowTint,
-    speakerUrl: getSpeakerUrl(eventSegment, effectiveChannelSegment(event, channel), publicBaseUrl),
-  }))
-  const eventStatus = eventStatusChip(event.status)
+  const rows = [...channels]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((channel) => ({
+      channel,
+      listenerUrl: getListenerUrl(eventSegment, effectiveChannelSegment(event, channel), publicBaseUrl),
+      speakerUrl: getSpeakerUrl(eventSegment, effectiveChannelSegment(event, channel), publicBaseUrl),
+    }))
 
   return (
     <Layout breadcrumbs={[{ label: event.title }]} hideHeader title={event.title}>
       <section className="space-y-4">
+        <EventWorkspaceHeader canManage={canManageAssignments} event={event} eventSlug={eventSlug} />
 
-        <div className="flex flex-wrap items-center gap-2">
-          <span className={`us-chip ${eventStatus.className}`}>{eventStatus.label}</span>
-          <span className="us-chip us-chip-blue">
-            {event.channelCount} {event.channelCount === 1 ? 'channel' : 'channels'}
-          </span>
-          {event.location ? <span className="us-chip us-chip-muted">{event.location}</span> : null}
-          {event.publicListenerEnabled === false ? (
-            <span className="us-chip us-chip-warning">Public listeners off</span>
-          ) : null}
-          <Link
-            className="us-button-secondary ml-auto px-3 py-2 text-sm font-medium"
-            href={`/events/${eventSlug}/channels`}
-          >
-            All channels
-          </Link>
-        </div>
-
-        {event.description ? (
-          <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-            {event.description}
-          </p>
-        ) : null}
-
-        {canManageAssignments ? (
-          <EventSettingsDrawer
-            assignments={assignments.docs}
-            assignableUsers={assignableUsers}
-            canManageAssignments={canManageAssignments}
-            canSetAdminRole={isSuperAdminUser(user)}
-            defaultOpen={settings === 'open'}
-            event={fullEvent}
-            organizations={organizations}
-          />
-        ) : null}
-
-        <GoLiveWizard
-          channels={channelRows.map((item) => ({
-            enabled: item.channel.enabled,
-            listenerPageEnabled: item.channel.listenerPageEnabled,
-            listenerUrl: item.listenerUrl,
-            name: item.channel.name,
-            slug: item.channel.slug,
-            speakerPageEnabled: item.channel.speakerPageEnabled,
-            speakerUrl: item.speakerUrl,
-          }))}
-          eventTitle={event.title}
-          publicListenerEnabled={fullEvent.publicListenerEnabled}
-          shareHref={`/events/${eventSlug}/share`}
-        />
-
-        <article className="us-panel px-5 py-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-              Channels
+        <section className="us-panel overflow-hidden">
+          <div className="flex items-center justify-between gap-3 border-b px-3 py-2" style={{ borderColor: 'var(--us-border)' }}>
+            <p className="text-sm font-semibold" style={{ color: 'var(--us-green-dark)' }}>
+              Channels{' '}
+              <span className="font-normal" style={{ color: 'var(--us-muted)' }}>
+                {rows.length}
+              </span>
             </p>
-            {canManageChannelsUser ? (
-              <Link href={`/events/${eventSlug}/channels/new`} className="us-button-primary px-4 py-2.5 text-sm font-medium">
-                Add channel
-              </Link>
-            ) : null}
+            <div className="flex items-center gap-2">
+              {rows.length > 0
+                ? ([
+                    ['listener', 'Print listener QRs', 'One QR per page for your audience, plus the Android app QR.'],
+                    ['speaker', 'Print speaker QRs', 'One QR per page for speakers and translators.'],
+                  ] as const).map(([kind, label, hint]) => (
+                    // New tab on purpose: the PDF viewer has its own print button, and the printer dialog
+                    // lets people choose 1 or 2 pages per sheet.
+                    <a
+                      className="us-button-secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium"
+                      href={`/api/events/${encodeURIComponent(eventSlug)}/qr-pdf?kind=${kind}`}
+                      key={kind}
+                      rel="noreferrer"
+                      target="_blank"
+                      title={hint}
+                    >
+                      <PrinterIcon />
+                      {label}
+                    </a>
+                  ))
+                : null}
+              {canManageChannelsUser ? (
+                <AddChannelButton
+                  defaultOpen={addChannel === '1'}
+                  eventListenerPasswordConfigured={passwordConfigured}
+                  eventSlug={eventSlug}
+                />
+              ) : null}
+            </div>
           </div>
 
-          {channelRows.length > 0 ? (
-            <TruncatedList as="ul" className="mt-5" itemLabel="channels" listClassName="space-y-2">
-              {channelRows.map((item) => (
-                  <ChannelRow
-                    canDelete={canManageChannelsUser}
-                    channelId={item.channel.id}
-                    description={item.channel.description}
-                    enabled={item.channel.enabled}
-                    eventSlug={eventSlug}
-                    key={item.channel.slug}
-                    name={item.channel.name}
-                    rowTint={item.rowTint}
-                    slug={item.channel.slug}
-                  />
-                ))}
+          {rows.length > 0 ? (
+            <TruncatedList as="ul" itemLabel="channels" listClassName="">
+              {rows.map((item) => (
+                <ChannelRow
+                  canDelete={canManageChannelsUser}
+                  channel={recordsByID.get(item.channel.id)}
+                  channelId={item.channel.id}
+                  description={item.channel.description}
+                  enabled={item.channel.enabled}
+                  eventListenerPasswordConfigured={passwordConfigured}
+                  eventSlug={eventSlug}
+                  key={item.channel.slug}
+                  listenerRoute={{
+                    disabled: item.channel.listenerPageEnabled === false,
+                    fileName: qrFor(item.channel.slug, 'listener')?.fileName,
+                    qrDataUrl: qrFor(item.channel.slug, 'listener')?.qrDataUrl,
+                    url: item.listenerUrl,
+                  }}
+                  name={item.channel.name}
+                  slug={item.channel.slug}
+                  speakerRoute={{
+                    disabled: item.channel.speakerPageEnabled === false,
+                    fileName: qrFor(item.channel.slug, 'speaker')?.fileName,
+                    qrDataUrl: qrFor(item.channel.slug, 'speaker')?.qrDataUrl,
+                    url: item.speakerUrl,
+                  }}
+                />
+              ))}
             </TruncatedList>
           ) : (
-            <div className="mt-5 rounded-2xl border bg-white/70 px-4 py-5" style={{ borderColor: 'var(--us-border)' }}>
-              <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-                No channels yet.
-              </p>
-              {canManageChannelsUser ? (
-                <Link href={`/events/${eventSlug}/channels/new`} className="us-button-primary mt-4 inline-flex px-4 py-2.5 text-sm font-medium">
-                  Add first channel
-                </Link>
-              ) : (
-                <p className="mt-3 text-sm" style={{ color: 'var(--us-muted)' }}>
-                  Ask an organization manager to add channels for this event.
-                </p>
-              )}
-            </div>
+            <p className="px-3 py-5 text-sm" style={{ color: 'var(--us-muted)' }}>
+              {canManageChannelsUser
+                ? 'No channels yet. Add one for each language or audio feed.'
+                : 'No channels yet. Ask an organization manager to add them for this event.'}
+            </p>
           )}
-        </article>
+        </section>
       </section>
     </Layout>
   )

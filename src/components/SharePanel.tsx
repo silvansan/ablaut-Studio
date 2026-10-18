@@ -208,9 +208,6 @@ export function SharePanel({
           <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
             Share &amp; print
           </p>
-          <p className="mt-2 text-sm leading-6" style={{ color: 'var(--us-muted)' }}>
-            QR codes and links for {eventTitle}. Print for signage or send links to your team.
-          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button className="us-button-secondary px-4 py-2.5 text-sm font-medium" onClick={() => void copyAllLinks()} type="button">
@@ -227,9 +224,6 @@ export function SharePanel({
         <section className="mt-5 rounded-2xl border bg-white/60 px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
           <p className="text-sm font-semibold" style={{ color: 'var(--us-green-dark)' }}>
             One QR for all languages
-          </p>
-          <p className="mt-1 text-sm leading-6" style={{ color: 'var(--us-muted)' }}>
-            Listeners pick their channel after scanning.
           </p>
           <div className="mt-3">
             <ShareRouteRow

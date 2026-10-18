@@ -25,9 +25,6 @@ export default async function ServerHealthPage() {
           <h2 className="text-xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
             Server health
           </h2>
-          <p className="mt-1 text-sm" style={{ color: 'var(--us-muted)' }}>
-            Live numbers from this server. Useful on event day to see whether it is coping.
-          </p>
         </div>
         <ServerStatsPanel />
       </section>

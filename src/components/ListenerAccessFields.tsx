@@ -25,7 +25,7 @@ export function ListenerAccessFields({
         Listener access
       </p>
       <p className="mt-2 text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
-        Password mode uses one listener password for the whole event (not per channel). Set it under event Settings.
+        Password mode: one password for the whole event, set in event Settings.
       </p>
       <label className="mt-4 block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
         Listener token mode

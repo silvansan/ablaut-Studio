@@ -123,7 +123,7 @@ export default async function ProfilePage() {
               Organizations
             </p>
             <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              Request access to an organization. A manager must approve your request before you can see its events.
+              A manager approves your request before you see its events.
             </p>
             <div className="mt-5">
               <JoinOrganizationForm organizations={joinableOrganizations} />
@@ -133,9 +133,6 @@ export default async function ProfilePage() {
 
         <article className="us-panel px-6 py-6 xl:col-span-2">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              Sign out on this device when you are done managing events.
-            </p>
             <form action={logoutAction}>
               <button className="rounded-2xl border px-5 py-3 text-sm font-medium" style={{ borderColor: 'var(--us-danger)', color: 'var(--us-danger)' }} type="submit">
                 Logout

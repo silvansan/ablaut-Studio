@@ -21,7 +21,7 @@ export default function ForgotPasswordPage() {
             Get a new link
           </h2>
           <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-            Forgot your password, or did your invitation link expire? Enter your account email and ablaut will send a fresh link: a new invitation if you have not activated yet, or a password reset if you have.
+            Enter your account email. You will get a new invitation or a password reset link.
           </p>
           <div className="mt-6">
             <ForgotPasswordForm />

@@ -200,7 +200,7 @@ export async function Layout({
           <aside className="us-sidebar-shell hidden xl:block">{sidebar}</aside>
         ) : null}
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
           <MobileAppChrome
             orgName={sidebarOrganization?.name ?? null}
             showSidebar={showAppMenu}
@@ -219,7 +219,7 @@ export async function Layout({
               </div>
             ) : null}
 
-            <div className="us-content mx-auto flex w-full max-w-6xl flex-col gap-4 px-3 py-4 md:px-6 md:py-6">
+            <div className="us-content mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-3 py-4 md:px-6 md:py-6">
               {hideHeader ? null : (
                 <header>
                   <p className="text-xs font-semibold" style={{ color: 'var(--us-blue-dark)' }}>
@@ -231,61 +231,57 @@ export async function Layout({
                 </header>
               )}
 
-              <main className="min-w-0 flex-1">
-                {showBetaBanner ? (
-                  <div
-                    className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm"
-                    style={{ backgroundColor: 'var(--us-card)', borderColor: 'var(--us-border)', color: 'var(--us-muted)' }}
-                  >
-                    <span>
-                      <span className="us-chip us-chip-blue mr-2">Beta</span>
-                      ablaut-Studio is in active development.
-                    </span>
-                    <Link className="font-medium hover:underline" href="/feedback" style={{ color: 'var(--us-blue-dark)' }}>
-                      Send feedback
-                    </Link>
-                  </div>
-                ) : null}
-                {children}
-              </main>
-
-              <footer className="border-t pt-4 text-xs" style={{ borderColor: 'var(--us-border)', color: 'var(--us-muted)' }}>
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                  <p>
-                    Copyright © {currentYear} {APP_STUDIO_NAME} · {APP_PRODUCT_NAME} {APP_PRONUNCIATION}
-                  </p>
-                  <div className="flex flex-wrap gap-x-4 gap-y-2">
-                    <a
-                      className="inline-flex items-center gap-1.5 font-medium"
-                      href="https://github.com/silvansan/ablaut-Studio"
-                      rel="noreferrer"
-                      style={{ color: 'var(--us-blue-dark)' }}
-                      target="_blank"
-                    >
-                      <GitHubIcon />
-                      Source code
-                    </a>
-                    <a
-                      className="inline-flex items-center gap-1.5 font-medium"
-                      href="https://github.com/silvansan/ablaut-Studio/blob/main/LICENSE"
-                      rel="noreferrer"
-                      style={{ color: 'var(--us-blue-dark)' }}
-                      target="_blank"
-                    >
-                      <LicenseIcon />
-                      License: AGPLv3
-                    </a>
-                    {mobileRelease?.latestVersion && mobileAppQrDataUrl ? (
-                      <AppDownloadFooterLink
-                        downloadPageUrl={mobileRelease.downloadPageUrl}
-                        latestVersion={mobileRelease.latestVersion}
-                        qrDataUrl={mobileAppQrDataUrl}
-                      />
-                    ) : null}
-                  </div>
-                </div>
-              </footer>
+              <main className="min-w-0 flex-1">{children}</main>
             </div>
+
+            {/* One slim line; pinned to the bottom of the screen on desktop so it never rides along with the cards. */}
+            <footer className="us-footer z-20 xl:sticky xl:bottom-0">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                {showBetaBanner ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="us-chip us-chip-blue">Beta</span>
+                    <span>In active development</span>
+                  </span>
+                ) : null}
+                {user ? (
+                  <Link className="font-medium hover:underline" href="/feedback" style={{ color: 'var(--us-blue-dark)' }}>
+                    Send feedback
+                  </Link>
+                ) : null}
+                <span className="hidden md:inline">
+                  © {currentYear} {APP_STUDIO_NAME} · {APP_PRODUCT_NAME} {APP_PRONUNCIATION}
+                </span>
+                <span className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1">
+                  <a
+                    className="inline-flex items-center gap-1.5 font-medium"
+                    href="https://github.com/silvansan/ablaut-Studio"
+                    rel="noreferrer"
+                    style={{ color: 'var(--us-blue-dark)' }}
+                    target="_blank"
+                  >
+                    <GitHubIcon />
+                    Source code
+                  </a>
+                  <a
+                    className="inline-flex items-center gap-1.5 font-medium"
+                    href="https://github.com/silvansan/ablaut-Studio/blob/main/LICENSE"
+                    rel="noreferrer"
+                    style={{ color: 'var(--us-blue-dark)' }}
+                    target="_blank"
+                  >
+                    <LicenseIcon />
+                    AGPLv3
+                  </a>
+                  {mobileRelease?.latestVersion && mobileAppQrDataUrl ? (
+                    <AppDownloadFooterLink
+                      downloadPageUrl={mobileRelease.downloadPageUrl}
+                      latestVersion={mobileRelease.latestVersion}
+                      qrDataUrl={mobileAppQrDataUrl}
+                    />
+                  ) : null}
+                </span>
+              </div>
+            </footer>
           </MobileAppChrome>
         </div>
       </div>

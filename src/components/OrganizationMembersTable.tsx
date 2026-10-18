@@ -174,10 +174,6 @@ export function OrganizationMembersTable({
               </form>
             ) : null}
           </div>
-        ) : selectedUser ? (
-          <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-            Open the full user page to review this account, or choose another member to manage.
-          </p>
         ) : null}
       </Drawer>
     </>

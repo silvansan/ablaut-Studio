@@ -179,13 +179,12 @@ export function ServerStatsPanel() {
                 <strong>{rates.tx === null ? '...' : `${formatBytes(rates.tx)}/s`}</strong>
               </p>
               <p className="text-xs" style={{ ...numeric, color: 'var(--us-muted)' }}>
-                Total since start: {formatBytes(stats.network.rxBytes)} in · {formatBytes(stats.network.txBytes)} out.
-                Listener audio flows through LiveKit, so heavy events show up here.
+                Since start: {formatBytes(stats.network.rxBytes)} in · {formatBytes(stats.network.txBytes)} out
               </p>
             </>
           ) : (
             <p className="text-sm" style={{ color: 'var(--us-muted)' }}>
-              Network counters are only available on Linux servers.
+              Not available on this server.
             </p>
           )}
         </Tile>

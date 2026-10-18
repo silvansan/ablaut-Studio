@@ -16,9 +16,6 @@ export function OrganizationSettingsPanel({ canDelete, organization }: Organizat
         <h3 className="text-lg font-semibold" style={{ color: 'var(--us-green-dark)' }}>
           Organization settings
         </h3>
-        <p className="mt-2 text-sm leading-6" style={{ color: 'var(--us-muted)' }}>
-          Update organization details visible across events and member management.
-        </p>
       </div>
 
       <form action={updateOrganizationAction} className="grid gap-4 md:grid-cols-2">

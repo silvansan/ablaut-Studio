@@ -42,9 +42,6 @@ export function AppSidebar({
             </span>
           </span>
         </Link>
-        <Link className="us-side-link" href="/feedback">
-          <span className="min-w-0 truncate">Send feedback</span>
-        </Link>
       </div>
     </div>
   )

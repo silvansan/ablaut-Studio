@@ -2,6 +2,8 @@
 
 import { useCallback } from 'react'
 
+import { DownloadIcon } from '@/components/ActionIcons'
+
 type ShareZipButtonProps = {
   className?: string
   eventSlug: string
@@ -18,7 +20,8 @@ export function ShareZipButton({
   }, [eventSlug])
 
   return (
-    <button className={className} onClick={downloadZip} type="button">
+    <button className={`${className} inline-flex items-center gap-1.5`} onClick={downloadZip} type="button">
+      <DownloadIcon />
       {label}
     </button>
   )

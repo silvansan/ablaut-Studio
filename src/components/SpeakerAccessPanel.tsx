@@ -286,7 +286,7 @@ export function SpeakerAccessPanel({
           Enter the speaker password
         </h2>
         <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-          This password only unlocks the speaker page for this event/channel. It is separate from Payload user login.
+          Unlocks this speaker page only.
         </p>
         <form onSubmit={submitPassword} className="mt-5 space-y-3">
           <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>

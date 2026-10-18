@@ -2,12 +2,13 @@
 
 import configPromise from '@payload-config'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { getPayload, type Payload } from 'payload'
 
+import { errorFeedback, successFeedback, type ActionFeedback } from '@/lib/action-feedback'
 import { requireAppUser } from '@/lib/app-auth'
 import { canUserManageEventByID, isSuperAdminUser } from '@/lib/permissions'
 import type { User } from '@/payload-types'
+import { redirectInOrg } from '@/lib/org-redirect'
 
 function stringValue(formData: FormData, key: string): string | undefined {
   const value = formData.get(key)
@@ -51,7 +52,7 @@ export async function canManageAssignment(payload: Payload, user: User, eventID:
   return canUserManageEventByID({ payload, user } as never, eventID)
 }
 
-export async function upsertEventAssignmentAction(formData: FormData) {
+async function saveEventAssignment(formData: FormData) {
   const user = await requireAppUser()
   const payload = await getPayload({ config: configPromise })
   const eventID = stringValue(formData, 'eventID')
@@ -128,8 +129,30 @@ export async function upsertEventAssignmentAction(formData: FormData) {
   }
 
   revalidatePath(`/events/${eventSlug}`)
+  revalidatePath(`/events/${eventSlug}/people`)
   revalidatePath('/users')
-  redirect(`/events/${eventSlug}?settings=open`)
+
+  return { eventSlug }
+}
+
+export async function upsertEventAssignmentAction(formData: FormData) {
+  const { eventSlug } = await saveEventAssignment(formData)
+
+  await redirectInOrg(`/events/${eventSlug}/people`)
+}
+
+/** For the assignment drawer: saves in place and reports back instead of redirecting. */
+export async function saveEventAssignmentFeedbackAction(
+  _previousState: ActionFeedback,
+  formData: FormData,
+): Promise<ActionFeedback> {
+  try {
+    await saveEventAssignment(formData)
+
+    return successFeedback('Access saved.')
+  } catch (error) {
+    return errorFeedback(error instanceof Error ? error.message : 'The access could not be saved.')
+  }
 }
 
 export async function deleteEventAssignmentAction(formData: FormData) {
@@ -162,6 +185,7 @@ export async function deleteEventAssignmentAction(formData: FormData) {
   })
 
   revalidatePath(`/events/${eventSlug}`)
+  revalidatePath(`/events/${eventSlug}/people`)
   revalidatePath('/users')
-  redirect(`/events/${eventSlug}?settings=open`)
+  await redirectInOrg(`/events/${eventSlug}/people`)
 }

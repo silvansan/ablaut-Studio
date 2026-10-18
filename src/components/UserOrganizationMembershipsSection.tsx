@@ -48,9 +48,6 @@ export function UserOrganizationMembershipsSection({
       <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
         Organization access
       </p>
-      <p className="mt-2 text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
-        Add this user to organizations and set their organization role.
-      </p>
 
       {tintedMemberships.length > 0 ? (
         <TruncatedList className="mt-4" itemLabel="organization memberships" listClassName="space-y-3">

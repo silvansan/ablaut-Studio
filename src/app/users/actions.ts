@@ -3,7 +3,6 @@
 import configPromise from '@payload-config'
 import { randomBytes } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { canManageAssignment } from '@/app/events/[eventSlug]/settings/actions'
@@ -32,6 +31,7 @@ import {
 } from '@/lib/user-management'
 import { completeUserActivation } from '@/lib/user-activation'
 import { canViewUserInUsersHub } from '@/lib/user-hub-access'
+import { redirectInOrg } from '@/lib/org-redirect'
 
 function stringValue(formData: FormData, key: string): string | undefined {
   const value = formData.get(key)
@@ -778,7 +778,7 @@ export async function bulkAssignUsersToOrganizationAction(formData: FormData) {
     revalidatePath(`/users/${targetUserID}`)
   }
 
-  redirect('/users')
+  await redirectInOrg('/users')
 }
 
 function numericValues(formData: FormData, key: string): number[] {
@@ -1063,7 +1063,7 @@ export async function bulkUsersAction(formData: FormData) {
     revalidatePath(`/users/${targetUserID}`)
   }
 
-  redirect(returnPath)
+  await redirectInOrg(returnPath)
 }
 
 export async function deleteUserAction(formData: FormData) {

@@ -2,7 +2,6 @@
 
 import configPromise from '@payload-config'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { getPayload, type Payload } from 'payload'
 
 import { requireAppUser } from '@/lib/app-auth'
@@ -15,6 +14,7 @@ import {
 } from '@/lib/action-feedback'
 import { APP_NOTICES } from '@/lib/app-notices'
 import type { User } from '@/payload-types'
+import { redirectInOrg } from '@/lib/org-redirect'
 
 function stringValue(formData: FormData, key: string): string | undefined {
   const value = formData.get(key)
@@ -64,7 +64,7 @@ async function getEventID(eventSlug: string) {
   return { eventID: events.docs[0]?.id, payload, user }
 }
 
-export async function createChannelAction(formData: FormData) {
+async function createChannelRecord(formData: FormData) {
   const eventSlug = stringValue(formData, 'eventSlug')
   const name = stringValue(formData, 'name')
 
@@ -109,10 +109,31 @@ export async function createChannelAction(formData: FormData) {
   revalidatePath(`/events/${eventSlug}`)
   revalidatePath(`/events/${eventSlug}/channels`)
   revalidatePath(`/events/${eventSlug}/channels/${channel.slug}`)
-  redirect(`/events/${eventSlug}/channels/${channel.slug}`)
+
+  return { channel, eventSlug }
 }
 
-export async function updateChannelAction(formData: FormData) {
+export async function createChannelAction(formData: FormData) {
+  const { channel, eventSlug } = await createChannelRecord(formData)
+
+  await redirectInOrg(`/events/${eventSlug}/channels/${channel.slug}`)
+}
+
+/** For the channel drawer: stays on the list and reports back instead of redirecting. */
+export async function createChannelFeedbackAction(
+  _previousState: ActionFeedback,
+  formData: FormData,
+): Promise<ActionFeedback> {
+  try {
+    const { channel } = await createChannelRecord(formData)
+
+    return successFeedback(`Channel "${channel.name}" added.`)
+  } catch (error) {
+    return errorFeedback(error instanceof Error ? error.message : 'The channel could not be added.')
+  }
+}
+
+async function updateChannelRecord(formData: FormData) {
   const eventSlug = stringValue(formData, 'eventSlug')
   const id = stringValue(formData, 'id')
   const originalSlug = stringValue(formData, 'originalSlug')
@@ -164,7 +185,28 @@ export async function updateChannelAction(formData: FormData) {
   revalidatePath(`/events/${eventSlug}/channels`)
   revalidatePath(`/events/${eventSlug}/channels/${originalSlug}`)
   revalidatePath(`/events/${eventSlug}/channels/${channel.slug}`)
-  redirect(`/events/${eventSlug}/channels/${channel.slug}`)
+
+  return { channel, eventSlug }
+}
+
+export async function updateChannelAction(formData: FormData) {
+  const { channel, eventSlug } = await updateChannelRecord(formData)
+
+  await redirectInOrg(`/events/${eventSlug}/channels/${channel.slug}`)
+}
+
+/** For the channel drawer: saves in place and reports back. */
+export async function updateChannelFeedbackAction(
+  _previousState: ActionFeedback,
+  formData: FormData,
+): Promise<ActionFeedback> {
+  try {
+    const { channel } = await updateChannelRecord(formData)
+
+    return successFeedback(`Channel "${channel.name}" saved.`)
+  } catch (error) {
+    return errorFeedback(error instanceof Error ? error.message : 'The channel could not be saved.')
+  }
 }
 
 export async function updateChannelSummaryAction(
@@ -373,7 +415,7 @@ export async function deleteChannelAction(formData: FormData) {
     return
   }
 
-  redirect(`/events/${eventSlug}/channels`)
+  await redirectInOrg(`/events/${eventSlug}/channels`)
 }
 
 function channelKeys(formData: FormData): Array<{ channelID: number; eventSlug: string }> {
@@ -508,5 +550,5 @@ export async function bulkChannelsAction(formData: FormData) {
     revalidatePath(`/events/${eventSlug}/channels`)
   }
 
-  redirect(returnPath)
+  await redirectInOrg(returnPath)
 }

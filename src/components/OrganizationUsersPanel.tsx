@@ -72,9 +72,6 @@ export function OrganizationUsersPanel({
     <div className="space-y-4">
       <div className="us-panel flex flex-wrap items-center justify-between gap-3 px-5 py-4">
         <div>
-          <p className="text-sm" style={{ color: 'var(--us-muted)' }}>
-            Members, invites, and join requests for {organization.name}.
-          </p>
           <Link
             className="mt-2 inline-block text-sm font-medium hover:underline"
             href={`/users?organization=${encodeURIComponent(organization.slug)}`}

@@ -41,9 +41,6 @@ export default async function OrganizationsPage() {
             <p className="text-sm font-medium" style={{ color: 'var(--us-green-dark)' }}>
               {pendingJoinRequestCount} pending join request{pendingJoinRequestCount === 1 ? '' : 's'}
             </p>
-            <p className="mt-2 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              Open an organization&apos;s Users tab to approve or reject requests.
-            </p>
           </div>
         ) : null}
         <div className="us-panel flex flex-wrap items-center gap-2 px-6 py-5">

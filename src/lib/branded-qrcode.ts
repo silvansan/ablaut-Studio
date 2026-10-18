@@ -215,6 +215,11 @@ export async function generateBrandedQrCardDataUrl(input: BrandedQrCardInput): P
   }
 }
 
+// QR images are a pure function of their inputs. Event pages show one pair per channel on every
+// load, so remember recent ones instead of re-drawing them each time.
+const routeQrCache = new Map<string, string>()
+const ROUTE_QR_CACHE_LIMIT = 300
+
 export async function generateBrandedRouteQrDataUrl(input: {
   channelName: string
   organizationName: string
@@ -222,13 +227,28 @@ export async function generateBrandedRouteQrDataUrl(input: {
   url: string
   variant: 'listener' | 'speaker'
 }): Promise<string> {
-  return generateBrandedQrCardDataUrl({
+  const cacheKey = JSON.stringify([input.variant, input.style, input.organizationName, input.channelName, input.url])
+  const cached = routeQrCache.get(cacheKey)
+
+  if (cached) {
+    return cached
+  }
+
+  const dataUrl = await generateBrandedQrCardDataUrl({
     kind: input.variant,
     primaryTitle: input.organizationName,
     secondaryTitle: input.channelName,
     style: input.style,
     url: input.url,
   })
+
+  if (routeQrCache.size >= ROUTE_QR_CACHE_LIMIT) {
+    routeQrCache.delete(routeQrCache.keys().next().value as string)
+  }
+
+  routeQrCache.set(cacheKey, dataUrl)
+
+  return dataUrl
 }
 
 export async function generateBrandedDownloadQrDataUrl(input: {

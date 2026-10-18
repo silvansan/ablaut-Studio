@@ -1,18 +1,22 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useState, useTransition, type ReactNode } from 'react'
 
 import { ModalPortal } from '@/components/ModalPortal'
 
 type ConfirmSubmitButtonProps = {
   action: (formData: FormData) => Promise<void>
-  children: string
+  /** Text, or an icon for compact rows (then pass `triggerLabel`). */
+  children: ReactNode
   className?: string
+  confirmLabel?: string
   confirmMessage: string
   formId: string
   successUrl?: string
   title?: string
+  /** Accessible name and tooltip for an icon-only trigger. */
+  triggerLabel?: string
 }
 
 function actionErrorMessage(error: unknown): string {
@@ -27,11 +31,14 @@ export function ConfirmSubmitButton({
   action,
   children,
   className,
+  confirmLabel,
   confirmMessage,
   formId,
   successUrl,
   title = 'Confirm delete',
+  triggerLabel,
 }: ConfirmSubmitButtonProps) {
+  const confirmText = confirmLabel ?? (typeof children === 'string' ? children : 'Delete')
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -67,6 +74,7 @@ export function ConfirmSubmitButton({
     <>
       <div className="flex flex-col items-end gap-2">
         <button
+          aria-label={triggerLabel}
           className={className ?? 'rounded-2xl border px-4 py-2.5 text-sm font-medium'}
           disabled={isPending}
           onClick={() => {
@@ -74,6 +82,7 @@ export function ConfirmSubmitButton({
             setOpen(true)
           }}
           style={{ borderColor: 'var(--us-danger)', color: 'var(--us-danger)' }}
+          title={triggerLabel}
           type="button"
         >
           {children}
@@ -118,7 +127,7 @@ export function ConfirmSubmitButton({
                   style={{ borderColor: 'var(--us-danger)', color: 'var(--us-danger)' }}
                   type="button"
                 >
-                  {isPending ? 'Deleting…' : children}
+                  {isPending ? 'Deleting…' : confirmText}
                 </button>
               </div>
             </div>

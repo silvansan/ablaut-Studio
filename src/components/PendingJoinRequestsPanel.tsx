@@ -19,9 +19,6 @@ export function PendingJoinRequestsPanel({ memberships, returnPath = '/users' }:
       <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
         Pending join requests
       </p>
-      <p className="mt-2 text-sm leading-6" style={{ color: 'var(--us-muted)' }}>
-        Approve or reject people who asked to join your organization.
-      </p>
       <ul className="mt-4 space-y-2">
         {memberships.map((membership) => {
           const organization =
