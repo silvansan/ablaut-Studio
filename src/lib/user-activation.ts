@@ -72,7 +72,7 @@ export async function completeUserActivation(
   }
 }
 
-export type LoginFailureReason = 'invalid' | 'inactive' | 'unverified'
+export type LoginFailureReason = 'invalid' | 'inactive' | 'invited' | 'unverified'
 
 export async function getLoginFailureReason(
   payload: Payload,
@@ -100,6 +100,10 @@ export async function getLoginFailureReason(
     return 'inactive'
   }
 
+  if (user.invitationStatus === 'pending') {
+    return 'invited'
+  }
+
   if (user._verified === false) {
     return 'unverified'
   }
@@ -112,8 +116,12 @@ export function loginFailureMessage(reason: LoginFailureReason | null): string {
     return 'This account is inactive. Contact a super admin for access.'
   }
 
+  if (reason === 'invited') {
+    return 'This invitation has not been activated yet. Open the invitation email to choose your password, or request a new link.'
+  }
+
   if (reason === 'unverified') {
-    return 'This account is not verified yet. Use the activation or password reset link from your email.'
+    return 'This account is not verified yet. Open the activation email to choose your password, or request a new link.'
   }
 
   return 'The email or password did not work. Check the account and try again.'

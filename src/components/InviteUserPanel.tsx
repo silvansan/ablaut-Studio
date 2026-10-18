@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 
 import { inviteUserAction } from '@/app/users/actions'
+import { useActionFeedback } from '@/components/AppToastProvider'
 import { Drawer } from '@/components/Drawer'
 import { INVITABLE_ORGANIZATION_ROLES } from '@/lib/organizations'
 import type { Organization } from '@/payload-types'
@@ -29,12 +30,22 @@ export function InviteUserPanel({
     defaultOrganizationId ?? organizations[0]?.id ?? CREATE_ORGANIZATION_VALUE
   const [organizationChoice, setOrganizationChoice] = useState(String(resolvedDefaultOrganizationId))
   const isCreatingOrganization = organizationChoice === CREATE_ORGANIZATION_VALUE
+  const [formKey, setFormKey] = useState(0)
+  const { formAction, pending, state } = useActionFeedback(inviteUserAction)
 
   useEffect(() => {
     if (open) {
       setOrganizationChoice(String(resolvedDefaultOrganizationId))
     }
   }, [open, resolvedDefaultOrganizationId])
+
+  // A successful invite closes the drawer and clears the form; a failure keeps the input.
+  useEffect(() => {
+    if (state.message && state.ok) {
+      setOpen(false)
+      setFormKey((key) => key + 1)
+    }
+  }, [state])
 
   if (organizations.length === 0 && !canCreateOrganization) {
     return null
@@ -52,7 +63,12 @@ export function InviteUserPanel({
         open={open}
         title="Invite user"
       >
-        <form action={inviteUserAction} className="space-y-4">
+        <form action={formAction} aria-busy={pending} className="space-y-4" key={formKey}>
+          {state.message && !state.ok ? (
+            <p className="rounded-2xl border px-4 py-3 text-sm" role="alert" style={{ borderColor: 'var(--us-border)', color: 'var(--us-danger)' }}>
+              {state.message}
+            </p>
+          ) : null}
           <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--us-muted)' }}>
             Username
             <input
@@ -145,8 +161,12 @@ export function InviteUserPanel({
           ) : (
             <input name="role" type="hidden" value="moderator" />
           )}
-          <button className="us-button-primary w-full px-5 py-3 text-sm font-medium" type="submit">
-            Send invite
+          <button
+            className="us-button-primary w-full px-5 py-3 text-sm font-medium"
+            disabled={pending}
+            type="submit"
+          >
+            {pending ? 'Sending invite...' : 'Send invite'}
           </button>
         </form>
       </Drawer>

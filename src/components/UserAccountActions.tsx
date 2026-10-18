@@ -5,7 +5,10 @@ import {
   resendInviteForUserAction,
   sendPasswordResetForUserAction,
 } from '@/app/users/actions'
+import { ActionFeedbackForm } from '@/components/ActionFeedbackForm'
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
+import { CopyAccessLinkButton } from '@/components/CopyAccessLinkButton'
+import { SubmitButton } from '@/components/SubmitButton'
 import type { User } from '@/payload-types'
 
 type UserAccountActionsProps = {
@@ -24,26 +27,28 @@ export function UserAccountActions({
   const resetFormId = `${formIdPrefix}-reset-${targetUser.id}`
   const resendFormId = `${formIdPrefix}-resend-${targetUser.id}`
   const deleteFormId = `${formIdPrefix}-delete-${targetUser.id}`
+  const isPending = targetUser.invitationStatus === 'pending'
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
-        <form action={sendPasswordResetForUserAction} id={resetFormId}>
+        <ActionFeedbackForm action={sendPasswordResetForUserAction} id={resetFormId}>
           <input name="id" type="hidden" value={targetUser.id} />
           {organizationId ? <input name="organizationId" type="hidden" value={organizationId} /> : null}
-          <button className="us-button-secondary px-4 py-2.5 text-sm font-medium" type="submit">
-            Send password reset
-          </button>
-        </form>
-        {targetUser.invitationStatus === 'pending' ? (
-          <form action={resendInviteForUserAction} id={resendFormId}>
+          <SubmitButton idleLabel="Send password reset" pendingLabel="Sending..." />
+        </ActionFeedbackForm>
+        {isPending ? (
+          <ActionFeedbackForm action={resendInviteForUserAction} id={resendFormId}>
             <input name="id" type="hidden" value={targetUser.id} />
             {organizationId ? <input name="organizationId" type="hidden" value={organizationId} /> : null}
-            <button className="us-button-secondary px-4 py-2.5 text-sm font-medium" type="submit">
-              Resend invite
-            </button>
-          </form>
+            <SubmitButton idleLabel="Resend invite" pendingLabel="Sending..." />
+          </ActionFeedbackForm>
         ) : null}
+        <CopyAccessLinkButton
+          label={isPending ? 'Copy invite link' : 'Copy reset link'}
+          organizationId={organizationId}
+          userId={targetUser.id}
+        />
       </div>
 
       {showDelete ? (

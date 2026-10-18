@@ -39,6 +39,11 @@ export function UserDetailPanel({ canManageUsers, currentUser, data }: UserDetai
             <p className="mt-2 text-sm" style={{ color: 'var(--us-muted)' }}>
               {targetUser.email}
             </p>
+            {targetUser.invitationStatus === 'pending' && targetUser.invitedAt ? (
+              <p className="mt-1 text-xs" style={{ color: 'var(--us-muted)' }}>
+                Last invite sent {new Date(targetUser.invitedAt).toLocaleString()}. Links work for 7 days.
+              </p>
+            ) : null}
           </div>
           <div className="ml-auto flex flex-wrap gap-2">
             <span className="us-chip us-chip-blue capitalize">{formatGlobalRole(targetUser.role)}</span>

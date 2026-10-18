@@ -14,7 +14,7 @@ export function ForgotPasswordForm() {
     setLoading(true)
 
     try {
-      const response = await fetch('/api/users/forgot-password', {
+      const response = await fetch('/api/app/request-access-link', {
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
         headers: {
           'Content-Type': 'application/json',
@@ -24,8 +24,13 @@ export function ForgotPasswordForm() {
 
       setLoading(false)
 
+      if (response.status === 429) {
+        setError('Too many requests. Wait a few minutes and try again.')
+        return
+      }
+
       if (!response.ok) {
-        setError('We could not start a reset for that email. Check it and try again.')
+        setError('Enter the email address of your account and try again.')
         return
       }
 
@@ -54,7 +59,7 @@ export function ForgotPasswordForm() {
 
       {sent ? (
         <p className="rounded-2xl border px-4 py-3 text-sm" style={{ borderColor: 'var(--us-green)', color: 'var(--us-green-dark)' }}>
-          If that email exists, a password reset link has been sent.
+          If an active account uses that email, a new link is on its way. Check your inbox and spam folder.
         </p>
       ) : null}
 
@@ -65,7 +70,7 @@ export function ForgotPasswordForm() {
       ) : null}
 
       <button disabled={loading || sent} type="submit" className="us-button-primary w-full px-5 py-3 text-sm font-medium">
-        {loading ? 'Sending reset link...' : sent ? 'Reset link sent' : 'Send reset link'}
+        {loading ? 'Sending...' : sent ? 'Link sent' : 'Email me a new link'}
       </button>
     </form>
   )

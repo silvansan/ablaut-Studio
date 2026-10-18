@@ -82,6 +82,7 @@ export async function POST(request: Request) {
   const invitedUser = await payload.create({
     collection: 'users',
     data: {
+      _verified: false,
       active: true,
       email,
       invitationStatus: 'pending',
@@ -95,10 +96,14 @@ export async function POST(request: Request) {
     overrideAccess: true,
   })
 
-  await sendUserActivationInviteEmail(payload, email)
+  const delivery = await sendUserActivationInviteEmail(payload, email, {
+    inviterName: user?.name || user?.email,
+  })
 
   return NextResponse.json(
     {
+      emailDelivered: delivery.delivered,
+      ...(delivery.error ? { emailError: delivery.error } : {}),
       id: invitedUser.id,
       invitationStatus: invitedUser.invitationStatus,
       role: invitedUser.role,

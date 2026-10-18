@@ -7,7 +7,9 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { canManageAssignment } from '@/app/events/[eventSlug]/settings/actions'
+import { errorFeedback, successFeedback, type ActionFeedback } from '@/lib/action-feedback'
 import { requireAppUser } from '@/lib/app-auth'
+import { writeAuditLog } from '@/lib/audit'
 import {
   canManageUserInOrganization,
   getManageableOrganizationIDs,
@@ -23,7 +25,11 @@ import {
   joinUrl,
 } from '@/lib/email'
 import { revalidateOrganizationPaths } from '@/lib/revalidate-organization-paths'
-import { sendUserActivationInviteEmail, sendUserPasswordResetEmail } from '@/lib/user-management'
+import {
+  createUserAccessLink,
+  sendUserActivationInviteEmail,
+  sendUserPasswordResetEmail,
+} from '@/lib/user-management'
 import { completeUserActivation } from '@/lib/user-activation'
 import { canViewUserInUsersHub } from '@/lib/user-hub-access'
 
@@ -151,8 +157,40 @@ async function assertCanManageOrganizationUsers(
   }
 }
 
-export async function inviteUserAction(formData: FormData) {
+function actionErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback
+}
+
+function inviteDeliveryFeedback(args: {
+  delivery: { delivered: boolean; error?: string; expiresIn: string }
+  email: string
+}): ActionFeedback {
+  if (args.delivery.delivered) {
+    return successFeedback(`Invitation sent to ${args.email}. The link works for ${args.delivery.expiresIn}.`)
+  }
+
+  return successFeedback(
+    `${args.email} was added, but no email went out: ${args.delivery.error ?? 'delivery failed.'} Open their profile and use "Copy invite link" to share it yourself.`,
+  )
+}
+
+export async function inviteUserAction(
+  _previousState: ActionFeedback,
+  formData: FormData,
+): Promise<ActionFeedback> {
   const currentUser = await requireAppUser()
+
+  try {
+    return await performInviteUser(currentUser, formData)
+  } catch (error) {
+    return errorFeedback(actionErrorMessage(error, 'The invitation could not be created.'))
+  }
+}
+
+async function performInviteUser(
+  currentUser: Awaited<ReturnType<typeof requireAppUser>>,
+  formData: FormData,
+): Promise<ActionFeedback> {
   const payload = await getPayload({ config: configPromise })
 
   await assertCanManageOrganizationUsers(payload, currentUser)
@@ -160,6 +198,26 @@ export async function inviteUserAction(formData: FormData) {
   const name = stringValue(formData, 'name')
   const organizationChoice = stringValue(formData, 'organizationId')
   let organizationID = numericValue(formData, 'organizationId')
+  let organizationName: string | undefined
+
+  if (!email || !name) {
+    throw new Error('Name and email are required.')
+  }
+
+  const existing = await payload.find({
+    collection: 'users',
+    depth: 0,
+    limit: 1,
+    overrideAccess: true,
+    pagination: false,
+    where: { email: { equals: email } },
+  })
+
+  if (existing.docs.length > 0) {
+    throw new Error(
+      `${email} already has an account. Find them in the user list to resend an invite or add them to an organization.`,
+    )
+  }
 
   if (organizationChoice === 'new') {
     if (!isSuperAdminUser(currentUser)) {
@@ -174,13 +232,21 @@ export async function inviteUserAction(formData: FormData) {
 
     const organization = await createOrganizationRecord(payload, currentUser, newOrganizationName)
     organizationID = organization.id
+    organizationName = organization.name
   }
 
-  if (!email || !name || !organizationID) {
-    throw new Error('Name, email, and organization are required.')
+  if (!organizationID) {
+    throw new Error('Choose an organization.')
   }
 
   await assertCanManageOrganization(payload, currentUser, organizationID)
+
+  if (!organizationName) {
+    const organization = await payload
+      .findByID({ collection: 'organizations', depth: 0, id: organizationID, overrideAccess: true })
+      .catch(() => null)
+    organizationName = organization?.name
+  }
 
   const temporaryPassword = randomBytes(32).toString('base64url')
   const canSetAdmin = isSuperAdminUser(currentUser)
@@ -218,9 +284,22 @@ export async function inviteUserAction(formData: FormData) {
     user: currentUser,
   })
 
-  await sendUserActivationInviteEmail(payload, email)
+  const delivery = await sendUserActivationInviteEmail(payload, email, {
+    inviterName: currentUser.name || currentUser.email,
+    organizationName,
+  })
+
+  await writeAuditLog(payload, {
+    action: 'user.invited',
+    collection: 'users',
+    documentId: createdUser.id,
+    metadata: { delivered: delivery.delivered, email, organizationID },
+    user: currentUser,
+  })
 
   await revalidateOrganizationById(payload, organizationID)
+
+  return inviteDeliveryFeedback({ delivery, email })
 }
 
 export async function updateUserAction(formData: FormData) {
@@ -263,10 +342,12 @@ export async function updateUserAction(formData: FormData) {
   revalidatePath(`/users/${id}`)
 }
 
-export async function sendPasswordResetForUserAction(formData: FormData) {
-  const currentUser = await requireAppUser()
-  const payload = await getPayload({ config: configPromise })
-
+/** Shared permission gate for single-user access-link actions (reset, resend, copy link). */
+async function loadManageableTarget(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  currentUser: Awaited<ReturnType<typeof requireAppUser>>,
+  formData: FormData,
+) {
   await assertCanManageOrganizationUsers(payload, currentUser)
 
   const userID = stringValue(formData, 'id')
@@ -291,54 +372,133 @@ export async function sendPasswordResetForUserAction(formData: FormData) {
     )
 
     if (!allowed) {
-      throw new Error('You do not have permission to reset this user password.')
+      throw new Error('You do not have permission to manage this user.')
     }
   } else if (!isSuperAdminUser(currentUser)) {
     throw new Error('Organization context is required.')
   }
 
-  await sendUserPasswordResetEmail(payload, targetUser.email)
-
-  revalidatePath('/users')
+  return { organizationID, targetUser, userID }
 }
 
-export async function resendInviteForUserAction(formData: FormData) {
+function isAwaitingActivation(user: { _verified?: boolean | null; invitationStatus?: string | null }) {
+  return user.invitationStatus === 'pending' || user._verified === false
+}
+
+export async function sendPasswordResetForUserAction(
+  _previousState: ActionFeedback,
+  formData: FormData,
+): Promise<ActionFeedback> {
   const currentUser = await requireAppUser()
-  const payload = await getPayload({ config: configPromise })
 
-  await assertCanManageOrganizationUsers(payload, currentUser)
+  try {
+    const payload = await getPayload({ config: configPromise })
+    const { targetUser, userID } = await loadManageableTarget(payload, currentUser, formData)
+    const delivery = await sendUserPasswordResetEmail(payload, targetUser.email)
 
-  const userID = stringValue(formData, 'id')
-  const organizationID = numericValue(formData, 'organizationId')
+    await writeAuditLog(payload, {
+      action: 'user.password_reset_sent',
+      collection: 'users',
+      documentId: userID,
+      metadata: { delivered: delivery.delivered },
+      user: currentUser,
+    })
+    revalidatePath('/users')
 
-  if (!userID || !organizationID) {
-    throw new Error('User ID and organization are required.')
+    return delivery.delivered
+      ? successFeedback(`Password reset email sent to ${targetUser.email}. The link works for ${delivery.expiresIn}.`)
+      : errorFeedback(
+          `No email was sent to ${targetUser.email}: ${delivery.error ?? 'delivery failed.'} Use "Copy reset link" instead.`,
+        )
+  } catch (error) {
+    return errorFeedback(actionErrorMessage(error, 'The password reset could not be sent.'))
   }
+}
 
-  const targetUser = await payload.findByID({
-    id: userID,
-    collection: 'users',
-    overrideAccess: false,
-    user: currentUser,
-  })
+export async function resendInviteForUserAction(
+  _previousState: ActionFeedback,
+  formData: FormData,
+): Promise<ActionFeedback> {
+  const currentUser = await requireAppUser()
 
-  if (targetUser.invitationStatus !== 'pending') {
-    throw new Error('This user is not waiting for activation.')
+  try {
+    const payload = await getPayload({ config: configPromise })
+    const { organizationID, targetUser, userID } = await loadManageableTarget(payload, currentUser, formData)
+
+    if (!isAwaitingActivation(targetUser)) {
+      throw new Error('This user already activated their account.')
+    }
+
+    const organization = organizationID
+      ? await payload
+          .findByID({ collection: 'organizations', depth: 0, id: organizationID, overrideAccess: true })
+          .catch(() => null)
+      : null
+
+    const delivery = await sendUserActivationInviteEmail(payload, targetUser.email, {
+      inviterName: currentUser.name || currentUser.email,
+      organizationName: organization?.name,
+    })
+
+    await writeAuditLog(payload, {
+      action: 'user.invite_resent',
+      collection: 'users',
+      documentId: userID,
+      metadata: { delivered: delivery.delivered },
+      user: currentUser,
+    })
+    revalidatePath('/users')
+
+    return delivery.delivered
+      ? successFeedback(`Invitation re-sent to ${targetUser.email}. The new link works for ${delivery.expiresIn}.`)
+      : errorFeedback(
+          `No email was sent to ${targetUser.email}: ${delivery.error ?? 'delivery failed.'} Use "Copy invite link" instead.`,
+        )
+  } catch (error) {
+    return errorFeedback(actionErrorMessage(error, 'The invitation could not be re-sent.'))
   }
+}
 
-  const allowed = await canManageUserInOrganization(
-    { payload, user: currentUser } as never,
-    userID,
-    organizationID,
-  )
+export type AccessLinkFeedback = ActionFeedback & { url?: string }
 
-  if (!allowed) {
-    throw new Error('You do not have permission to resend this invite.')
+/**
+ * Mints a fresh one-time link for the admin to hand over personally (chat, in person).
+ * Works without SMTP. Every minted link is audit-logged; the previous link stops working.
+ */
+export async function createAccessLinkForUserAction(args: {
+  organizationId?: number
+  userId: number | string
+}): Promise<AccessLinkFeedback> {
+  const currentUser = await requireAppUser()
+
+  try {
+    const payload = await getPayload({ config: configPromise })
+    const formData = new FormData()
+    formData.set('id', String(args.userId))
+    if (args.organizationId) {
+      formData.set('organizationId', String(args.organizationId))
+    }
+
+    const { targetUser, userID } = await loadManageableTarget(payload, currentUser, formData)
+    const kind = isAwaitingActivation(targetUser) ? 'invite' : 'reset'
+    const link = await createUserAccessLink(payload, targetUser.email, kind)
+
+    await writeAuditLog(payload, {
+      action: 'user.access_link_copied',
+      collection: 'users',
+      documentId: userID,
+      metadata: { kind },
+      user: currentUser,
+    })
+
+    return {
+      message: `Link copied. It works once and expires in ${link.expiresIn}. Any earlier link for ${targetUser.email} no longer works.`,
+      ok: true,
+      url: link.url,
+    }
+  } catch (error) {
+    return errorFeedback(actionErrorMessage(error, 'The link could not be created.'))
   }
-
-  await sendUserActivationInviteEmail(payload, targetUser.email)
-
-  revalidatePath('/users')
 }
 
 export async function approveMembershipAction(formData: FormData) {

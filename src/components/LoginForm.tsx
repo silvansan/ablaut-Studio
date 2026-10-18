@@ -23,10 +23,12 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [password, setPassword] = useState('')
+  const [needsNewLink, setNeedsNewLink] = useState(false)
 
   async function submitLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
+    setNeedsNewLink(false)
     setLoading(true)
 
     try {
@@ -50,7 +52,11 @@ export function LoginForm() {
           },
           method: 'POST',
         })
-        const failurePayload = (await failureResponse.json().catch(() => null)) as { error?: string } | null
+        const failurePayload = (await failureResponse.json().catch(() => null)) as {
+          error?: string
+          reason?: string
+        } | null
+        setNeedsNewLink(failurePayload?.reason === 'invited' || failurePayload?.reason === 'unverified')
         setError(failurePayload?.error ?? 'The email or password did not work. Check the account and try again.')
         return
       }
@@ -92,9 +98,16 @@ export function LoginForm() {
       </label>
 
       {error ? (
-        <p className="rounded-2xl border px-4 py-3 text-sm" style={{ borderColor: 'var(--us-danger)', color: 'var(--us-danger)' }}>
-          {error}
-        </p>
+        <div className="rounded-2xl border px-4 py-3 text-sm" role="alert" style={{ borderColor: 'var(--us-danger)', color: 'var(--us-danger)' }}>
+          <p>{error}</p>
+          {needsNewLink ? (
+            <p className="mt-2">
+              <Link className="font-medium underline" href="/forgot-password">
+                Send me a new link
+              </Link>
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       <button disabled={loading} type="submit" className="us-button-primary w-full px-5 py-3 text-sm font-medium">

@@ -2,6 +2,7 @@ import configPromise from '@payload-config'
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 
+import { MIN_PASSWORD_LENGTH } from '@/lib/password-policy'
 import { completeUserActivation } from '@/lib/user-activation'
 import { rateLimitRequest } from '@/lib/rate-limit'
 
@@ -10,13 +11,13 @@ type ResetPasswordBody = {
   token?: unknown
 }
 
-function parseString(value: unknown): string | null {
+function parseToken(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
 }
 
 export async function POST(request: Request) {
   const rateLimited = rateLimitRequest(request, 'reset-password', {
-    limit: 5,
+    limit: 10,
     windowMs: 10 * 60_000,
   })
 
@@ -32,18 +33,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  const password = parseString(body.password)
-  const token = parseString(body.token)
+  // The password is deliberately NOT trimmed: login sends it verbatim, so trimming here
+  // would silently store a different password than the one the person typed.
+  const password = typeof body.password === 'string' ? body.password : null
+  const token = parseToken(body.token)
 
   if (!password || !token) {
-    return NextResponse.json({ error: 'password and token are required' }, { status: 400 })
+    return NextResponse.json({ error: 'Choose a password to continue.' }, { status: 400 })
   }
 
-  if (password.length < 8) {
-    return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return NextResponse.json(
+      { error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.` },
+      { status: 400 },
+    )
   }
 
   const payload = await getPayload({ config: configPromise })
+
+  let userID: null | number | string = null
+  let email: null | string = null
 
   try {
     const result = await payload.resetPassword({
@@ -55,14 +64,29 @@ export async function POST(request: Request) {
       overrideAccess: true,
     })
 
-    const userID = result?.user?.id
-
-    if (userID !== undefined && userID !== null) {
-      await completeUserActivation(payload, userID as number | string)
-    }
-
-    return NextResponse.json({ message: 'Password reset successfully.' })
+    userID = (result?.user?.id as number | string | undefined) ?? null
+    email = typeof result?.user?.email === 'string' ? result.user.email : null
   } catch {
-    return NextResponse.json({ error: 'This reset link did not work. It may have expired.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'invalid_token', error: 'This link has expired or was already used. Request a new one.' },
+      { status: 400 },
+    )
   }
+
+  if (userID !== null) {
+    try {
+      await completeUserActivation(payload, userID)
+    } catch (error) {
+      payload.logger.error({ err: error, msg: 'Password was set but account activation failed.' })
+      return NextResponse.json(
+        {
+          code: 'activation_failed',
+          error: 'Your password was saved, but the account could not be activated. Ask an administrator for help.',
+        },
+        { status: 500 },
+      )
+    }
+  }
+
+  return NextResponse.json({ email, message: 'Password saved.' })
 }

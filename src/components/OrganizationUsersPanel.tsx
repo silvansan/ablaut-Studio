@@ -6,10 +6,13 @@ import {
   resendInviteForUserAction,
   upsertUserOrganizationMembershipAction,
 } from '@/app/users/actions'
+import { ActionFeedbackForm } from '@/components/ActionFeedbackForm'
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
+import { CopyAccessLinkButton } from '@/components/CopyAccessLinkButton'
 import { InviteUserPanel } from '@/components/InviteUserPanel'
 import { ListGroupRow } from '@/components/ListGroupRow'
 import { OrganizationMembersTable } from '@/components/OrganizationMembersTable'
+import { SubmitButton } from '@/components/SubmitButton'
 import { TruncatedList } from '@/components/TruncatedList'
 import { assignGroupTints, assignZebraTints } from '@/lib/list-group-tints'
 import { userID, userLabel } from '@/lib/organization-user-utils'
@@ -202,13 +205,18 @@ export function OrganizationUsersPanel({
                       Waiting for activation in {organization.name}
                     </p>
                   </div>
-                  <form action={resendInviteForUserAction} id={`resend-invite-${invitedUserID}`}>
-                    <input name="id" type="hidden" value={invitedUserID} />
-                    <input name="organizationId" type="hidden" value={organization.id} />
-                    <button className="us-button-secondary px-4 py-2.5 text-sm font-medium" type="submit">
-                      Resend invite
-                    </button>
-                  </form>
+                  <div className="flex flex-wrap items-start gap-2">
+                    <ActionFeedbackForm action={resendInviteForUserAction} id={`resend-invite-${invitedUserID}`}>
+                      <input name="id" type="hidden" value={invitedUserID} />
+                      <input name="organizationId" type="hidden" value={organization.id} />
+                      <SubmitButton idleLabel="Resend invite" pendingLabel="Sending..." />
+                    </ActionFeedbackForm>
+                    <CopyAccessLinkButton
+                      label="Copy invite link"
+                      organizationId={organization.id}
+                      userId={invitedUserID}
+                    />
+                  </div>
                 </ListGroupRow>
               )
             })}

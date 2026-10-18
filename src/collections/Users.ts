@@ -126,8 +126,9 @@ export const Users: CollectionConfig = {
       sameSite: 'Lax',
       secure: shouldUseSecureCookies(),
     },
+    // No `expiration` here on purpose: a collection-level value overrides the per-call
+    // expiration used for 7-day invites (see lib/access-tokens.ts). Payload's default is 1h.
     forgotPassword: {
-      expiration: 1000 * 60 * 60,
       generateEmailHTML: generateForgotPasswordEmailHTML,
       generateEmailSubject: generateForgotPasswordEmailSubject,
     },
