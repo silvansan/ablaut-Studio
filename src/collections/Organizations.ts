@@ -27,6 +27,12 @@ export const Organizations: CollectionConfig = {
         return true
       }
 
+      // Users who manage no organization (plain moderators) must see an empty list.
+      // Returning `false` here makes Payload throw 403, which crashed /events for them.
+      if (where === false) {
+        return { id: { equals: -1 } }
+      }
+
       return where
     },
     update: async ({ req }) => {

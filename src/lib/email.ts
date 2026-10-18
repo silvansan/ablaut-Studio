@@ -1,7 +1,7 @@
 import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import type { EmailAdapter, PayloadRequest, TypedUser } from 'payload'
 
-import { formatTtl, INVITE_TTL_MS, mintAccessToken, RESET_TTL_MS } from '@/lib/access-tokens'
+import { formatTtl, getAccessLinkTtlMs, mintAccessToken } from '@/lib/access-tokens'
 
 export type SmtpConfig = {
   from: string
@@ -202,7 +202,7 @@ type InviteEmailInput = {
 function buildInviteEmailArgs(input: InviteEmailInput): EmailShellArgs {
   const inviter = input.inviterName?.trim()
   const org = input.organizationName?.trim()
-  const expiresIn = input.expiresIn ?? formatTtl(INVITE_TTL_MS)
+  const expiresIn = input.expiresIn ?? formatTtl(getAccessLinkTtlMs('invite'))
 
   const lead = inviter
     ? `${inviter} invited you to join ${org ? `${org} on ` : ''}ablaut.`
@@ -214,7 +214,7 @@ function buildInviteEmailArgs(input: InviteEmailInput): EmailShellArgs {
     details: [`Account: ${input.email}`, `This link works once and expires in ${expiresIn}.`],
     eyebrow: 'ablaut invitation',
     intro: `${lead} Choose a password to activate your account. You will be signed in right after.`,
-    outro: `If the link has expired, open the sign-in page and choose "Lost password?" to get a new one.`,
+    outro: `If the link has expired, open the sign-in page and choose "Forgot your password, or invitation link expired?" to get a new one.`,
     title: 'Activate your account',
   }
 }
@@ -235,7 +235,7 @@ function buildResetEmailArgs(args: { email: string; resetUrl: string }): EmailSh
   return {
     ctaLabel: 'Choose a new password',
     ctaUrl: args.resetUrl,
-    details: [`Account: ${args.email}`, `This link works once and expires in ${formatTtl(RESET_TTL_MS)}.`],
+    details: [`Account: ${args.email}`, `This link works once and expires in ${formatTtl(getAccessLinkTtlMs('reset'))}.`],
     eyebrow: 'ablaut security',
     intro: `A password reset was requested for ${args.email}. Use the button below to choose a new password.`,
     outro: 'If you did not request this, you can safely ignore this email. Your password will not change.',

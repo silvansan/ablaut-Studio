@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { UserAccountActions } from '@/components/UserAccountActions'
 import { UserAccountForm } from '@/components/UserAccountForm'
 import { UserOrganizationMembershipsSection } from '@/components/UserOrganizationMembershipsSection'
+import { formatTtl, getAccessLinkTtlMs } from '@/lib/access-tokens'
 import { formatGlobalRole } from '@/lib/organization-user-utils'
 import { isSelfUser, type UserDetailData } from '@/lib/user-detail-data'
 import type { User } from '@/payload-types'
@@ -41,7 +42,7 @@ export function UserDetailPanel({ canManageUsers, currentUser, data }: UserDetai
             </p>
             {targetUser.invitationStatus === 'pending' && targetUser.invitedAt ? (
               <p className="mt-1 text-xs" style={{ color: 'var(--us-muted)' }}>
-                Last invite sent {new Date(targetUser.invitedAt).toLocaleString()}. Links work for 7 days.
+                Last invite sent {new Date(targetUser.invitedAt).toLocaleString()}. Links work for {formatTtl(getAccessLinkTtlMs('invite'))}.
               </p>
             ) : null}
           </div>

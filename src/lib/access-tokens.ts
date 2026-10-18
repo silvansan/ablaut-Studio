@@ -1,21 +1,50 @@
 import type { Payload, PayloadRequest } from 'payload'
 
-/** Invitation links stay valid long enough for someone to open the mail days later. */
-export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000
-/** Password-reset links are short-lived on purpose. */
-export const RESET_TTL_MS = 60 * 60 * 1000
+const HOUR_MS = 60 * 60 * 1000
+const MINUTE_MS = 60 * 1000
+
+/** Defaults: invitation links stay valid long enough to open the mail days later; resets are short. */
+export const INVITE_TTL_MS = 7 * 24 * HOUR_MS
+export const RESET_TTL_MS = HOUR_MS
 
 export type AccessLinkKind = 'invite' | 'reset'
 
+function readBoundedNumber(name: string, unitMs: number, bounds: { max: number; min: number }, fallbackMs: number) {
+  const raw = process.env[name]?.trim()
+  const value = raw ? Number(raw) : NaN
+
+  if (!Number.isFinite(value) || value < bounds.min || value > bounds.max) {
+    return fallbackMs
+  }
+
+  return Math.round(value * unitMs)
+}
+
+/**
+ * Link lifetimes can be tuned per deployment (Portainer environment variables):
+ *   INVITE_LINK_TTL_HOURS    1 to 720 (30 days), default 168 (7 days)
+ *   RESET_LINK_TTL_MINUTES   5 to 1440 (24 hours), default 60
+ * Out-of-range or non-numeric values fall back to the defaults.
+ */
 export function getAccessLinkTtlMs(kind: AccessLinkKind) {
-  return kind === 'invite' ? INVITE_TTL_MS : RESET_TTL_MS
+  return kind === 'invite'
+    ? readBoundedNumber('INVITE_LINK_TTL_HOURS', HOUR_MS, { max: 720, min: 1 }, INVITE_TTL_MS)
+    : readBoundedNumber('RESET_LINK_TTL_MINUTES', MINUTE_MS, { max: 1440, min: 5 }, RESET_TTL_MS)
 }
 
 export function formatTtl(ms: number) {
-  const hours = Math.round(ms / (60 * 60 * 1000))
+  const minutes = Math.round(ms / MINUTE_MS)
+
+  if (minutes < 60) {
+    return minutes === 1 ? '1 minute' : `${minutes} minutes`
+  }
+
+  const hours = Math.round(minutes / 60)
+
   if (hours >= 48) {
     return `${Math.round(hours / 24)} days`
   }
+
   return hours === 1 ? '1 hour' : `${hours} hours`
 }
 

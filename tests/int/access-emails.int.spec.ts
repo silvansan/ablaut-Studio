@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { formatTtl, getAccessLinkTtlMs, INVITE_TTL_MS, RESET_TTL_MS } from '@/lib/access-tokens'
 import {
@@ -75,7 +75,26 @@ describe('reset email', () => {
 })
 
 describe('access link lifetimes', () => {
-  it('keeps invites for a week and resets for an hour', () => {
+  afterEach(() => {
+    delete process.env.INVITE_LINK_TTL_HOURS
+    delete process.env.RESET_LINK_TTL_MINUTES
+  })
+
+  it('reads the lifetimes from the environment', () => {
+    process.env.INVITE_LINK_TTL_HOURS = '72'
+    process.env.RESET_LINK_TTL_MINUTES = '15'
+    expect(formatTtl(getAccessLinkTtlMs('invite'))).toBe('3 days')
+    expect(formatTtl(getAccessLinkTtlMs('reset'))).toBe('15 minutes')
+  })
+
+  it('ignores out-of-range and non-numeric values', () => {
+    process.env.INVITE_LINK_TTL_HOURS = '99999'
+    process.env.RESET_LINK_TTL_MINUTES = 'soon'
+    expect(getAccessLinkTtlMs('invite')).toBe(INVITE_TTL_MS)
+    expect(getAccessLinkTtlMs('reset')).toBe(RESET_TTL_MS)
+  })
+
+  it('keeps invites for a week and resets for an hour by default', () => {
     expect(getAccessLinkTtlMs('invite')).toBe(INVITE_TTL_MS)
     expect(getAccessLinkTtlMs('reset')).toBe(RESET_TTL_MS)
     expect(formatTtl(INVITE_TTL_MS)).toBe('7 days')

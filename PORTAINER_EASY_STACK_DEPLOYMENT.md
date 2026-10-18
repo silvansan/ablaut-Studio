@@ -58,6 +58,8 @@ SMTP_PORT=587
 SMTP_USER=
 SMTP_PASS=
 SMTP_FROM=noreply@example.com
+INVITE_LINK_TTL_HOURS=168
+RESET_LINK_TTL_MINUTES=60
 
 INITIAL_SUPER_ADMIN_EMAIL=admin@example.com
 INITIAL_SUPER_ADMIN_PASSWORD=replace-with-a-strong-first-password
@@ -92,10 +94,14 @@ SMTP_PORT=587
 SMTP_USER=smtp-user
 SMTP_PASS=smtp-password
 SMTP_FROM=noreply@example.com
+INVITE_LINK_TTL_HOURS=168
+RESET_LINK_TTL_MINUTES=60
 
 INITIAL_SUPER_ADMIN_EMAIL=admin@example.com
 INITIAL_SUPER_ADMIN_PASSWORD=replace-with-a-strong-first-password
 ```
+
+`INVITE_LINK_TTL_HOURS` (1 to 720, default 168) and `RESET_LINK_TTL_MINUTES` (5 to 1440, default 60) set how long emailed invitation and password-reset links stay valid. Both are optional; links always work only once.
 
 Generate good secrets on a Linux/macOS host with:
 

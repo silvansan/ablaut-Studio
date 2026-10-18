@@ -115,7 +115,7 @@ export function LoginForm() {
       </button>
       <div className="text-center">
         <Link href="/forgot-password" className="text-sm font-medium" style={{ color: 'var(--us-blue-dark)' }}>
-          Lost password?
+          Forgot your password, or invitation link expired?
         </Link>
       </div>
       {loading ? (
