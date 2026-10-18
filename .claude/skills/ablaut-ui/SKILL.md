@@ -34,15 +34,19 @@ style here and is fine. Raw hex or ad-hoc `rgba()` in a `.tsx` file is not.
 | `--us-warning` `#e8b84d` | warnings |
 | `--us-border` | every 1px border |
 | `--us-bg` / `--us-card` | page ground / card ground (usually via `us-panel`, not by hand) |
-| `--us-shadow` / `--us-shadow-soft` | the only shadow values — never write a bespoke `box-shadow` |
+| `--us-border-strong` | input / secondary-button borders |
+| `--us-r-chip` `2px` / `--us-r-control` `4px` / `--us-r-panel` `6px` | the only corner radii (see Layout) |
+| `--us-shadow` / `--us-shadow-soft` | hairline shadows — never write a bespoke `box-shadow` |
 
 ## Component classes — reach for these first
 
-- **`us-panel`** — every card / section surface. Border + `1.25rem` radius + gradient card
-  ground + soft shadow. If you're drawing a box, it's a `us-panel` (add padding with
-  `px-5 py-5` / `px-6 py-6`).
-- **`us-button-primary`** / **`us-button-secondary`** — all buttons and button-styled links.
-  Add sizing with `px-5 py-3 text-sm font-medium`. Do not restyle their color/shadow.
+- **`us-panel`** — every card / section surface. Flat white ground, 1px border, `6px`
+  radius, hairline shadow. If you're drawing a box, it's a `us-panel` (add padding with
+  `px-5 py-5` / `px-6 py-6`). No gradients, no glow.
+- **`us-button-primary`** (solid dark green) / **`us-button-secondary`** (white, 1px border) —
+  all buttons and button-styled links, `4px` radius. Add sizing with
+  `px-4 py-2 text-sm font-medium`. Do not restyle their color/shadow.
+- **`us-input`** + **`us-label`** — every text field / select. Never hand-style an input.
 - **`us-chip`** + one of `us-chip-muted` / `us-chip-blue` / `us-chip-warning` /
   `us-chip-active` / `us-chip-inactive` — labels, tags, counts, statuses.
 - **`us-data-row`** with `__lead` / `__chips` / `__detail` / `__actions`, plus
@@ -50,8 +54,8 @@ style here and is fine. Raw hex or ad-hoc `rgba()` in a `.tsx` file is not.
   hub table. Reuse it for new lists; don't hand-roll a flex row.
 - **`us-row-tint-green` / `-blue` / `-white`** — group tinting (assigned by
   `src/lib/list-group-tints.ts`).
-- **`us-hero-glow`** — decorative gradient glow (sidebar, hero panels only).
-- **`us-neu-toggle`** — the toggle switch. **`us-toast`** — toasts, via `AppToastProvider`.
+- **`us-hero-glow`** — legacy no-op positioning helper; do not use for new work.
+- **`us-neu-toggle`** — the (flat) toggle switch. **`us-toast`** — toasts, via `AppToastProvider`.
 
 ## Status — use the helpers
 
@@ -77,10 +81,13 @@ Do **not** add a new `*Drawer` / `*Panel` / modal primitive. Compose these.
 ## Layout & scale
 
 - Section rhythm: `space-y-4`. Gaps: `gap-2` / `gap-3` / `gap-4`.
-- Radius: `rounded-2xl` (inputs, inner cards), `rounded-3xl` (large cards), `rounded-full`
-  (chips, dots). Panels get their radius from `us-panel`.
-- Inputs: `mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none` with
-  `style={{ borderColor: 'var(--us-border)' }}`.
+- Radius scale: **2px chips, 4px controls, 6px panels**. Pills (`rounded-full`) only for
+  status dots and avatars. The Tailwind `rounded-2xl` / `rounded-3xl` utilities are remapped to
+  4px / 6px in `globals.css`, so legacy markup stays on the scale; prefer `us-panel`,
+  `us-input` and `us-button-*` over raw radius utilities in new code.
+- Inputs: `className="us-input"` (label: `us-label`). Do not re-create the border/padding.
+- Direction (docs/ui-restructure-plan.md): flat, structured, dense. Hairline-divided table
+  rows instead of card-per-row; no gradients, glows, neumorphism, or hover lift.
 - Use Tailwind flex/grid for **layout**. Inline `style` is for **tokens only**, not for
   margins/padding/width.
 
@@ -109,6 +116,8 @@ icon-only hunting).
 
 - Raw hex or one-off `rgba()` in a `.tsx` → a `--us-*` token.
 - Bespoke `box-shadow` → `--us-shadow` / `--us-shadow-soft` or just `us-panel`.
+- Gradients, glow blobs, neumorphic shadows, `translateY` hover lift.
+- Radii above 6px, or pill buttons/chips.
 - Arbitrary Tailwind values (`w-[347px]`, `mt-[13px]`, `text-[13px]`) → the scale.
 - Re-implementing `us-panel` / `us-chip` / `us-data-row` with raw Tailwind.
 - Hand-rolled status pills instead of `active-status.ts`.
@@ -120,7 +129,7 @@ icon-only hunting).
 
 ## Before you finish a UI change
 
-1. Every surface is `us-panel` (or nested in one).
+1. Every surface is `us-panel` (or nested in one); corners are 2/4/6px only.
 2. Zero raw hex / ad-hoc rgba in the diff; colors are `--us-*`.
 3. Buttons are `us-button-primary` / `us-button-secondary` + sizing utilities.
 4. Status is `us-chip-*` or an `active-status.ts` helper.

@@ -18,7 +18,7 @@ export function QrCardPreview({ alt, qrDataUrl }: QrCardPreviewProps) {
       className="relative flex justify-center rounded-3xl border p-3 transition-all duration-200"
       style={{
         borderColor: 'var(--us-border)',
-        background: 'linear-gradient(180deg, var(--us-card), var(--us-bg))',
+        background: 'var(--us-card)',
       }}
     >
       <button
