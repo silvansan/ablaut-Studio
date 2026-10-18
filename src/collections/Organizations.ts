@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
+import { generateOrgKey } from '@/lib/org-key'
 import { isSuperAdminUser } from '@/lib/permissions'
 import { getManageableOrganizationWhere } from '@/lib/organizations'
 
@@ -67,6 +68,16 @@ export const Organizations: CollectionConfig = {
       index: true,
     },
     {
+      name: 'publicKey',
+      type: 'text',
+      unique: true,
+      index: true,
+      admin: {
+        description: 'Opaque key used in admin URLs (/o/<key>/...). Generated once; never changes.',
+        readOnly: true,
+      },
+    },
+    {
       name: 'description',
       type: 'textarea',
     },
@@ -99,8 +110,17 @@ export const Organizations: CollectionConfig = {
   ],
   hooks: {
     beforeChange: [
-      ({ data, operation, req }) => {
+      ({ data, operation, originalDoc, req }) => {
         const nextData = { ...data }
+
+        // The key is created once and is immutable: URLs and bookmarks depend on it.
+        if (operation === 'create') {
+          nextData.publicKey = nextData.publicKey || generateOrgKey()
+        } else if (originalDoc?.publicKey) {
+          nextData.publicKey = originalDoc.publicKey
+        } else if (!nextData.publicKey) {
+          nextData.publicKey = generateOrgKey()
+        }
 
         if (typeof nextData.name === 'string' && !nextData.slug) {
           nextData.slug = formatSlug(nextData.name)

@@ -1,6 +1,6 @@
 import configPromise from '@payload-config'
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import Link from '@/components/OrgLink'
 import { notFound } from 'next/navigation'
 import { after } from 'next/server'
 import { getPayload } from 'payload'

@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import Link from '@/components/OrgLink'
 
 export type BreadcrumbSegment = {
   href?: string

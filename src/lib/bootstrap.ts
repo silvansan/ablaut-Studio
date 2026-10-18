@@ -1,7 +1,7 @@
 import type { Payload } from 'payload'
 
 import { markPayloadReady } from '@/lib/app-readiness'
-import { ensureDefaultOrganization } from '@/lib/bootstrap-organizations'
+import { ensureDefaultOrganization, ensureOrganizationKeys } from '@/lib/bootstrap-organizations'
 import { getLiveKitConfigOrNull } from '@/lib/livekit'
 import { syncMobileAppReleaseIfStale } from '@/lib/mobile-app-release'
 import { migrations } from '@/migrations'
@@ -104,6 +104,7 @@ async function runDeferredBootstrap(payload: Payload) {
   try {
     await ensureInitialSuperAdmin(payload)
     await ensureDefaultOrganization(payload)
+    await ensureOrganizationKeys(payload)
     await syncMobileAppReleaseIfStale(payload)
   } catch (error) {
     payload.logger.error(

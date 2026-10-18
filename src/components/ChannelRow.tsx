@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import Link from '@/components/OrgLink'
 import { useRouter } from 'next/navigation'
 
 import { deleteChannelAction } from '@/app/events/[eventSlug]/channels/actions'

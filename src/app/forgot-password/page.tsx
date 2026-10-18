@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import Link from '@/components/OrgLink'
 
 import { ForgotPasswordForm } from '@/components/ForgotPasswordForm'
 import { Layout } from '@/components/Layout'

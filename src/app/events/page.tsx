@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import configPromise from '@payload-config'
-import Link from 'next/link'
+import Link from '@/components/OrgLink'
 import { getPayload } from 'payload'
 
 import { canDeleteEvent, createEventAction } from '@/app/events/actions'

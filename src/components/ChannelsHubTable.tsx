@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import Link from 'next/link'
+import Link from '@/components/OrgLink'
 import { useRouter } from 'next/navigation'
 
 import { bulkChannelsAction } from '@/app/events/[eventSlug]/channels/actions'

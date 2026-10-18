@@ -14,6 +14,7 @@ import * as migration_20260527_120000_events_active_default from './20260527_120
 import * as migration_20260709_120000_organization_production_mode from './20260709_120000_organization_production_mode';
 import * as migration_20260905_120000_user_recent_events from './20260905_120000_user_recent_events';
 import * as migration_20261001_120000_private_links from './20261001_120000_private_links';
+import * as migration_20261101_120000_organization_public_key from './20261101_120000_organization_public_key';
 
 export const migrations = [
   {
@@ -95,5 +96,10 @@ export const migrations = [
     up: migration_20261001_120000_private_links.up,
     down: migration_20261001_120000_private_links.down,
     name: '20261001_120000_private_links'
+  },
+  {
+    up: migration_20261101_120000_organization_public_key.up,
+    down: migration_20261101_120000_organization_public_key.down,
+    name: '20261101_120000_organization_public_key'
   },
 ];

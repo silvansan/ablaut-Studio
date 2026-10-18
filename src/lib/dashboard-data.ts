@@ -1,7 +1,8 @@
 import configPromise from '@payload-config'
-import { getPayload } from 'payload'
+import { getPayload, type Where } from 'payload'
 
 import { requireAppUser } from '@/lib/app-auth'
+import { getScopedOrganizationId } from '@/lib/org-context'
 import { countPendingJoinRequestsForUser } from '@/lib/organizations'
 import type { Channel, Event } from '@/payload-types'
 
@@ -153,9 +154,30 @@ async function getChannelCount(eventID: number, user: Awaited<ReturnType<typeof 
   }
 }
 
+/** Restricts event queries to the organization named in the URL (`/o/<key>/...`), when there is one. */
+async function organizationScopeWhere(): Promise<Where | undefined> {
+  const scopedOrganizationID = await getScopedOrganizationId()
+
+  return scopedOrganizationID ? { organization: { equals: scopedOrganizationID } } : undefined
+}
+
+async function channelScopeWhere(): Promise<Where | undefined> {
+  const scopedOrganizationID = await getScopedOrganizationId()
+
+  return scopedOrganizationID ? { 'event.organization': { equals: scopedOrganizationID } } : undefined
+}
+
+async function eventSlugWhere(eventSlug: string): Promise<Where> {
+  const scope = await organizationScopeWhere()
+  const slug: Where = { slug: { equals: eventSlug } }
+
+  return scope ? { and: [slug, scope] } : slug
+}
+
 export async function getDashboardEvents(limit = 100): Promise<DashboardEvent[]> {
   const user = await requireAppUser()
   const payload = await getPayload({ config: configPromise })
+  const scope = await organizationScopeWhere()
   let events: { docs: Event[] }
 
   try {
@@ -167,6 +189,7 @@ export async function getDashboardEvents(limit = 100): Promise<DashboardEvent[]>
       pagination: false,
       sort: '-updatedAt',
       user,
+      where: scope,
     })
   } catch (error) {
     if (isAccessDenied(error)) {
@@ -192,6 +215,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   const user = await requireAppUser()
   const payload = await getPayload({ config: configPromise })
   const events = await getDashboardEvents(6)
+  const channelScope = await channelScopeWhere()
   const channels = await payload
     .find({
       collection: 'channels',
@@ -201,6 +225,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       pagination: false,
       sort: '-updatedAt',
       user,
+      where: channelScope,
     })
     .catch((error: unknown) => {
       if (isAccessDenied(error)) {
@@ -242,6 +267,7 @@ export async function getDashboardAllChannels(
 > {
   const user = await requireAppUser()
   const payload = await getPayload({ config: configPromise })
+  const channelScope = await channelScopeWhere()
   const channels = await payload
     .find({
       collection: 'channels',
@@ -251,6 +277,7 @@ export async function getDashboardAllChannels(
       pagination: false,
       sort: '-updatedAt',
       user,
+      where: channelScope,
     })
     .catch((error: unknown) => {
       if (isAccessDenied(error)) {
@@ -288,11 +315,7 @@ export async function getDashboardEvent(eventSlug: string): Promise<DashboardEve
       overrideAccess: false,
       pagination: false,
       user,
-      where: {
-        slug: {
-          equals: eventSlug,
-        },
-      },
+      where: await eventSlugWhere(eventSlug),
     })
   } catch (error) {
     if (isAccessDenied(error)) {
@@ -323,11 +346,7 @@ export async function getDashboardChannels(eventSlug: string): Promise<Dashboard
       overrideAccess: false,
       pagination: false,
       user,
-      where: {
-        slug: {
-          equals: eventSlug,
-        },
-      },
+      where: await eventSlugWhere(eventSlug),
     })
   } catch (error) {
     if (isAccessDenied(error)) {
@@ -421,6 +440,7 @@ export async function getDashboardActionItems(): Promise<DashboardActionItems> {
       return aStart - bStart
     })
 
+  const scopedOrganizationID = await getScopedOrganizationId()
   const pendingInviteCount = await payload.count({
     collection: 'organization-memberships',
     overrideAccess: false,
@@ -430,6 +450,7 @@ export async function getDashboardActionItems(): Promise<DashboardActionItems> {
         { status: { equals: 'pending' } },
         { invitedBy: { exists: true } },
         { requestedBy: { exists: false } },
+        ...(scopedOrganizationID ? [{ organization: { equals: scopedOrganizationID } }] : []),
       ],
     },
   })

@@ -1,6 +1,6 @@
 import configPromise from '@payload-config'
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import Link from '@/components/OrgLink'
 import { getPayload } from 'payload'
 
 import { ForgotPasswordForm } from '@/components/ForgotPasswordForm'

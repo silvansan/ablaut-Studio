@@ -1,7 +1,7 @@
 'use client'
 
 import { FormEvent, useState } from 'react'
-import Link from 'next/link'
+import Link from '@/components/OrgLink'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 function getSafeNextPath(value: string | null): string {

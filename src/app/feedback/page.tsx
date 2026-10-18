@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
-import Link from 'next/link'
+import Link from '@/components/OrgLink'
 
 import { FeedbackForm } from '@/components/FeedbackForm'
 import { Layout } from '@/components/Layout'

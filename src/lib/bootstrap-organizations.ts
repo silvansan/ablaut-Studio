@@ -1,5 +1,6 @@
 import type { Payload } from 'payload'
 
+import { generateOrgKey } from '@/lib/org-key'
 import { isOrganizationManagerRole } from '@/lib/organizations'
 
 const DEFAULT_ORGANIZATION_SLUG = 'default'
@@ -15,6 +16,31 @@ function normalizeRelationshipID(value: number | string | { id?: number | string
   }
 
   return null
+}
+
+/** Safety net: every organization needs a public key for its admin URLs (the migration backfills; this covers dev/push databases). */
+export async function ensureOrganizationKeys(payload: Payload) {
+  const missing = await payload.find({
+    collection: 'organizations',
+    depth: 0,
+    limit: 500,
+    overrideAccess: true,
+    pagination: false,
+    where: { publicKey: { exists: false } },
+  })
+
+  for (const organization of missing.docs) {
+    await payload.update({
+      collection: 'organizations',
+      data: { publicKey: generateOrgKey() },
+      id: organization.id,
+      overrideAccess: true,
+    })
+  }
+
+  if (missing.docs.length > 0) {
+    payload.logger.info(`Assigned a public key to ${missing.docs.length} organization(s).`)
+  }
 }
 
 export async function ensureDefaultOrganization(payload: Payload) {

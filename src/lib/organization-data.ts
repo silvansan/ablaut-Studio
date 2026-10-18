@@ -2,6 +2,7 @@ import configPromise from '@payload-config'
 import { getPayload, type Where } from 'payload'
 
 import { requireAppUser } from '@/lib/app-auth'
+import { getScopedOrganizationId } from '@/lib/org-context'
 import { getManageableOrganizationIDs } from '@/lib/organizations'
 import type { Organization } from '@/payload-types'
 
@@ -111,7 +112,12 @@ export async function getManageableOrganizations(): Promise<Organization[]> {
     where: manageableOrganizationWhere(manageableOrganizationIDs),
   })
 
-  return organizations.docs
+  // Inside /o/<key>/..., every organization list narrows to that organization.
+  const scopedOrganizationID = await getScopedOrganizationId()
+
+  return scopedOrganizationID
+    ? organizations.docs.filter((organization) => organization.id === scopedOrganizationID)
+    : organizations.docs
 }
 
 export async function getOrganizationSummaries(): Promise<OrganizationSummary[]> {

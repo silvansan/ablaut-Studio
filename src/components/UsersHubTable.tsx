@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import Link from '@/components/OrgLink'
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 

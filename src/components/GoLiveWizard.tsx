@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import Link from '@/components/OrgLink'
 import type { ReactNode } from 'react'
 
 export type GoLiveChannelItem = {

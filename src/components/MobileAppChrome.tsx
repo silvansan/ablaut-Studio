@@ -1,34 +1,34 @@
 'use client'
 
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { UserCircleIcon } from '@/components/ActionIcons'
-import { AppNav } from '@/components/AppNav'
-import { Logo } from '@/components/Logo'
-import type { NavChild } from '@/features/types'
+import Link, { useOrgKey } from '@/components/OrgLink'
+import { toPublicPath } from '@/lib/org-paths'
 
-type MobileNavItem = {
+type MobileTab = {
   badge?: number
-  children?: NavChild[]
   href: string
   label: string
 }
 
 type MobileAppChromeProps = {
   children: ReactNode
-  email: string
-  items: MobileNavItem[]
+  orgName: null | string
   showSidebar: boolean
+  /** The same sidebar the desktop shows, rendered inside the slide-down menu. */
+  sidebar: ReactNode
+  tabs: MobileTab[]
 }
 
-function tabMatches(pathname: string, href: string): boolean {
+function tabMatches(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
-export function MobileAppChrome({ children, email, items, showSidebar }: MobileAppChromeProps) {
+export function MobileAppChrome({ children, orgName, showSidebar, sidebar, tabs }: MobileAppChromeProps) {
   const pathname = usePathname()
+  const orgKey = useOrgKey()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
@@ -53,72 +53,54 @@ export function MobileAppChrome({ children, email, items, showSidebar }: MobileA
     }
   }, [drawerOpen])
 
-  const bottomTabs = items
-    .filter((item) => ['/events', '/organizations', '/settings', '/users'].includes(item.href))
-    .slice(0, 5)
-
   if (!showSidebar) {
     return <>{children}</>
   }
 
   return (
     <>
-      <div className="xl:hidden">
-        <div
-          className="us-panel mb-3 flex items-center justify-between gap-3 px-4 py-3"
-          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+      <div className="us-topbar flex xl:hidden" style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}>
+        <button
+          aria-expanded={drawerOpen}
+          aria-label={drawerOpen ? 'Close menu' : 'Open menu'}
+          className="us-button-secondary px-3 py-1.5 text-sm font-medium"
+          onClick={() => setDrawerOpen((open) => !open)}
+          type="button"
         >
-          <button
-            aria-expanded={drawerOpen}
-            aria-label={drawerOpen ? 'Close menu' : 'Open menu'}
-            className="us-button-secondary px-3 py-2 text-sm font-medium"
-            onClick={() => setDrawerOpen((open) => !open)}
-            type="button"
-          >
-            Menu
-          </button>
-          <Logo className="min-w-0 flex-1" href="/events" />
-          <Link aria-label="My profile" className="us-button-secondary inline-flex h-10 w-10 items-center justify-center" href="/profile">
-            <UserCircleIcon />
-          </Link>
-        </div>
-
-        {drawerOpen ? (
-          <div className="fixed inset-0 z-[10040] xl:hidden">
-            <button
-              aria-label="Close menu overlay"
-              className="us-scrim absolute inset-0"
-              onClick={() => setDrawerOpen(false)}
-              type="button"
-            />
-            <aside
-              className="us-panel absolute left-3 right-3 top-3 max-h-[calc(100vh-6rem)] overflow-y-auto"
-              style={{ top: 'max(0.75rem, env(safe-area-inset-top))' }}
-            >
-              <div className="us-nav-surface us-hero-glow flex flex-col gap-5 rounded-[inherit] px-5 py-5">
-                <Logo theme="light" />
-                <AppNav items={items} />
-                <Link
-                  className="us-nav-profile flex min-w-0 items-center gap-3 rounded-2xl px-4 py-4 text-sm font-semibold"
-                  href="/profile"
-                >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white">
-                    <UserCircleIcon />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block">My profile</span>
-                    <span className="us-nav-profile__email block truncate text-xs font-normal">{email}</span>
-                  </span>
-                </Link>
-              </div>
-            </aside>
-          </div>
-        ) : null}
+          Menu
+        </button>
+        <p className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: 'var(--us-green-dark)' }}>
+          {orgName ?? 'ablaut'}
+        </p>
+        <Link
+          aria-label="My profile"
+          className="us-button-secondary inline-flex h-9 w-9 items-center justify-center"
+          href="/profile"
+        >
+          <UserCircleIcon />
+        </Link>
       </div>
 
-      <div className="pb-20 xl:pb-0">{children}</div>
+      {drawerOpen ? (
+        <div className="fixed inset-0 z-[10040] xl:hidden">
+          <button
+            aria-label="Close menu overlay"
+            className="us-scrim absolute inset-0"
+            onClick={() => setDrawerOpen(false)}
+            type="button"
+          />
+          <aside
+            className="absolute inset-y-0 left-0 w-[min(20rem,88vw)] overflow-y-auto"
+            style={{ background: 'var(--us-card)', boxShadow: 'var(--us-shadow-strong)' }}
+          >
+            {sidebar}
+          </aside>
+        </div>
+      ) : null}
 
-      {bottomTabs.length > 0 ? (
+      <div className="pb-16 xl:pb-0">{children}</div>
+
+      {tabs.length > 0 ? (
         <nav
           aria-label="Primary"
           className="us-mobile-tabbar fixed inset-x-0 bottom-0 z-[10030] border-t xl:hidden"
@@ -128,19 +110,19 @@ export function MobileAppChrome({ children, email, items, showSidebar }: MobileA
             paddingBottom: 'env(safe-area-inset-bottom)',
           }}
         >
-          <div className="mx-auto grid max-w-lg" style={{ gridTemplateColumns: `repeat(${bottomTabs.length}, minmax(0, 1fr))` }}>
-            {bottomTabs.map((item) => {
-              const active = tabMatches(pathname, item.href)
+          <div className="mx-auto grid max-w-lg" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
+            {tabs.map((tab) => {
+              const active = tabMatches(pathname, toPublicPath(tab.href, orgKey))
 
               return (
                 <Link
                   className={`us-mobile-tabbar__link flex flex-col items-center gap-1 px-2 py-2.5 text-center font-semibold leading-tight ${active ? 'us-mobile-tabbar__link--active' : ''}`}
-                  href={item.href}
-                  key={item.href}
-                  style={{ color: active ? 'var(--us-blue-dark)' : 'var(--us-muted)' }}
+                  href={tab.href}
+                  key={tab.href}
+                  style={{ color: active ? 'var(--us-green-dark)' : 'var(--us-muted)' }}
                 >
-                  <span>{item.label}</span>
-                  {item.badge ? <span className="us-mobile-tabbar__badge">{item.badge}</span> : null}
+                  <span>{tab.label}</span>
+                  {tab.badge ? <span className="us-mobile-tabbar__badge">{tab.badge}</span> : null}
                 </Link>
               )
             })}

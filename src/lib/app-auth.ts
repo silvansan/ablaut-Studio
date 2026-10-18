@@ -2,11 +2,13 @@ import configPromise from '@payload-config'
 import { cookies } from 'next/headers'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { cache } from 'react'
 import { getPayload } from 'payload'
 
 import type { User } from '@/payload-types'
 
-export async function getCurrentAppUser(): Promise<User | null> {
+// Cached per request: layouts, data helpers and the org context all ask who is signed in.
+export const getCurrentAppUser = cache(async (): Promise<User | null> => {
   const payload = await getPayload({ config: configPromise })
   const requestHeaders = await headers()
   const authHeaders = new Headers(requestHeaders)
@@ -20,7 +22,7 @@ export async function getCurrentAppUser(): Promise<User | null> {
   const { user } = await payload.auth({ headers: authHeaders })
 
   return (user as User | null) ?? null
-}
+})
 
 export async function requireAppUser(): Promise<User> {
   const user = await getCurrentAppUser()

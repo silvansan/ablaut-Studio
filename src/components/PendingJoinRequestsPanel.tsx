@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import Link from '@/components/OrgLink'
 
 import { approveMembershipAction, rejectMembershipAction } from '@/app/users/actions'
 import type { OrganizationMembership } from '@/payload-types'

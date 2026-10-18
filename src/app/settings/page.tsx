@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import Link from '@/components/OrgLink'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 

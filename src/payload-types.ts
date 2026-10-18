@@ -217,6 +217,10 @@ export interface Organization {
   id: number;
   name: string;
   slug: string;
+  /**
+   * Opaque key used in admin URLs (/o/<key>/...). Generated once; never changes.
+   */
+  publicKey?: string | null;
   description?: string | null;
   active?: boolean | null;
   /**
@@ -583,6 +587,7 @@ export interface MediaSelect<T extends boolean = true> {
 export interface OrganizationsSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
+  publicKey?: T;
   description?: T;
   active?: T;
   productionMode?: T;

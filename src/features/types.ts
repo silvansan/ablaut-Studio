@@ -1,33 +1,3 @@
-export type NavChild = {
-  href: string
-  label: string
-  status?: 'active' | 'draft' | 'archived'
-  variant?: 'event' | 'viewall'
-}
-
-export type FeatureNavItem = {
-  badge?: number
-  children?: NavChild[]
-  featureId: string
-  href: string
-  label: string
-}
-
-export type AblautFeature = {
-  enabled: () => boolean
-  id: string
-  label: string
-  navItems?: (context: FeatureNavContext) => FeatureNavItem[]
-}
-
-export type FeatureNavContext = {
-  isAdmin: boolean
-  isOrganizationManager: boolean
-  isSuperAdmin: boolean
-  pendingJoinRequestCount: number
-  showMultiOrganizationNav: boolean
-}
-
 export function isFeatureEnabled(featureId: string): boolean {
   const envKey = `FEATURE_${featureId.toUpperCase().replace(/-/g, '_')}`
   const envValue = process.env[envKey]

@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import Link from '@/components/OrgLink'
 
 import type { UserHubStatusFilter } from '@/lib/users-hub-filters'
 import type { Organization } from '@/payload-types'

@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import Link from '@/components/OrgLink'
 import { notFound } from 'next/navigation'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'

@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import Link from '@/components/OrgLink'
 
 import { UserAccountActions } from '@/components/UserAccountActions'
 import { UserAccountForm } from '@/components/UserAccountForm'
