@@ -6,6 +6,7 @@ import type { User } from '@/payload-types'
 
 const RECENT_EVENTS_LIMIT = 6
 const FLYOUT_LIMIT = 8
+const SEARCH_LIMIT = 200
 
 export type RecentEventEntry = {
   id: number
@@ -20,6 +21,8 @@ export type EventFlyoutItem = {
 
 export type EventNavFlyout = {
   items: EventFlyoutItem[]
+  /** Every event (recent first) for the jump-to search; bigger than `items`. */
+  searchItems: EventFlyoutItem[]
   totalCount: number
   isEmpty: boolean
 }
@@ -74,7 +77,7 @@ export async function getEventNavFlyout(
   organizationId?: null | number,
 ): Promise<EventNavFlyout> {
   if (!user) {
-    return { items: [], totalCount: 0, isEmpty: true }
+    return { items: [], searchItems: [], totalCount: 0, isEmpty: true }
   }
 
   const allEvents = await getDashboardEvents(1000)
@@ -104,14 +107,18 @@ export async function getEventNavFlyout(
       return bStart - aStart
     })
 
-  const items = [...ordered, ...remaining].slice(0, FLYOUT_LIMIT).map((event) => ({
+  const toItem = (event: (typeof events)[number]) => ({
     href: `/events/${event.slug}`,
     label: event.title,
     status: (event.status ?? 'active') as EventFlyoutItem['status'],
-  }))
+  })
+  const archived = events.filter((event) => event.status === 'archived')
+  const items = [...ordered, ...remaining].slice(0, FLYOUT_LIMIT).map(toItem)
+  const searchItems = [...ordered, ...remaining, ...archived].slice(0, SEARCH_LIMIT).map(toItem)
 
   return {
     items,
+    searchItems,
     totalCount: events.length,
     isEmpty: events.length === 0,
   }

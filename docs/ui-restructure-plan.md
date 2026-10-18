@@ -1,6 +1,6 @@
 # UI restructure plan
 
-Status: approved direction, phase 1 in progress. Decisions made with the owner:
+Status: all six phases implemented on the local `ui-restructure` branch (not pushed). Decisions made with the owner:
 
 1. Navigation: **left sidebar** replaces the top bar and its hover submenus.
 2. **Organization in every admin URL**, using a scrambled key (not the readable slug).
@@ -65,6 +65,21 @@ Production schema changes need a migration in `src/migrations/` registered in `i
 - Tables: hairline-divided rows instead of card-per-row; tabular numerals, right-aligned numbers.
 - Colour: green for brand and "live"; neutral otherwise.
 - One shared `us-input` / `us-label` instead of hand-styled fields.
+
+## How it was built
+
+- Pages did **not** move. `src/middleware.ts` rewrites `/o/<key>/...` and `/platform/...` onto the existing
+  `/events`, `/users`, `/settings`, `/organizations` folders (mapping in `src/lib/org-paths.ts`) and passes the
+  organization key to server code in request headers (`src/lib/org-headers.ts`, `src/lib/org-context.ts`).
+- `@/components/OrgLink` replaces `next/link` everywhere and rewrites `/events/x` to `/o/<key>/events/x`
+  automatically. Use it (not `next/link`) for any admin link.
+- Old unscoped URLs (`/events/x`, bookmarks, server-action redirects) are redirected by `Layout` to the owning
+  organization (event-aware), else the last visited one (cookie `ablaut_org`), else the first.
+- Event, channel, organization and People queries follow the organization in the URL
+  (`getScopedOrganizationId`). `/platform/users` keeps the all-organizations view.
+- `Organization.publicKey`: migration `20261101_120000_organization_public_key` plus a startup backfill.
+- `/platform/server` (super admins): CPU, memory, network, LiveKit rooms, database; API at `/api/app/server-stats`.
+- Jump-to palette (Ctrl/Cmd+K) in the sidebar: events, sections, organizations.
 
 ## Phases (each ships and can be tagged on its own)
 

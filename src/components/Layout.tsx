@@ -10,6 +10,7 @@ import { AppSidebar } from './AppSidebar'
 import { Breadcrumbs } from './Breadcrumbs'
 import { MobileAppChrome } from './MobileAppChrome'
 import { OrgProvider } from './OrgLink'
+import type { PaletteItem } from './CommandPalette'
 import type { SidebarNavItem } from './SidebarNav'
 import { isFeatureEnabled } from '@/features/types'
 import { getCurrentAppUser, requireAppUser } from '@/lib/app-auth'
@@ -158,6 +159,26 @@ export async function Layout({
     .map((organization) => ({ key: organization.publicKey, name: organization.name }))
 
   // The sidebar always links into the organization it shows, even on Platform pages that have none in the URL.
+  const paletteItems: PaletteItem[] = [
+    ...navItems.map((item) => ({ hint: 'Section', href: item.href, id: `nav-${item.href}`, label: item.label })),
+    ...platformItems.map((item) => ({ hint: 'Platform', href: item.href, id: `platform-${item.href}`, label: item.label })),
+    ...(eventFlyout?.searchItems ?? []).map((item) => ({
+      hint: 'Event',
+      href: item.href,
+      id: `event-${item.href}`,
+      label: item.label,
+      status: item.status,
+    })),
+    ...organizationOptions
+      .filter((organization) => organization.key !== sidebarOrganization?.publicKey)
+      .map((organization) => ({
+        hint: 'Switch organization',
+        href: `/o/${organization.key}/events`,
+        id: `org-${organization.key}`,
+        label: organization.name,
+      })),
+  ]
+
   const sidebar = (
     <OrgProvider orgKey={sidebarOrganization?.publicKey ?? null}>
       <AppSidebar
@@ -165,6 +186,7 @@ export async function Layout({
         email={user?.email ?? ''}
         navItems={navItems}
         organizations={organizationOptions}
+        paletteItems={paletteItems}
         platformItems={platformItems}
         recentItems={recentItems}
       />

@@ -137,9 +137,11 @@ export default async function UsersPage({ searchParams }: PageProps) {
         ) : (
           <div className="us-panel px-6 py-6">
             <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              No users are available yet.
+              {organizations.length === 1
+                ? `No one in ${organizations[0]?.name} yet. Use "Invite user" above to add your first person.`
+                : 'No users are available yet.'}
             </p>
-            {organizations.length > 0 ? (
+            {organizations.length > 1 ? (
               <Link
                 className="mt-3 inline-block text-sm font-medium hover:underline"
                 href="/organizations"

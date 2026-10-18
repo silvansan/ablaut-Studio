@@ -78,6 +78,20 @@ const s = eventStatusChip(event.status)   // → { className, label }
 
 Do **not** add a new `*Drawer` / `*Panel` / modal primitive. Compose these.
 
+## App shell & links
+
+- Every admin page renders inside `Layout` (left sidebar, top-bar breadcrumbs, content column
+  `max-w-6xl`). Do not build page-level headers or footers. Pass `title`; for dynamic pages
+  (event, channel) also pass `breadcrumbs={[{ href, label }, { label }]}` with real titles.
+- **Links: import `Link` from `@/components/OrgLink`, never `next/link`.** Write internal hrefs the
+  old way (`/events/x`, `/users`, `/settings`); OrgLink turns them into `/o/<key>/events/x`,
+  `/o/<key>/people`, `/o/<key>/settings`. Org management lives at `/platform/organizations`.
+- Admin URLs are organization-scoped (`/o/<key>/...`); public `/listen` and `/speak` URLs are not.
+  Queries for events, channels, organizations and People already follow the URL's organization.
+- Mapping lives in `src/lib/org-paths.ts` (unit-tested). New top-level admin sections need an entry there.
+- Tailwind caveat: a custom class that sets `display` beats responsive utilities (`xl:hidden`)
+  because it is unlayered. Put `display` in utility classes in the markup instead.
+
 ## Layout & scale
 
 - Section rhythm: `space-y-4`. Gaps: `gap-2` / `gap-3` / `gap-4`.

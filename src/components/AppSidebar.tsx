@@ -1,5 +1,6 @@
 import Link from '@/components/OrgLink'
 
+import { CommandPalette, type PaletteItem } from './CommandPalette'
 import { Logo } from './Logo'
 import { OrgSwitcher, type OrgSwitcherOption } from './OrgSwitcher'
 import { SidebarNav, type SidebarNavItem } from './SidebarNav'
@@ -9,6 +10,7 @@ type AppSidebarProps = {
   email: string
   navItems: SidebarNavItem[]
   organizations: OrgSwitcherOption[]
+  paletteItems: PaletteItem[]
   platformItems: SidebarNavItem[]
   recentItems: SidebarNavItem[]
 }
@@ -19,6 +21,7 @@ export function AppSidebar({
   email,
   navItems,
   organizations,
+  paletteItems,
   platformItems,
   recentItems,
 }: AppSidebarProps) {
@@ -26,6 +29,7 @@ export function AppSidebar({
     <div className="us-sidebar">
       <Logo compact href="/events" />
       {organizations.length > 0 ? <OrgSwitcher currentKey={currentKey} organizations={organizations} /> : null}
+      <CommandPalette items={paletteItems} />
       <SidebarNav items={navItems} label="Main" />
       <SidebarNav heading="Recent" items={recentItems} label="Recent events" />
       <SidebarNav heading="Platform" items={platformItems} label="Platform" />

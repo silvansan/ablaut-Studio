@@ -63,6 +63,10 @@ export default async function EventsPage({ searchParams }: PageProps) {
   )
   const tintedEvents = assignGroupTints(eventsWithDelete, (event) => String(event.organizationId ?? '__none__'))
   const returnPath = status ? `/events?status=${status}` : '/events'
+  const createEventDescription =
+    organizations.length === 1
+      ? `Create a new event in ${organizations[0]?.name}.`
+      : 'Choose an organization and create a new event.'
 
   return (
     <Layout hideHeader title="Events">
@@ -101,7 +105,7 @@ export default async function EventsPage({ searchParams }: PageProps) {
         </div>
 
         {canCreateEventsUser ? (
-          <CollapsiblePanel description="Choose an organization and create a new event." title="Create event">
+          <CollapsiblePanel description={createEventDescription} title="Create event">
             <EventForm
               action={createEventAction}
               organizations={organizations}
@@ -134,22 +138,13 @@ export default async function EventsPage({ searchParams }: PageProps) {
               {canCreateEventsUser
                 ? organizations.length === 0
                   ? 'No events yet. Join an organization under Settings, then create your first event.'
-                  : 'No events yet. Create one to get started.'
+                  : `No events yet${organizations.length === 1 ? ` in ${organizations[0]?.name}` : ''}. Open "Create event" above to add your first.`
                 : 'No events are available for your account yet.'}
             </p>
             {organizations.length === 0 && canCreateEventsUser ? (
               <Link className="us-button-primary mt-4 inline-flex px-4 py-2.5 text-sm font-medium" href="/settings">
                 Open settings
               </Link>
-            ) : canCreateEventsUser ? (
-              <CollapsiblePanel description="Choose an organization and create a new event." title="Create event">
-                <EventForm
-                  action={createEventAction}
-                  organizations={organizations}
-                  submitLabel="Create event"
-                  variant="drawer"
-                />
-              </CollapsiblePanel>
             ) : null}
           </div>
         )}

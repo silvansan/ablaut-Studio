@@ -482,6 +482,21 @@ button.us-side-org:hover {
   color: var(--us-muted);
 }
 
+.us-side-search {
+  color: var(--us-muted);
+  font-weight: 400;
+}
+
+.us-kbd {
+  padding: 0 0.3125rem;
+  border: 1px solid var(--us-border-strong);
+  border-radius: var(--us-r-chip);
+  font-family: inherit;
+  font-size: 0.6875rem;
+  line-height: 1.25rem;
+  color: var(--us-muted);
+}
+
 .us-side-menu {
   position: absolute;
   z-index: 60;
