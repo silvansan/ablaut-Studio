@@ -47,6 +47,12 @@ style here and is fine. Raw hex or ad-hoc `rgba()` in a `.tsx` file is not.
   all buttons and button-styled links, `4px` radius. Add sizing with
   `px-4 py-2 text-sm font-medium`. Do not restyle their color/shadow.
 - **`us-input`** + **`us-label`** — every text field / select. Never hand-style an input.
+- **Forms** use `@/components/FormFields`: `Field` (compact label above a `us-input`; `hint` shows as an
+  info-icon tooltip, not a paragraph), `SwitchField` (on/off row instead of a boxed checkbox; `note` for a
+  one-line consequence), `FormSection` (flat collapsible group for rarely used options), `Hint`. Lay fields
+  out with a 12-column grid (`grid gap-3 md:grid-cols-12`, literal `md:col-span-*` classes: Tailwind cannot
+  see class names built from variables). Textareas start at `rows={2}`. Prefer icons and tooltips to
+  explanatory paragraphs.
 - **`us-chip`** + one of `us-chip-muted` / `us-chip-blue` / `us-chip-warning` /
   `us-chip-active` / `us-chip-inactive` — labels, tags, counts, statuses.
 - **`us-data-row`** with `__lead` / `__chips` / `__detail` / `__actions`, plus

@@ -1,4 +1,5 @@
 import { AudioEffectToggle } from '@/components/AudioEffectToggle'
+import { Field, FormSection, SwitchField } from '@/components/FormFields'
 import { ListenerAccessFields } from '@/components/ListenerAccessFields'
 import type { Channel } from '@/payload-types'
 
@@ -27,127 +28,58 @@ export function ChannelForm({
   const isAdvanced = variant === 'advanced'
   const useEmbedded = embedded || (isAdvanced && !action)
   const Wrapper = useEmbedded ? 'div' : 'form'
-  const wrapperClassName = isAdvanced || chrome === 'none' ? 'space-y-5' : 'us-panel space-y-5 px-6 py-6'
+  const wrapperClassName = isAdvanced || chrome === 'none' ? 'space-y-4' : 'us-panel space-y-4 px-6 py-6'
 
-  return (
-    <Wrapper
-      {...(useEmbedded ? {} : { action })}
-      className={wrapperClassName}
-    >
-      <input name="eventSlug" type="hidden" value={eventSlug} />
-      {channel ? (
-        <>
-          <input name="id" type="hidden" value={channel.id} />
-          <input name="originalSlug" type="hidden" value={channel.slug} />
-          {isAdvanced ? <input name="name" type="hidden" value={channel.name} /> : null}
-        </>
-      ) : null}
-
-      {!isAdvanced ? (
-        <>
-          <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-            Channel name
-            <input className="us-input mt-2" defaultValue={channel?.name ?? ''} name="name" required style={{ borderColor: 'var(--us-border)' }} />
-          </label>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-              Sort order
-              <input className="us-input mt-2" defaultValue={channel?.sortOrder ?? 0} name="sortOrder" style={{ borderColor: 'var(--us-border)' }} type="number" />
-            </label>
-          </div>
-
-          <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-            Description
-            <textarea className="us-input mt-2 min-h-24" defaultValue={channel?.description ?? ''} name="description" style={{ borderColor: 'var(--us-border)' }} />
-          </label>
-        </>
-      ) : (
-        <>
-          <input name="description" type="hidden" value={channel?.description ?? ''} />
-          <input name="sortOrder" type="hidden" value={channel?.sortOrder ?? 0} />
-          <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-            URL name
-            <input className="us-input mt-2" defaultValue={channel?.slug ?? ''} name="slug" style={{ borderColor: 'var(--us-border)' }} />
-            <span className="mt-2 block text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
-              Changing it breaks links and QR codes that use it. Private links are not affected.
-            </span>
-          </label>
-        </>
-      )}
-
-      <div className="grid gap-3 md:grid-cols-2">
-        {[
-          ['enabled', 'Channel enabled', channel?.enabled ?? true],
-          ['listenerPageEnabled', 'Listener page on', channel?.listenerPageEnabled ?? true],
-          ['speakerPageEnabled', 'Speaker page on', channel?.speakerPageEnabled ?? true],
-        ].map(([name, label, checked]) => (
-          <label key={String(name)} className="flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
-            <input className="mt-1" defaultChecked={Boolean(checked)} name={String(name)} type="checkbox" />
-            <span>{label}</span>
-          </label>
-        ))}
-      </div>
-
-      <details className="rounded-2xl border px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
-        <summary className="cursor-pointer text-sm font-semibold" style={{ color: 'var(--us-green-dark)' }}>
-          Expert options
-        </summary>
-        <div className="mt-4 space-y-5">
+  const expertOptions = (
+    <>
       <ListenerAccessFields
         defaultMode={channel?.listenerTokenMode ?? 'public'}
         eventListenerPasswordConfigured={eventListenerPasswordConfigured}
         eventSlug={eventSlug}
       />
 
-      <div className="rounded-2xl border px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-          Speaker access
-        </p>
-        <p className="mt-2 text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
-          Overrides the event speaker password. Leave blank to keep the current one.
-        </p>
-        <label className="mt-4 flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
-          <input className="mt-1" defaultChecked={channel?.speakerPasswordEnabled ?? false} name="speakerPasswordEnabled" type="checkbox" />
-          <span>Require a speaker password for this channel</span>
-        </label>
-        <label className="mt-3 block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-          New speaker password
+      <div>
+        <p className="us-subheading pb-1">Speaker access</p>
+        <SwitchField
+          defaultChecked={channel?.speakerPasswordEnabled ?? false}
+          hint="Overrides the event speaker password."
+          label="Speaker password"
+          name="speakerPasswordEnabled"
+        />
+        <Field label="New speaker password">
           <input
             autoComplete="new-password"
-            className="us-input mt-2"
+            className="us-input"
             name="speakerPassword"
-            placeholder={channel?.speakerPasswordHash ? 'Leave blank to keep current password' : 'Set a speaker password'}
+            placeholder={channel?.speakerPasswordHash ? 'Leave blank to keep the current one' : 'Set a password'}
             type="password"
           />
-        </label>
+        </Field>
       </div>
 
-      <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-        Icecast fallback URL
-        <input className="us-input mt-2" defaultValue={channel?.icecastFallbackUrl ?? ''} name="icecastFallbackUrl" style={{ borderColor: 'var(--us-border)' }} />
-      </label>
+      <Field label="Icecast fallback URL">
+        <input className="us-input" defaultValue={channel?.icecastFallbackUrl ?? ''} name="icecastFallbackUrl" />
+      </Field>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        {[
-          ['webrtcEnabled', 'Low-latency listening (WebRTC)', channel?.webrtcEnabled ?? true],
-          ['hlsEnabled', 'Compatibility listening (LL-HLS)', channel?.hlsEnabled ?? true],
-        ].map(([name, label, checked]) => (
-          <label key={String(name)} className="flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
-            <input className="mt-1" defaultChecked={Boolean(checked)} name={String(name)} type="checkbox" />
-            <span>{label}</span>
-          </label>
-        ))}
+      <div>
+        <p className="us-subheading pb-1">Listening modes</p>
+        <SwitchField
+          defaultChecked={channel?.webrtcEnabled ?? true}
+          hint="Lowest delay. Works in most browsers."
+          label="Live (low delay)"
+          name="webrtcEnabled"
+        />
+        <SwitchField
+          defaultChecked={channel?.hlsEnabled ?? true}
+          hint="A few seconds behind, but works almost everywhere."
+          label="Compatibility"
+          name="hlsEnabled"
+        />
       </div>
 
-      <div className="rounded-2xl border px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-          Audio quality defaults
-        </p>
-        <p className="mt-2 text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
-          Loaded on the speaker page. Leave off for music.
-        </p>
-        <div className="mt-4 space-y-3">
+      <div>
+        <p className="us-subheading pb-1">Speaker audio defaults</p>
+        <div className="space-y-2">
           <AudioEffectToggle
             defaultChecked={channel?.audioQuality?.echoCancellation ?? false}
             hint="Off by default to avoid music distortion"
@@ -171,12 +103,55 @@ export function ChannelForm({
           />
         </div>
       </div>
-        </div>
-      </details>
+    </>
+  )
 
-      <button type="submit" className="us-button-primary px-5 py-3 text-sm font-medium">
-        {submitLabel}
-      </button>
+  return (
+    <Wrapper {...(useEmbedded ? {} : { action })} className={wrapperClassName}>
+      <input name="eventSlug" type="hidden" value={eventSlug} />
+      {channel ? (
+        <>
+          <input name="id" type="hidden" value={channel.id} />
+          <input name="originalSlug" type="hidden" value={channel.slug} />
+          {isAdvanced ? <input name="name" type="hidden" value={channel.name} /> : null}
+        </>
+      ) : null}
+
+      {!isAdvanced ? (
+        <div className="grid gap-3 md:grid-cols-12">
+          <Field className="md:col-span-9" label="Channel name">
+            <input className="us-input" defaultValue={channel?.name ?? ''} name="name" required />
+          </Field>
+          <Field className="md:col-span-3" hint="Lower numbers are listed first." label="Order">
+            <input className="us-input" defaultValue={channel?.sortOrder ?? 0} name="sortOrder" type="number" />
+          </Field>
+          <Field className="md:col-span-12" label="Description">
+            <textarea className="us-input" defaultValue={channel?.description ?? ''} name="description" rows={2} />
+          </Field>
+        </div>
+      ) : (
+        <>
+          <input name="description" type="hidden" value={channel?.description ?? ''} />
+          <input name="sortOrder" type="hidden" value={channel?.sortOrder ?? 0} />
+          <Field hint="Changing it breaks links and QR codes that use it. Private links are not affected." label="URL name">
+            <input className="us-input" defaultValue={channel?.slug ?? ''} name="slug" />
+          </Field>
+        </>
+      )}
+
+      <div>
+        <SwitchField defaultChecked={channel?.enabled ?? true} label="Channel enabled" name="enabled" />
+        <SwitchField defaultChecked={channel?.listenerPageEnabled ?? true} label="Listener page" name="listenerPageEnabled" />
+        <SwitchField defaultChecked={channel?.speakerPageEnabled ?? true} label="Speaker page" name="speakerPageEnabled" />
+      </div>
+
+      <FormSection title="Expert options">{expertOptions}</FormSection>
+
+      <div className="pt-1">
+        <button className="us-button-primary px-4 py-2 text-sm font-medium" type="submit">
+          {submitLabel}
+        </button>
+      </div>
     </Wrapper>
   )
 }

@@ -1,4 +1,4 @@
-import { CollapsiblePanel } from '@/components/CollapsiblePanel'
+import { Field, FormSection, SwitchField } from '@/components/FormFields'
 import {
   OrganizationSelectField,
   organizationIdFromEvent,
@@ -39,7 +39,7 @@ export function EventForm({
   const canSubmit = Boolean(event) || Boolean(organizationId) || organizations.length > 0
   const useEmbedded = embedded || (isDrawer && !action)
   const Wrapper = useEmbedded ? 'div' : 'form'
-  const wrapperClassName = isDrawer ? 'space-y-5' : 'us-panel space-y-5 px-6 py-6'
+  const wrapperClassName = isDrawer ? 'space-y-4' : 'us-panel space-y-4 px-6 py-6'
 
   return (
     <Wrapper
@@ -63,157 +63,104 @@ export function EventForm({
         />
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-          Title
-          <input
-            className="us-input mt-2"
-            defaultValue={event?.title ?? ''}
-            name="title"
-            required
-          />
-        </label>
-
-        <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-          URL name
-          <input
-            className="us-input mt-2"
-            defaultValue={event?.slug ?? ''}
-            name="slug"
-          />
-          <span className="mt-2 block text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
-            Changing it breaks links and QR codes that use it. Private links are not affected.
-          </span>
-        </label>
-      </div>
-
-      <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-        Description
-        <textarea
-          className="us-input mt-2 min-h-28"
-          defaultValue={event?.description ?? ''}
-          name="description"
-        />
-      </label>
-
-      <div className="grid gap-4 md:grid-cols-4">
-        <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-          Status
-          <select
-            className="us-input mt-2"
-            defaultValue={event?.status ?? 'active'}
-            name="status"
-          >
+      <div className="grid gap-3 md:grid-cols-12">
+        <Field className="md:col-span-8" label="Title">
+          <input className="us-input" defaultValue={event?.title ?? ''} name="title" required />
+        </Field>
+        <Field className="md:col-span-4" label="Status">
+          <select className="us-input" defaultValue={event?.status ?? 'active'} name="status">
             <option value="active">Active</option>
-            <option value="draft">Draft (inactive)</option>
+            <option value="draft">Draft</option>
             <option value="archived">Archived</option>
           </select>
-        </label>
-
-        <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-          Start
-          <input
-            className="us-input mt-2"
-            defaultValue={dateTimeValue(event?.dateStart)}
-            name="dateStart"
-            type="datetime-local"
-          />
-        </label>
-
-        <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-          End
-          <input
-            className="us-input mt-2"
-            defaultValue={dateTimeValue(event?.dateEnd)}
-            name="dateEnd"
-            type="datetime-local"
-          />
-        </label>
-
-        <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-          Default language
-          <input
-            className="us-input mt-2"
-            defaultValue={event?.defaultLanguage ?? 'en'}
-            name="defaultLanguage"
-          />
-        </label>
+        </Field>
+        <Field className="md:col-span-4" label="Starts">
+          <input className="us-input" defaultValue={dateTimeValue(event?.dateStart)} name="dateStart" type="datetime-local" />
+        </Field>
+        <Field className="md:col-span-4" label="Ends">
+          <input className="us-input" defaultValue={dateTimeValue(event?.dateEnd)} name="dateEnd" type="datetime-local" />
+        </Field>
+        <Field className="md:col-span-4" label="Language">
+          <input className="us-input" defaultValue={event?.defaultLanguage ?? 'en'} name="defaultLanguage" />
+        </Field>
+        <Field className="md:col-span-12" label="Description">
+          <textarea className="us-input" defaultValue={event?.description ?? ''} name="description" rows={2} />
+        </Field>
       </div>
 
-      <label className="flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
-        <input className="mt-1" defaultChecked={event?.publicListenerEnabled ?? true} name="publicListenerEnabled" type="checkbox" />
-        <span>Public listener pages enabled</span>
-      </label>
-
-      <CollapsiblePanel title="Sharing and access options">
-        <div className="space-y-4">
-      <div className="rounded-2xl border px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-          Listener access
-        </p>
-        <label className="mt-4 flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
-          <input className="mt-1" defaultChecked={event?.unifiedListenerQrEnabled ?? false} name="unifiedListenerQrEnabled" type="checkbox" />
-          <span>One QR for all languages (listeners choose a channel after scanning)</span>
-        </label>
-        <label className="mt-3 flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
-          <input className="mt-1" defaultChecked={event?.listenerPasswordEnabled ?? false} name="listenerPasswordEnabled" type="checkbox" />
-          <span>Require event listener password (used when channels use password mode)</span>
-        </label>
-        <label className="mt-3 block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-          Listener password
-          <input
-            autoComplete="new-password"
-            className="us-input mt-2"
-            name="listenerPassword"
-            placeholder={event?.listenerPasswordHash ? 'Leave blank to keep current password' : 'Set listener password'}
-            type="password"
-          />
-        </label>
+      <div>
+        <SwitchField
+          defaultChecked={event?.publicListenerEnabled ?? true}
+          hint="Off hides the public listener pages for every channel."
+          label="Public listener pages"
+          name="publicListenerEnabled"
+        />
+        <SwitchField
+          defaultChecked={event?.unifiedListenerQrEnabled ?? false}
+          hint="Listeners pick their channel after scanning."
+          label="One QR for all languages"
+          name="unifiedListenerQrEnabled"
+        />
+        <SwitchField
+          defaultChecked={event?.privateLinksEnabled ?? false}
+          hint="Random, unguessable links instead of readable ones."
+          label="Private links"
+          name="privateLinksEnabled"
+          note="Turning this on or off changes every listener and speaker link and QR code."
+        />
       </div>
 
-      <div className="rounded-2xl border px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-          Speaker access
-        </p>
-        <label className="mt-4 flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
-          <input className="mt-1" defaultChecked={event?.speakerPasswordEnabled ?? false} name="speakerPasswordEnabled" type="checkbox" />
-          <span>Require event speaker password (unless a channel sets its own)</span>
-        </label>
-        <label className="mt-3 block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-          Speaker password
-          <input
-            autoComplete="new-password"
-            className="us-input mt-2"
-            name="speakerPassword"
-            placeholder={event?.speakerPasswordHash ? 'Leave blank to keep current password' : 'Set speaker password'}
-            type="password"
-          />
-        </label>
-      </div>
-
-      <div className="rounded-2xl border px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-          Private links
-        </p>
-        <label className="mt-4 flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm" style={{ color: 'var(--us-text)' }}>
-          <input className="mt-1" defaultChecked={event?.privateLinksEnabled ?? false} name="privateLinksEnabled" type="checkbox" />
-          <span>Use random, unguessable links instead of readable ones for this event and its channels</span>
-        </label>
-        <p className="mt-3 text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
-          Turning this on replaces every listener and speaker URL with a random one. Links and QR codes already shared
-          stop working the moment it&apos;s on.
-        </p>
-      </div>
+      <FormSection title="Passwords and URL">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div>
+            <SwitchField
+              defaultChecked={event?.listenerPasswordEnabled ?? false}
+              hint="Used by channels set to password mode."
+              label="Listener password"
+              name="listenerPasswordEnabled"
+            />
+            <Field label="New listener password">
+              <input
+                autoComplete="new-password"
+                className="us-input"
+                name="listenerPassword"
+                placeholder={event?.listenerPasswordHash ? 'Leave blank to keep the current one' : 'Set a password'}
+                type="password"
+              />
+            </Field>
+          </div>
+          <div>
+            <SwitchField
+              defaultChecked={event?.speakerPasswordEnabled ?? false}
+              hint="Unless a channel sets its own."
+              label="Speaker password"
+              name="speakerPasswordEnabled"
+            />
+            <Field label="New speaker password">
+              <input
+                autoComplete="new-password"
+                className="us-input"
+                name="speakerPassword"
+                placeholder={event?.speakerPasswordHash ? 'Leave blank to keep the current one' : 'Set a password'}
+                type="password"
+              />
+            </Field>
+          </div>
         </div>
-      </CollapsiblePanel>
+        <Field hint="Changing it breaks links and QR codes that use it. Private links are not affected." label="URL name">
+          <input className="us-input" defaultValue={event?.slug ?? ''} name="slug" />
+        </Field>
+      </FormSection>
 
-      <button
-        className="us-button-primary px-5 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
-        disabled={!canSubmit}
-        type="submit"
-      >
-        {submitLabel}
-      </button>
+      <div className="pt-1">
+        <button
+          className="us-button-primary px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!canSubmit}
+          type="submit"
+        >
+          {submitLabel}
+        </button>
+      </div>
     </Wrapper>
   )
 }

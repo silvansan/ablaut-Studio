@@ -113,6 +113,15 @@ export function LockIcon({ className = 'h-4 w-4' }: IconProps) {
   )
 }
 
+export function InfoIcon({ className = 'h-3.5 w-3.5' }: IconProps) {
+  return (
+    <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5M12 8h.01" />
+    </svg>
+  )
+}
+
 export function SearchIcon({ className = 'h-4 w-4' }: IconProps) {
   return (
     <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">

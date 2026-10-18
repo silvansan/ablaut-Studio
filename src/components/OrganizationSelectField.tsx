@@ -15,16 +15,16 @@ type OrganizationSelectFieldProps = {
 
 export function OrganizationSelectField({
   defaultOrganizationId,
-  labelClassName = 'block text-sm font-medium',
+  labelClassName = 'us-field',
   name = 'organizationId',
   organizations,
   required = true,
-  selectClassName = 'mt-2 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none',
+  selectClassName = 'us-input',
 }: OrganizationSelectFieldProps) {
   if (organizations.length === 0) {
     return (
-      <p className="rounded-2xl border px-4 py-3 text-sm" style={{ borderColor: 'var(--us-border)', color: 'var(--us-muted)' }}>
-        No organizations are available. Create or join an organization first.
+      <p className="text-sm" style={{ color: 'var(--us-muted)' }}>
+        No organizations yet. Create or join one first.
       </p>
     )
   }
@@ -36,14 +36,13 @@ export function OrganizationSelectField({
   const selectedOrganizationId = defaultOrganizationId ?? organizations[0]?.id
 
   return (
-    <label className={labelClassName} style={{ color: 'var(--us-text)' }}>
-      Organization
+    <label className={labelClassName}>
+      <span className="us-field__label">Organization</span>
       <select
         className={selectClassName}
         defaultValue={selectedOrganizationId}
         name={name}
         required={required}
-        style={{ borderColor: 'var(--us-border)' }}
       >
         {organizations.map((organization) => (
           <option key={organization.id} value={organization.id}>

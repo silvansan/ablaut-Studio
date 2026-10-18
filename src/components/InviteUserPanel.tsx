@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { inviteUserAction } from '@/app/users/actions'
 import { useActionFeedback } from '@/components/AppToastProvider'
 import { Drawer } from '@/components/Drawer'
+import { Field } from '@/components/FormFields'
 import { INVITABLE_ORGANIZATION_ROLES } from '@/lib/organizations'
 import type { Organization } from '@/payload-types'
 
@@ -65,99 +66,72 @@ export function InviteUserPanel({
       >
         <form action={formAction} aria-busy={pending} className="space-y-4" key={formKey}>
           {state.message && !state.ok ? (
-            <p className="rounded-2xl border px-4 py-3 text-sm" role="alert" style={{ borderColor: 'var(--us-border)', color: 'var(--us-danger)' }}>
+            <p
+              className="border px-3 py-2 text-sm"
+              role="alert"
+              style={{ borderColor: 'var(--us-danger)', borderRadius: 'var(--us-r-control)', color: 'var(--us-danger)' }}
+            >
               {state.message}
             </p>
           ) : null}
-          <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--us-muted)' }}>
-            Username
-            <input
-              className="us-input mt-2"
-              name="name"
-              required
-            />
-          </label>
-          <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--us-muted)' }}>
-            Email
-            <input
-              className="us-input mt-2"
-              name="email"
-              required
-              type="email"
-            />
-          </label>
+
+          <Field label="Name">
+            <input className="us-input" name="name" required />
+          </Field>
+          <Field label="Email">
+            <input className="us-input" name="email" required type="email" />
+          </Field>
+
           {hideOrganizationSelector ? (
             <input name="organizationId" type="hidden" value={resolvedDefaultOrganizationId} />
           ) : (
-            <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--us-muted)' }}>
-              Organization
+            <Field label="Organization">
               <select
-                className="us-input mt-2"
+                className="us-input"
                 name="organizationId"
                 onChange={(event) => setOrganizationChoice(event.target.value)}
                 required
                 value={organizationChoice}
               >
-                {canCreateOrganization ? (
-                  <option value={CREATE_ORGANIZATION_VALUE}>Create new organization...</option>
-                ) : null}
+                {canCreateOrganization ? <option value={CREATE_ORGANIZATION_VALUE}>New organization...</option> : null}
                 {organizations.map((organization) => (
                   <option key={organization.id} value={organization.id}>
                     {organization.name}
                   </option>
                 ))}
               </select>
-            </label>
+            </Field>
           )}
           {isCreatingOrganization ? (
-            <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--us-muted)' }}>
-              New organization name
-              <input
-                className="us-input mt-2"
-                name="newOrganizationName"
-                placeholder="e.g. Riverside Community Church"
-                required
-              />
-            </label>
+            <Field label="New organization name">
+              <input className="us-input" name="newOrganizationName" placeholder="Riverside Community Church" required />
+            </Field>
           ) : null}
-          <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--us-muted)' }}>
-            Organization role
-            <select
-              className="us-input mt-2"
-              defaultValue="moderator"
-              name="roleInOrganization"
-            >
-              {INVITABLE_ORGANIZATION_ROLES.map((role) => (
-                <option key={role.value} title={role.description} value={role.value}>
-                  {role.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          {canSetPlatformRole ? (
-            <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--us-muted)' }}>
-              Platform role
-              <select
-                className="us-input mt-2"
-                defaultValue="moderator"
-                name="role"
-              >
-                <option value="admin">Platform admin (cross-organization helper)</option>
-                <option value="moderator">Platform moderator (organization-scoped)</option>
+
+          <div className={canSetPlatformRole ? 'grid gap-3 sm:grid-cols-2' : undefined}>
+            <Field hint={INVITABLE_ORGANIZATION_ROLES.map((role) => `${role.label}: ${role.description}`).join(' ')} label="Role">
+              <select className="us-input" defaultValue="moderator" name="roleInOrganization">
+                {INVITABLE_ORGANIZATION_ROLES.map((role) => (
+                  <option key={role.value} title={role.description} value={role.value}>
+                    {role.label}
+                  </option>
+                ))}
               </select>
-              <span className="mt-2 block text-xs font-normal normal-case tracking-normal" style={{ color: 'var(--us-muted)' }}>
-                Platform admins work across all organizations.
-              </span>
-            </label>
-          ) : (
-            <input name="role" type="hidden" value="moderator" />
-          )}
-          <button
-            className="us-button-primary w-full px-5 py-3 text-sm font-medium"
-            disabled={pending}
-            type="submit"
-          >
-            {pending ? 'Sending invite...' : 'Send invite'}
+            </Field>
+            {canSetPlatformRole ? (
+              <Field hint="Platform admins work across all organizations." label="Platform role">
+                <select className="us-input" defaultValue="moderator" name="role">
+                  <option value="admin">Platform admin</option>
+                  <option value="moderator">Moderator</option>
+                </select>
+              </Field>
+            ) : (
+              <input name="role" type="hidden" value="moderator" />
+            )}
+          </div>
+
+          <button className="us-button-primary px-4 py-2 text-sm font-medium" disabled={pending} type="submit">
+            {pending ? 'Sending...' : 'Send invite'}
           </button>
         </form>
       </Drawer>

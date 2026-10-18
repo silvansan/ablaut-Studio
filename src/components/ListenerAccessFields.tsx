@@ -37,7 +37,7 @@ export function ListenerAccessFields({
         >
           <option value="public">Public — anyone with the link can listen</option>
           <option value="password">Password — listeners must enter the event password</option>
-          <option value="private">Private — listeners blocked until admin flow is extended</option>
+          <option value="private">Closed — no one can listen</option>
         </select>
       </label>
 
@@ -52,7 +52,7 @@ export function ListenerAccessFields({
           </p>
           <Link
             className="us-button-primary mt-4 inline-flex px-4 py-2.5 text-sm font-medium"
-            href={`/events/${eventSlug}?settings=open`}
+            href={`/events/${eventSlug}/settings`}
           >
             Set listener password on event
           </Link>

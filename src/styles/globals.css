@@ -298,6 +298,99 @@ a:focus-visible {
 }
 
 /* Leaves room for a leading search icon. */
+/* Form building blocks: Field, SwitchField, FormSection (see components/FormFields.tsx). */
+.us-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.us-field__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--us-muted);
+}
+
+.us-hint {
+  display: inline-flex;
+  color: var(--us-muted);
+  cursor: help;
+}
+
+textarea.us-input {
+  resize: vertical;
+}
+
+.us-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+  color: var(--us-text);
+  cursor: pointer;
+}
+
+.us-switch-row + .us-switch-row {
+  border-top: 1px solid var(--us-border);
+}
+
+.us-neu-toggle--sm {
+  --neu-toggle-width: 2.5rem;
+  --neu-toggle-height: 1.375rem;
+  --neu-toggle-thumb: 1.0625rem;
+  --neu-toggle-pad: 0.15rem;
+}
+
+.us-section {
+  border-top: 1px solid var(--us-border);
+}
+
+.us-section__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--us-green-dark);
+  cursor: pointer;
+  list-style: none;
+}
+
+.us-section__summary::-webkit-details-marker {
+  display: none;
+}
+
+.us-section__chevron {
+  font-size: 0.7rem;
+  color: var(--us-muted);
+  transition: transform 160ms ease;
+}
+
+.us-section[open] .us-section__chevron {
+  transform: rotate(180deg);
+}
+
+.us-section__body {
+  display: grid;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.us-subheading {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--us-muted);
+}
+
 /* Toggle chip: a checkbox shown as an icon + label. */
 .us-perm {
   position: relative;
