@@ -6,7 +6,7 @@ import { UserEventAssignmentsSection } from '@/components/UserEventAssignmentsSe
 import { UserOrganizationMembershipsSection } from '@/components/UserOrganizationMembershipsSection'
 import { WorkspaceHeader } from '@/components/WorkspaceHeader'
 import { formatTtl, getAccessLinkTtlMs } from '@/lib/access-tokens'
-import { formatGlobalRole } from '@/lib/organization-user-utils'
+import { formatGlobalRole, hasPlatformRole } from '@/lib/organization-user-utils'
 import { isSelfUser, type UserDetailData } from '@/lib/user-detail-data'
 import type { User } from '@/payload-types'
 
@@ -62,12 +62,15 @@ export function UserDetailPanel({ canManageUsers, currentUser, data }: UserDetai
         </article>
       ) : null}
 
-      <UserOrganizationMembershipsSection
-        canManageMemberships={canManageUsers}
-        memberships={memberships}
-        organizations={manageableOrganizations}
-        targetUserID={targetUser.id}
-      />
+      {/* Platform admins manage every organization; their organization seats mean nothing. */}
+      {hasPlatformRole(targetUser.role) ? null : (
+        <UserOrganizationMembershipsSection
+          canManageMemberships={canManageUsers}
+          memberships={memberships}
+          organizations={manageableOrganizations}
+          targetUserID={targetUser.id}
+        />
+      )}
 
       <UserEventAssignmentsSection
         assignableEvents={[]}

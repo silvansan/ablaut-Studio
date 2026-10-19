@@ -113,12 +113,14 @@ export function OrganizationMembersTable({
               targetUser={selectedUser}
             />
 
-            <UserOrganizationMembershipsSection
-              canManageMemberships={canManageOrgUsers}
-              memberships={organizationMembershipsByUserID.get(selectedUser.id) ?? []}
-              organizations={manageableOrganizations}
-              targetUserID={selectedUser.id}
-            />
+            {hasPlatformRole(selectedUser.role) ? null : (
+              <UserOrganizationMembershipsSection
+                canManageMemberships={canManageOrgUsers}
+                memberships={organizationMembershipsByUserID.get(selectedUser.id) ?? []}
+                organizations={manageableOrganizations}
+                targetUserID={selectedUser.id}
+              />
+            )}
 
             {selectedUser.role === 'moderator' || isSuperAdminUser(currentUser) ? (
               <UserEventAssignmentsSection
