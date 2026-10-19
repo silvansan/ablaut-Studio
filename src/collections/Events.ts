@@ -3,6 +3,7 @@ import type { CollectionConfig } from 'payload'
 import { canCreateEvent } from '@/access/canCreateEvent'
 import { canManageEvent } from '@/access/canManageEvent'
 import { canReadEvent } from '@/access/canReadEvent'
+import { generatePublicId } from '@/lib/private-links'
 import { hashSpeakerPassword } from '@/lib/speaker-password'
 
 function formatSlug(value: string): string {
@@ -298,8 +299,13 @@ export const Events: CollectionConfig = {
   ],
   hooks: {
     beforeChange: [
-      async ({ data, operation, req }) => {
+      async ({ data, operation, originalDoc, req }) => {
         const nextData = { ...data }
+
+        // Same as channels: the private-link id exists before Private links is ever switched on.
+        if (!nextData.publicId && !originalDoc?.publicId) {
+          nextData.publicId = generatePublicId()
+        }
 
         if (typeof nextData.title === 'string' && !nextData.slug) {
           nextData.slug = formatSlug(nextData.title)

@@ -6,6 +6,7 @@ import { canReadChannel } from '@/access/canReadChannel'
 import { slugifyChannelName } from '@/lib/channel-identity'
 import { getLiveKitRoomName } from '@/lib/livekit'
 import { syncChannelHlsPlaybackUrl } from '@/lib/streaming/resolve-channel-stream'
+import { generatePublicId } from '@/lib/private-links'
 import { hashSpeakerPassword } from '@/lib/speaker-password'
 
 function normalizeRelationshipID(value: number | string | { id?: number | string } | null | undefined) {
@@ -321,6 +322,12 @@ export const Channels: CollectionConfig = {
 
         if (operation === 'create' && req.user?.id && !nextData.createdBy) {
           nextData.createdBy = req.user.id
+        }
+
+        // Every channel carries its private-link id from the start, so a channel added to an
+        // event that already has Private links on is reachable too (links use it only then).
+        if (!nextData.publicId && !originalDoc?.publicId) {
+          nextData.publicId = generatePublicId()
         }
 
         if (typeof nextData.speakerPassword === 'string' && nextData.speakerPassword.trim().length > 0) {
