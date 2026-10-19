@@ -4,6 +4,8 @@ import { ParticipantEvent, Room, RoomEvent, Track, type LocalTrackPublication } 
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 
 import { AudioEffectToggle } from '@/components/AudioEffectToggle'
+import { Field, Hint } from '@/components/FormFields'
+import { SettingsPanel } from '@/components/SettingsPanel'
 
 type SpeakerAccessPanelProps = {
   audioQualityDefaults?: AudioQualityControls
@@ -280,64 +282,48 @@ export function SpeakerAccessPanel({
 
   if (!hasAccess) {
     return (
-      <article className="us-panel px-6 py-7">
-        <span className="us-chip us-chip-warning">Speaker password required</span>
-        <h2 className="mt-4 text-2xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
-          Enter the speaker password
-        </h2>
-        <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-          Unlocks this speaker page only.
-        </p>
-        <form onSubmit={submitPassword} className="mt-5 space-y-3">
-          <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-            Speaker password
+      <SettingsPanel hint="Unlocks this speaker page only." title="Speaker password">
+        <form onSubmit={submitPassword} className="space-y-3">
+          <Field label="Password">
             <input
               autoComplete="current-password"
-              className="us-input mt-2"
+              className="us-input"
               onChange={(event) => setPassword(event.target.value)}
               required
-              style={{ borderColor: 'var(--us-border)', color: 'var(--us-text)' }}
               type="password"
               value={password}
             />
-          </label>
+          </Field>
           {error ? (
             <p className="text-sm" style={{ color: 'var(--us-danger)' }}>
               {error}
             </p>
           ) : null}
           <button disabled={loading} type="submit" className="us-button-primary w-full px-5 py-3 text-sm font-medium">
-            {loading ? 'Checking...' : 'Unlock speaker controls'}
+            {loading ? 'Checking...' : 'Unlock'}
           </button>
         </form>
-      </article>
+      </SettingsPanel>
     )
   }
 
   return (
-    <article className="us-panel px-6 py-7">
-      <span className="us-chip us-chip-blue">Speaker access ready</span>
+    <SettingsPanel
+      hint="Echo cancellation, noise suppression and auto gain start off, to keep music and natural sound intact."
+      title="Publish"
+    >
       {typeof window !== 'undefined' && !window.isSecureContext ? (
-        <p className="mt-4 rounded-2xl border px-4 py-3 text-sm leading-6" style={{ borderColor: 'var(--us-border)', color: 'var(--us-danger)' }}>
+        <p className="rounded-2xl border px-4 py-3 text-sm leading-6" style={{ borderColor: 'var(--us-border)', color: 'var(--us-danger)' }}>
           Microphone access requires a secure page. On this computer, open the speaker URL as{' '}
           <strong>http://localhost:3000/speak/…</strong> instead of a LAN IP address. Your phone can still listen via
           the LAN URL while you publish from localhost.
         </p>
       ) : null}
-      <h2 className="mt-4 text-2xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
-        Publish controls
-      </h2>
-      <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-        Select the microphone to publish to this channel. Browser echo cancellation, noise suppression, and auto gain
-        control stay off by default, to preserve music and natural source audio.
-      </p>
-      <label className="mt-5 block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-        Microphone
+      <Field label="Microphone">
         <select
-          className="us-input mt-2"
+          className="us-input"
           disabled={publishState === 'connecting' || publishState === 'publishing'}
           onChange={(event) => setSelectedDeviceID(event.target.value)}
-          style={{ borderColor: 'var(--us-border)', color: 'var(--us-text)' }}
           value={selectedDeviceID}
         >
           {microphones.length === 0 ? <option value="">No microphone loaded</option> : null}
@@ -347,8 +333,8 @@ export function SpeakerAccessPanel({
             </option>
           ))}
         </select>
-      </label>
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+      </Field>
+      <div className="flex flex-col gap-3 sm:flex-row">
         <button
           type="button"
           className="us-button-secondary px-5 py-3 text-sm font-medium"
@@ -373,19 +359,17 @@ export function SpeakerAccessPanel({
         )}
       </div>
       {publishMessage ? (
-        <p className="mt-4 text-sm leading-6" style={{ color: publishState === 'error' ? 'var(--us-danger)' : 'var(--us-muted)' }}>
+        <p className="text-sm leading-6" style={{ color: publishState === 'error' ? 'var(--us-danger)' : 'var(--us-muted)' }}>
           {publishMessage}
         </p>
       ) : null}
 
-      <div className="mt-6 rounded-2xl border px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-          Audio quality controls
+      <div className="rounded-2xl border px-4 py-4" style={{ borderColor: 'var(--us-border)' }}>
+        <p className="inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: 'var(--us-text)' }}>
+          Audio processing
+          <Hint text="For this speaker session only. Stop publishing before changing them." />
         </p>
-        <p className="mt-2 text-xs leading-5" style={{ color: 'var(--us-muted)' }}>
-          These affect this speaker session only. Stop publishing before changing them.
-        </p>
-        <div className="mt-4 space-y-3">
+        <div className="mt-3 space-y-3">
           <AudioEffectToggle
             checked={audioQuality.echoCancellation}
             disabled={publishState === 'publishing' || publishState === 'connecting'}
@@ -412,6 +396,6 @@ export function SpeakerAccessPanel({
           />
         </div>
       </div>
-    </article>
+    </SettingsPanel>
   )
 }
