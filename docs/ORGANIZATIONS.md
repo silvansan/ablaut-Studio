@@ -6,16 +6,17 @@ ablaut-Studio supports multiple charities, teams, or groups on one server throug
 
 - **Organization** — tenant boundary for events and members.
 - **Organization membership** — links a user to an organization with a role and status.
-- **Platform role** (`Users.role`) — `super_admin`, `admin`, or `moderator` for Payload/app permissions.
-- **Organization role** — `owner`, `manager`, `moderator`, or `viewer` inside one organization.
+- **Platform role** (`Users.role`) — `super_admin`, `admin`, or `moderator`. `moderator` is the default and means no platform powers (shown as **Platform access: None**).
+- **Organization role** — `owner`, `manager`, `moderator`, or `viewer` inside one organization. Platform admins and super admins already manage every organization, so their organization role is not shown.
+- **Organization key** — a random 8-character key in every admin address (`/o/<key>/events`), so organizations can reuse event and channel names.
 
 ## Permissions
 
 | Actor | Organizations | Users |
 | --- | --- | --- |
-| Super admin | All | All |
+| Super admin | All, including create and delete | All |
+| Platform admin | Manage all (cannot create or delete) | All |
 | Organization owner/manager | Manage their organizations | Users with membership in those organizations |
-| Platform admin without org manager role | None until assigned | Self only |
 | Moderator | Request to join | Self only |
 
 ## Bootstrap
@@ -30,20 +31,21 @@ On startup, if no organization exists:
 
 ### Invite
 
-1. Organization manager opens **Users**.
-2. Selects organization, enters name/email/roles.
-3. User receives **Activate account and set password** email (`/reset-password/{token}`).
-4. Setting a password marks the account verified and invitation accepted.
+1. An organization manager opens **People** and chooses **Invite user**.
+2. Enters name and email and picks one **Role**: Moderator or Manager. Super admins can also pick **Platform admin**, which needs no organization and creates no membership.
+3. The user receives an **Activate account and set password** email (`/reset-password/{token}`). The link works once and lasts `INVITE_LINK_TTL_HOURS` (default 7 days).
+4. Setting a password marks the account verified, accepts the invitation and signs the user in.
+5. Without SMTP, use **Copy invite link** on the person's page and share the link yourself.
 
 ### Request to join
 
-1. User submits organization slug on **Users**.
+1. User picks an organization under **Join an organization** on **My profile**.
 2. Membership is created as `pending`.
-3. Owners/managers receive email and can approve or reject in **Users**.
+3. Owners/managers receive email and can approve or reject in **People**.
 
 ### Password reset
 
-Managers can send **Send password reset** from the user row. Uses the same app reset route as **Lost password**.
+Managers can use **Send password reset** or **Copy reset link** on a person's page. Anyone can also request a new link from the sign-in page (**Forgot your password, or invitation link expired?**). Reset links last `RESET_LINK_TTL_MINUTES` (default 60 minutes).
 
 ## Event assignments
 
@@ -51,12 +53,13 @@ Event assignments must reference users who are **active members** of the event's
 
 ## App routes
 
-- `/users` — organization-aware user management
-- `/users` — global users hub with search, status, and organization filters
-- `/users?organization={slug}` — filter by organization (stays on the hub)
-- `/users?organization=none` — users without an organization
-- `/users?q={text}` — search by name or email
-- `/users?status=pending|active|inactive|unassigned` — filter by account status
+- `/o/{key}/people` — people of one organization
+- `/platform/users` — all users on the server (platform admins), with search, status and organization filters
+- `/platform/users?organization={slug}` — filter by organization
+- `/platform/users?organization=none` — users without an organization (platform admins are not counted)
+- `?q={text}` — search by name or email
+- `?status=pending|active|inactive|unassigned` — filter by account status
+- Old addresses such as `/users` and `/events` redirect to the organization-scoped ones.
 
 ## API routes
 

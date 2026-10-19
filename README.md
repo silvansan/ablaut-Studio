@@ -28,12 +28,34 @@ The project is not intended to be commercially exploited in ways that take advan
 
 ## What It Does
 
-- Create organisations, events and language/audio channels.
-- Generate listener and speaker links with QR codes.
-- Let speakers publish microphone audio through LiveKit.
-- Let listeners connect from browser or mobile app.
-- Manage users with `super_admin`, `admin`, and `moderator` roles.
-- Run locally, on LAN, or in cloud from the same Compose stack.
+- Host several organisations on one server, each with its own events, channels and people.
+- Create events with one channel per language, then share listener and speaker links with QR codes.
+- Print all listener or all speaker QR codes as a PDF, one per page, with the Android app QR on the last listener page.
+- Turn on **Private links** for an event so its links use random codes instead of readable names, and rotate them when needed.
+- Let speakers publish microphone audio through LiveKit, and listen back on any channel of the event.
+- Let listeners connect from the browser or the [ablaut-App](https://github.com/silvansan/ablaut-App).
+- Invite people by email. They set their own password from a one-time link and can request a new one from the sign-in page.
+- Run locally, on LAN, or in the cloud from the same Compose stack.
+
+## Roles
+
+| Role | Can do |
+| --- | --- |
+| **Super admin** | Everything on the server: create and delete organisations, server settings, platform roles |
+| **Platform admin** | Manage every organisation as if they were its manager |
+| **Manager** | One organisation: its people, events, channels and settings |
+| **Moderator** | Only the events they are assigned to, with per-event permissions (edit, add or delete channels, QR codes, speaker password) |
+
+Every admin page carries the organisation in its address (`/o/<key>/events`), using a random 8-character key, so two organisations can use the same event and channel names.
+
+## What's New in 0.5
+
+- Left sidebar with an organisation switcher, recent events and a `Ctrl K` jump-to search.
+- Event workspace with **Channels**, **People**, **Share** and **Settings** tabs. Channels and team members are added and edited in a side drawer that asks before discarding unsaved changes.
+- Blue (listener) and green (speaker) QR and open buttons on every channel row, plus print-ready QR PDFs.
+- One look for every list and form, with icons and tooltips instead of long explanations.
+- Simpler roles: one role picker when inviting, and platform admins no longer get an organisation seat.
+- Fixed in 0.5.1: links of channels added after Private links was turned on returned 404 (on the web and in the Android app).
 
 ## Stack
 
@@ -103,6 +125,8 @@ Do not delete these volumes during redeploys unless you intend to wipe data.
 - `docs/ARCHITECTURE.md`
 - `docs/API.md`
 - `docs/ROUTES.md`
+- `docs/ORGANIZATIONS.md`
+- `docs/SMTP_SETUP.md`
 - `docs/LIVEKIT.md`
 - `docs/DEPLOYMENT.md`
 - `docs/PORTAINER.md`
@@ -123,7 +147,9 @@ Do not delete these volumes during redeploys unless you intend to wipe data.
 - Proxy `ablaut.example.com` to app port `3000`.
 - Proxy `livekit.example.com` to LiveKit port `7880` with WebSocket support.
 - Forward LiveKit RTC ports `7881/tcp` and `50000-50100/udp`.
-- Back up `ablaut_db` and `ablaut_uploads`.
+- Back up `ablaut_db` and `ablaut_uploads`, and always back up before upgrading: database migrations run automatically when the new version starts.
+- Configure SMTP so invitations and password resets are emailed (see `docs/SMTP_SETUP.md`). Without it, use **Copy invite link** or **Copy reset link** on a person's page and hand the link over yourself.
+- Invite links last 7 days and reset links 60 minutes by default; change them with `INVITE_LINK_TTL_HOURS` and `RESET_LINK_TTL_MINUTES`.
 
 ## License
 
@@ -135,10 +161,34 @@ See `LICENSE`.
 
 # Screenshots
 
-<img width="100%" alt="image" src="https://github.com/user-attachments/assets/424cb155-8e35-42d9-92f8-a8f575b36dc4" />
-<img width="100%" alt="image" src="https://github.com/user-attachments/assets/802f2f89-ddc5-41b6-9e25-bfb9180d6637" />
-<img width="100%" alt="image" src="https://github.com/user-attachments/assets/c9375823-8236-472d-a89f-aaffdfd215fb" />
-<img width="100%" alt="image" src="https://github.com/user-attachments/assets/f9ab56eb-b6f1-4321-b759-3770a058dc22" />
-<img width="100%" alt="image" src="https://github.com/user-attachments/assets/e95a5163-ef94-4b35-bdd3-85e0a25c92af" />
+Events of an organisation, with the next event and anything that needs attention at the top:
 
+<img width="100%" alt="Events list" src="docs/screenshots/events.png" />
 
+An event's channels: listener (blue) and speaker (green) QR codes, open buttons, and print-ready QR PDFs:
+
+<img width="100%" alt="Event channels" src="docs/screenshots/event-channels.png" />
+
+Adding a channel in the side drawer:
+
+<img width="100%" alt="Add channel drawer" src="docs/screenshots/channel-drawer.png" />
+
+The event team, with each person's role and permissions as icons:
+
+<img width="100%" alt="Event team" src="docs/screenshots/event-team.png" />
+
+Share and print every QR code of an event:
+
+<img width="100%" alt="Share and print QR codes" src="docs/screenshots/event-share.png" />
+
+People of an organisation, including pending invites:
+
+<img width="100%" alt="People" src="docs/screenshots/people.png" />
+
+The speaker page: pick a microphone, publish, and listen back on any channel:
+
+<img width="100%" alt="Speaker page" src="docs/screenshots/speaker.png" />
+
+The listener page on a phone:
+
+<p align="center"><img width="320" alt="Listener page on a phone" src="docs/screenshots/listener-mobile.png" /></p>
