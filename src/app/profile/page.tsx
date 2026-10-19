@@ -3,10 +3,14 @@ import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 
 import { changeOwnPasswordAction, logoutAction, updateProfileAction } from '@/app/profile/actions'
+import { Field } from '@/components/FormFields'
 import { JoinOrganizationForm } from '@/components/JoinOrganizationForm'
 import { Layout } from '@/components/Layout'
+import { SettingsPanel } from '@/components/SettingsPanel'
+import { WorkspaceHeader } from '@/components/WorkspaceHeader'
 import { requireAppUser } from '@/lib/app-auth'
 import { pageMetadata } from '@/lib/branding'
+import { formatGlobalRole } from '@/lib/organization-user-utils'
 import { getJoinableOrganizations, hasPlatformWideOrganizationAccess } from '@/lib/organizations'
 
 export const metadata: Metadata = pageMetadata('My profile')
@@ -22,124 +26,76 @@ export default async function ProfilePage() {
 
   return (
     <Layout hideHeader title="My profile">
-      <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
-        <article className="us-panel px-6 py-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-            Profile
-          </p>
-
-          <form action={updateProfileAction} className="mt-5 space-y-4">
-            <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-              Email
-              <input
-                className="mt-2 w-full rounded-2xl border px-4 py-3 text-base outline-none"
-                disabled
-                style={{ backgroundColor: 'var(--us-bg)', borderColor: 'var(--us-border)', color: 'var(--us-muted)' }}
-                value={user.email}
-              />
-            </label>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-                Name
-                <input
-                  className="us-input mt-2"
-                  defaultValue={user.name}
-                  name="name"
-                  required
-                />
-              </label>
-
-              <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-                Preferred language
-                <input
-                  className="us-input mt-2"
-                  defaultValue={user.preferredLanguage ?? 'en'}
-                  name="preferredLanguage"
-                />
-              </label>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <button className="us-button-primary px-5 py-3 text-sm font-medium" type="submit">
-                Save profile
-              </button>
-              <span className="us-chip us-chip-muted capitalize">{user.role?.replace('_', ' ')}</span>
-              {user.active === false ? <span className="us-chip us-chip-warning">Inactive</span> : null}
-            </div>
-          </form>
-        </article>
-
-        <article className="us-panel px-6 py-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-            Security
-          </p>
-
-          <form action={changeOwnPasswordAction} className="mt-5 space-y-4">
-            <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-              Current password
-              <input
-                autoComplete="current-password"
-                className="us-input mt-2"
-                name="currentPassword"
-                required
-                type="password"
-              />
-            </label>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-                New password
-                <input
-                  autoComplete="new-password"
-                  className="us-input mt-2"
-                  name="newPassword"
-                  required
-                  type="password"
-                />
-              </label>
-
-              <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-                Confirm new password
-                <input
-                  autoComplete="new-password"
-                  className="us-input mt-2"
-                  name="confirmPassword"
-                  required
-                  type="password"
-                />
-              </label>
-            </div>
-
-            <button className="us-button-primary px-5 py-3 text-sm font-medium" type="submit">
-              Change password
-            </button>
-          </form>
-        </article>
-
-        {canJoinOrganizations ? (
-          <article className="us-panel px-6 py-6 xl:col-span-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--us-blue-dark)' }}>
-              Organizations
-            </p>
-            <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              A manager approves your request before you see its events.
-            </p>
-            <div className="mt-5">
-              <JoinOrganizationForm organizations={joinableOrganizations} />
-            </div>
-          </article>
-        ) : null}
-
-        <article className="us-panel px-6 py-6 xl:col-span-2">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <section className="space-y-4">
+        <WorkspaceHeader
+          actions={
             <form action={logoutAction}>
-              <button className="rounded-2xl border px-5 py-3 text-sm font-medium" style={{ borderColor: 'var(--us-danger)', color: 'var(--us-danger)' }} type="submit">
-                Logout
+              <button
+                className="us-button-secondary px-3 py-1.5 text-sm font-medium"
+                style={{ color: 'var(--us-danger)' }}
+                type="submit"
+              >
+                Sign out
               </button>
             </form>
-          </div>
-        </article>
+          }
+          chips={
+            <>
+              {/* Same rule as the user page: the platform role only when it is special. */}
+              {user.role === 'moderator' ? null : (
+                <span className="us-chip us-chip-blue capitalize" title="Platform role: works across all organizations">
+                  {formatGlobalRole(user.role)}
+                </span>
+              )}
+              {user.active === false ? <span className="us-chip us-chip-warning">Inactive</span> : null}
+            </>
+          }
+          description={user.email}
+          title={user.name}
+        />
+
+        <div className="grid gap-4 xl:grid-cols-2">
+          <SettingsPanel title="Profile">
+            <form action={updateProfileAction} className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-12">
+                <Field className="md:col-span-8" label="Name">
+                  <input className="us-input" defaultValue={user.name} name="name" required />
+                </Field>
+                <Field className="md:col-span-4" hint="Language code, for example en or de." label="Language">
+                  <input className="us-input" defaultValue={user.preferredLanguage ?? 'en'} name="preferredLanguage" />
+                </Field>
+              </div>
+              <button className="us-button-primary px-4 py-2 text-sm font-medium" type="submit">
+                Save
+              </button>
+            </form>
+          </SettingsPanel>
+
+          <SettingsPanel title="Password">
+            <form action={changeOwnPasswordAction} className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-3">
+                <Field label="Current">
+                  <input autoComplete="current-password" className="us-input" name="currentPassword" required type="password" />
+                </Field>
+                <Field label="New">
+                  <input autoComplete="new-password" className="us-input" name="newPassword" required type="password" />
+                </Field>
+                <Field label="Confirm new">
+                  <input autoComplete="new-password" className="us-input" name="confirmPassword" required type="password" />
+                </Field>
+              </div>
+              <button className="us-button-primary px-4 py-2 text-sm font-medium" type="submit">
+                Change password
+              </button>
+            </form>
+          </SettingsPanel>
+        </div>
+
+        {canJoinOrganizations ? (
+          <SettingsPanel hint="A manager approves your request before you see its events." title="Join an organization">
+            <JoinOrganizationForm organizations={joinableOrganizations} />
+          </SettingsPanel>
+        ) : null}
       </section>
     </Layout>
   )

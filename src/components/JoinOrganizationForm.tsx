@@ -1,4 +1,5 @@
 import { requestOrganizationMembershipAction } from '@/app/organizations/actions'
+import { Field } from '@/components/FormFields'
 
 type JoinOrganizationFormProps = {
   organizations: Array<{ id: number; name: string; slug: string }>
@@ -7,22 +8,16 @@ type JoinOrganizationFormProps = {
 export function JoinOrganizationForm({ organizations }: JoinOrganizationFormProps) {
   if (organizations.length === 0) {
     return (
-      <p className="text-sm leading-6" style={{ color: 'var(--us-muted)' }}>
-        You already belong to every active organization, or none are available to join.
+      <p className="text-sm" style={{ color: 'var(--us-muted)' }}>
+        No other organizations to join.
       </p>
     )
   }
 
   return (
     <form action={requestOrganizationMembershipAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-      <label className="block flex-1 text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-        Join an organization
-        <select
-          className="us-input mt-2"
-          defaultValue=""
-          name="organizationSlug"
-          required
-        >
+      <Field className="flex-1" label="Organization">
+        <select className="us-input" defaultValue="" name="organizationSlug" required>
           <option disabled value="">
             Choose an organization
           </option>
@@ -32,8 +27,8 @@ export function JoinOrganizationForm({ organizations }: JoinOrganizationFormProp
             </option>
           ))}
         </select>
-      </label>
-      <button className="us-button-primary px-4 py-2.5 text-sm font-medium" type="submit">
+      </Field>
+      <button className="us-button-primary px-4 py-2 text-sm font-medium" type="submit">
         Request access
       </button>
     </form>

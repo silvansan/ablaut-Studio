@@ -2,14 +2,14 @@ import type { Metadata } from 'next'
 import Link from '@/components/OrgLink'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
-import type { ReactNode } from 'react'
 
 import { importConfigAction, updateSiteSettingsAction } from '@/app/settings/actions'
 import { AndroidIcon, DownloadIcon, OpenLinkIcon } from '@/components/ActionIcons'
-import { Field, Hint, SwitchField } from '@/components/FormFields'
+import { Field, SwitchField } from '@/components/FormFields'
 import { Layout } from '@/components/Layout'
 import { OrganizationSettingsPanel } from '@/components/OrganizationSettingsPanel'
 import { PageHeader } from '@/components/PageHeader'
+import { SettingsPanel } from '@/components/SettingsPanel'
 import { requireAppUser } from '@/lib/app-auth'
 import { pageMetadata } from '@/lib/branding'
 import { getManageableOrganizations } from '@/lib/organization-data'
@@ -19,32 +19,6 @@ import { isAdminUser, isSuperAdminUser } from '@/lib/permissions'
 export const metadata: Metadata = pageMetadata('Settings')
 
 export const dynamic = 'force-dynamic'
-
-/** One settings card: a small heading (with an optional hint and actions) over its content. */
-function SettingsPanel({
-  actions,
-  children,
-  hint,
-  title,
-}: {
-  actions?: ReactNode
-  children?: ReactNode
-  hint?: string
-  title: string
-}) {
-  return (
-    <article className="us-panel space-y-4 px-6 py-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="inline-flex items-center gap-1.5 text-base font-semibold" style={{ color: 'var(--us-green-dark)' }}>
-          {title}
-          {hint ? <Hint text={hint} /> : null}
-        </h3>
-        {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
-      </div>
-      {children}
-    </article>
-  )
-}
 
 export default async function SettingsPage() {
   const user = await requireAppUser()

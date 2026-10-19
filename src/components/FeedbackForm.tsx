@@ -3,6 +3,7 @@
 import { useActionState } from 'react'
 
 import { submitFeedbackAction, type FeedbackActionState } from '@/app/feedback/actions'
+import { Field } from '@/components/FormFields'
 
 type FeedbackFormProps = {
   defaultContactEmail?: string | null
@@ -24,32 +25,24 @@ export function FeedbackForm({ defaultContactEmail, defaultPageUrl }: FeedbackFo
 
   return (
     <form action={formAction} className="space-y-4">
-      <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-        What happened?
+      <Field label="What happened?">
         <textarea
-          className="us-input mt-2 min-h-40"
+          className="us-input min-h-40"
           name="message"
-          placeholder="Describe what you tried, what you expected, and what went wrong."
+          placeholder="What you tried, what you expected, and what went wrong."
           required
         />
-      </label>
-      <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-        Contact email (optional)
-        <input
-          className="us-input mt-2"
-          defaultValue={defaultContactEmail ?? ''}
-          name="contactEmail"
-          placeholder="Where we can reply"
-          type="email"
-        />
-      </label>
+      </Field>
+      <Field hint="Only if you want a reply." label="Your email">
+        <input className="us-input" defaultValue={defaultContactEmail ?? ''} name="contactEmail" type="email" />
+      </Field>
       <input name="pageUrl" type="hidden" value={defaultPageUrl ?? ''} />
       {state.error ? (
         <p className="rounded-2xl border px-4 py-3 text-sm" style={{ borderColor: 'var(--us-danger)', color: 'var(--us-danger)' }}>
           {state.error}
         </p>
       ) : null}
-      <button className="us-button-primary w-full px-5 py-3 text-sm font-medium" disabled={pending} type="submit">
+      <button className="us-button-primary px-4 py-2 text-sm font-medium" disabled={pending} type="submit">
         {pending ? 'Sending...' : 'Send feedback'}
       </button>
     </form>
