@@ -28,7 +28,7 @@ export function AppDownloadFooterLink({
         type="button"
       >
         <AndroidIcon />
-        Android app v{latestVersion}
+        ablaut-app: latest version
       </button>
 
       {open ? (
@@ -50,10 +50,10 @@ export function AppDownloadFooterLink({
                     className="text-xs font-semibold uppercase tracking-[0.16em]"
                     style={{ color: 'var(--us-blue-dark)' }}
                   >
-                    ablaut listener app
+                    ablaut-app
                   </p>
                   <h2 className="mt-1 text-lg font-semibold" style={{ color: 'var(--us-green-dark)' }}>
-                    Android v{latestVersion}
+                    Latest version for Android
                   </h2>
                 </div>
                 <span

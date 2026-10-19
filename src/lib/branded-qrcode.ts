@@ -259,8 +259,9 @@ export async function generateBrandedDownloadQrDataUrl(input: {
   return generateBrandedQrCardDataUrl({
     footerLabel: 'android ablaut-app download',
     kind: 'download',
-    primaryTitle: 'ablaut listener app',
-    secondaryTitle: `Android v${input.version}`,
+    // No version number: printed QR sheets should not go out of date with each release.
+    primaryTitle: 'ablaut-app',
+    secondaryTitle: 'Latest version for Android',
     style: input.style,
     url: input.url,
   })
