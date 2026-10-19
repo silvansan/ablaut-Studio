@@ -11,6 +11,12 @@ import type { Organization } from '@/payload-types'
 
 const CREATE_ORGANIZATION_VALUE = 'new'
 
+/** One role picker. "Platform admin" becomes the platform role plus a manager seat in the organization. */
+type RoleChoice = 'manager' | 'moderator' | 'platform_admin'
+
+const ROLE_HINT =
+  'Moderator: runs the events and channels assigned to them. Manager: manages this organization. Platform admin: sees and manages every organization.'
+
 type InviteUserPanelProps = {
   canCreateOrganization?: boolean
   canSetPlatformRole: boolean
@@ -32,11 +38,13 @@ export function InviteUserPanel({
   const [organizationChoice, setOrganizationChoice] = useState(String(resolvedDefaultOrganizationId))
   const isCreatingOrganization = organizationChoice === CREATE_ORGANIZATION_VALUE
   const [formKey, setFormKey] = useState(0)
+  const [roleChoice, setRoleChoice] = useState<RoleChoice>('moderator')
   const { formAction, pending, state } = useActionFeedback(inviteUserAction)
 
   useEffect(() => {
     if (open) {
       setOrganizationChoice(String(resolvedDefaultOrganizationId))
+      setRoleChoice('moderator')
     }
   }, [open, resolvedDefaultOrganizationId])
 
@@ -108,27 +116,22 @@ export function InviteUserPanel({
             </Field>
           ) : null}
 
-          <div className={canSetPlatformRole ? 'grid gap-3 sm:grid-cols-2' : undefined}>
-            <Field hint={INVITABLE_ORGANIZATION_ROLES.map((role) => `${role.label}: ${role.description}`).join(' ')} label="Role">
-              <select className="us-input" defaultValue="moderator" name="roleInOrganization">
-                {INVITABLE_ORGANIZATION_ROLES.map((role) => (
-                  <option key={role.value} title={role.description} value={role.value}>
-                    {role.label}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            {canSetPlatformRole ? (
-              <Field hint="Platform admins work across all organizations." label="Platform role">
-                <select className="us-input" defaultValue="moderator" name="role">
-                  <option value="admin">Platform admin</option>
-                  <option value="moderator">Moderator</option>
-                </select>
-              </Field>
-            ) : (
-              <input name="role" type="hidden" value="moderator" />
-            )}
-          </div>
+          <Field hint={ROLE_HINT} label="Role">
+            <select
+              className="us-input"
+              onChange={(event) => setRoleChoice(event.target.value as RoleChoice)}
+              value={roleChoice}
+            >
+              {[...INVITABLE_ORGANIZATION_ROLES].reverse().map((role) => (
+                <option key={role.value} title={role.description} value={role.value}>
+                  {role.label}
+                </option>
+              ))}
+              {canSetPlatformRole ? <option value="platform_admin">Platform admin</option> : null}
+            </select>
+          </Field>
+          <input name="roleInOrganization" type="hidden" value={roleChoice === 'platform_admin' ? 'manager' : roleChoice} />
+          <input name="role" type="hidden" value={roleChoice === 'platform_admin' ? 'admin' : 'moderator'} />
 
           <button className="us-button-primary px-4 py-2 text-sm font-medium" disabled={pending} type="submit">
             {pending ? 'Sending...' : 'Send invite'}

@@ -35,11 +35,15 @@ export function UserAccountForm({
           <input className="us-input" defaultValue={targetUser.preferredLanguage ?? 'en'} name="preferredLanguage" />
         </Field>
         {isSuperAdmin ? (
-          <Field className={span(3)} label="Platform role">
+          <Field
+            className={span(3)}
+            hint="None: only the organizations they belong to. Admin: every organization. Super admin: also server settings and these roles."
+            label="Platform access"
+          >
             <select className="us-input" defaultValue={targetUser.role ?? 'moderator'} name="role">
-              <option value="super_admin">Super admin</option>
+              <option value="moderator">None</option>
               <option value="admin">Admin</option>
-              <option value="moderator">Moderator</option>
+              <option value="super_admin">Super admin</option>
             </select>
           </Field>
         ) : null}
