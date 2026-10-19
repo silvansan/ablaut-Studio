@@ -98,10 +98,15 @@ export async function canViewUserInUsersHub(
 
   const targetUser = await req.payload.findByID({
     collection: 'users',
+    disableErrors: true,
     id: targetUserID,
     overrideAccess: true,
     req,
   })
+
+  if (!targetUser) {
+    return false
+  }
 
   if (targetUser.role === 'super_admin' && !isSuperAdminUser(req.user)) {
     return false

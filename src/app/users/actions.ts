@@ -1155,6 +1155,12 @@ export async function deleteUserAction(formData: FormData) {
   })
 
   await revalidateOrganizationById(payload, organizationID)
+
+  // Deleted from the user's own page: that page no longer exists, so go back to the list.
+  if (stringValue(formData, 'afterDelete') === 'list') {
+    revalidatePath('/users')
+    await redirectInOrg('/users')
+  }
 }
 
 function booleanValue(formData: FormData, key: string): boolean {

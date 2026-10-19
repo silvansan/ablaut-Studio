@@ -13,6 +13,8 @@ import { SubmitButton } from '@/components/SubmitButton'
 import type { User } from '@/payload-types'
 
 type UserAccountActionsProps = {
+  /** Set on the user's own page, which no longer exists once the user is deleted. */
+  backToListAfterDelete?: boolean
   formIdPrefix?: string
   organizationId?: number
   showDelete?: boolean
@@ -20,6 +22,7 @@ type UserAccountActionsProps = {
 }
 
 export function UserAccountActions({
+  backToListAfterDelete = false,
   formIdPrefix = 'user',
   organizationId,
   showDelete = true,
@@ -53,6 +56,7 @@ export function UserAccountActions({
       {showDelete ? (
         <form action={deleteUserAction} className="ml-auto" id={deleteFormId}>
           <input name="id" type="hidden" value={targetUser.id} />
+          {backToListAfterDelete ? <input name="afterDelete" type="hidden" value="list" /> : null}
           {organizationId ? <input name="organizationId" type="hidden" value={organizationId} /> : null}
           <ConfirmSubmitButton
             action={deleteUserAction}

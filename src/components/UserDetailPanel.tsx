@@ -58,7 +58,7 @@ export function UserDetailPanel({ canManageUsers, currentUser, data }: UserDetai
       {canManageUsers && !isSelf ? (
         <article className="us-panel space-y-4 px-6 py-5">
           <UserAccountForm currentUser={currentUser} layout="panel" targetUser={targetUser} />
-          <UserAccountActions formIdPrefix="user-detail" targetUser={targetUser} />
+          <UserAccountActions backToListAfterDelete formIdPrefix="user-detail" targetUser={targetUser} />
         </article>
       ) : null}
 
