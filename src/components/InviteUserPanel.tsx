@@ -11,7 +11,7 @@ import type { Organization } from '@/payload-types'
 
 const CREATE_ORGANIZATION_VALUE = 'new'
 
-/** One role picker. "Platform admin" becomes the platform role plus a manager seat in the organization. */
+/** One role picker. A platform admin manages every organization, so they get no organization seat. */
 type RoleChoice = 'manager' | 'moderator' | 'platform_admin'
 
 const ROLE_HINT =
@@ -39,6 +39,7 @@ export function InviteUserPanel({
   const isCreatingOrganization = organizationChoice === CREATE_ORGANIZATION_VALUE
   const [formKey, setFormKey] = useState(0)
   const [roleChoice, setRoleChoice] = useState<RoleChoice>('moderator')
+  const isPlatformAdmin = roleChoice === 'platform_admin'
   const { formAction, pending, state } = useActionFeedback(inviteUserAction)
 
   useEffect(() => {
@@ -90,32 +91,6 @@ export function InviteUserPanel({
             <input className="us-input" name="email" required type="email" />
           </Field>
 
-          {hideOrganizationSelector ? (
-            <input name="organizationId" type="hidden" value={resolvedDefaultOrganizationId} />
-          ) : (
-            <Field label="Organization">
-              <select
-                className="us-input"
-                name="organizationId"
-                onChange={(event) => setOrganizationChoice(event.target.value)}
-                required
-                value={organizationChoice}
-              >
-                {canCreateOrganization ? <option value={CREATE_ORGANIZATION_VALUE}>New organization...</option> : null}
-                {organizations.map((organization) => (
-                  <option key={organization.id} value={organization.id}>
-                    {organization.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          )}
-          {isCreatingOrganization ? (
-            <Field label="New organization name">
-              <input className="us-input" name="newOrganizationName" placeholder="Riverside Community Church" required />
-            </Field>
-          ) : null}
-
           <Field hint={ROLE_HINT} label="Role">
             <select
               className="us-input"
@@ -130,8 +105,37 @@ export function InviteUserPanel({
               {canSetPlatformRole ? <option value="platform_admin">Platform admin</option> : null}
             </select>
           </Field>
-          <input name="roleInOrganization" type="hidden" value={roleChoice === 'platform_admin' ? 'manager' : roleChoice} />
           <input name="role" type="hidden" value={roleChoice === 'platform_admin' ? 'admin' : 'moderator'} />
+          {isPlatformAdmin ? null : (
+            <>
+              {hideOrganizationSelector ? (
+                <input name="organizationId" type="hidden" value={resolvedDefaultOrganizationId} />
+              ) : (
+                <Field label="Organization">
+                  <select
+                    className="us-input"
+                    name="organizationId"
+                    onChange={(event) => setOrganizationChoice(event.target.value)}
+                    required
+                    value={organizationChoice}
+                  >
+                    {canCreateOrganization ? <option value={CREATE_ORGANIZATION_VALUE}>New organization...</option> : null}
+                    {organizations.map((organization) => (
+                      <option key={organization.id} value={organization.id}>
+                        {organization.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              )}
+              {isCreatingOrganization ? (
+                <Field label="New organization name">
+                  <input className="us-input" name="newOrganizationName" placeholder="Riverside Community Church" required />
+                </Field>
+              ) : null}
+              <input name="roleInOrganization" type="hidden" value={roleChoice} />
+            </>
+          )}
 
           <button className="us-button-primary px-4 py-2 text-sm font-medium" disabled={pending} type="submit">
             {pending ? 'Sending...' : 'Send invite'}

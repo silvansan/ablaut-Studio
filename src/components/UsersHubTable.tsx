@@ -12,7 +12,7 @@ import {
 } from '@/components/ListBulkActionsPanel'
 import { BanIcon, BuildingIcon, MailIcon, ShieldIcon, StarIcon } from '@/components/ActionIcons'
 import { Chip, ChipGrid, ListBody, ListPanel, ListRow, OpenIconButton, RowTitle } from '@/components/ListKit'
-import { formatGlobalRole, formatOrganizationRole } from '@/lib/organization-user-utils'
+import { formatGlobalRole, formatOrganizationRole, hasPlatformRole } from '@/lib/organization-user-utils'
 import { INVITABLE_ORGANIZATION_ROLES } from '@/lib/organizations'
 import type { UserHubEntry } from '@/lib/users-hub-data'
 import type { Organization } from '@/payload-types'
@@ -180,7 +180,11 @@ export function UsersHubTable({
                 chips={
                   <ChipGrid columns={showOrganizationColumn ? '12rem 6.5rem 8.5rem' : '6.5rem 8.5rem'}>
                     {showOrganizationColumn ? (
-                      entry.organizationName && entry.organizationSlug ? (
+                      hasPlatformRole(entry.globalRole) ? (
+                        <Chip icon={<BuildingIcon />} title="Platform role: sees every organization" tone="muted">
+                          All
+                        </Chip>
+                      ) : entry.organizationName && entry.organizationSlug ? (
                         <Link
                           className="us-chip us-chip-blue"
                           href={`/users?organization=${encodeURIComponent(entry.organizationSlug)}`}
@@ -202,14 +206,16 @@ export function UsersHubTable({
                         </Link>
                       )
                     ) : false}
-                    <Chip
-                      className="capitalize"
-                      icon={<ShieldIcon />}
-                      title={entry.organizationName ? `Role in ${entry.organizationName}` : 'Role in the organization'}
-                      tone="muted"
-                    >
-                      {formatOrganizationRole(entry.roleInOrganization)}
-                    </Chip>
+                    {hasPlatformRole(entry.globalRole) ? null : (
+                      <Chip
+                        className="capitalize"
+                        icon={<ShieldIcon />}
+                        title={entry.organizationName ? `Role in ${entry.organizationName}` : 'Role in the organization'}
+                        tone="muted"
+                      >
+                        {formatOrganizationRole(entry.roleInOrganization)}
+                      </Chip>
+                    )}
                     {/* Platform role only when it is special; "Moderator" is everyone's default. */}
                     {entry.globalRole === 'moderator' ? null : (
                       <Chip className="capitalize" icon={<StarIcon />} title="Platform role: works across all organizations" tone="blue">

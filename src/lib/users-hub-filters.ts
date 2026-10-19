@@ -1,3 +1,4 @@
+import { hasPlatformRole } from '@/lib/organization-user-utils'
 import type { UserHubEntry } from '@/lib/users-hub-data'
 
 export type UserHubStatusFilter = 'active' | 'inactive' | 'pending' | 'unassigned' | ''
@@ -26,8 +27,11 @@ export function filterUserHubEntries(entries: UserHubEntry[], filters: UserHubFi
       }
     }
 
+    // Platform admins have no organization because they see all of them, not because they are unassigned.
+    const unassigned = !entry.organizationId && !hasPlatformRole(entry.globalRole)
+
     if (organization === 'none') {
-      if (entry.organizationId) {
+      if (!unassigned) {
         return false
       }
     } else if (organization) {
@@ -37,7 +41,7 @@ export function filterUserHubEntries(entries: UserHubEntry[], filters: UserHubFi
     }
 
     if (status === 'unassigned') {
-      return !entry.organizationId
+      return unassigned
     }
 
     if (status === 'pending') {

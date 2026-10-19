@@ -34,6 +34,11 @@ export function formatOrganizationRole(role: string | null | undefined): string 
   return role.replace(/_/g, ' ')
 }
 
+/** Platform admins and super admins manage every organization, so their organization role means nothing. */
+export function hasPlatformRole(role: string | null | undefined): boolean {
+  return role === 'admin' || role === 'super_admin'
+}
+
 export function formatGlobalRole(role: string | null | undefined): string {
   if (!role) {
     return 'Moderator'

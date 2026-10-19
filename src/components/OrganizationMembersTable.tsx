@@ -11,9 +11,9 @@ import { UserAccountActions } from '@/components/UserAccountActions'
 import { UserAccountForm } from '@/components/UserAccountForm'
 import { UserEventAssignmentsSection } from '@/components/UserEventAssignmentsSection'
 import { UserOrganizationMembershipsSection } from '@/components/UserOrganizationMembershipsSection'
-import { BanIcon, ShieldIcon } from '@/components/ActionIcons'
+import { BanIcon, ShieldIcon, StarIcon } from '@/components/ActionIcons'
 import { Chip, ChipGrid, EditIconButton, ListBody, ListEmpty, ListPanel, ListRow, OpenIconButton, RowTitle } from '@/components/ListKit'
-import { getUserEventSummary } from '@/lib/organization-user-utils'
+import { formatGlobalRole, getUserEventSummary, hasPlatformRole } from '@/lib/organization-user-utils'
 import type { OrganizationUsersData } from '@/lib/organization-users-data'
 import { isSuperAdminUser } from '@/lib/permissions'
 import type { Organization, User } from '@/payload-types'
@@ -70,10 +70,16 @@ export function OrganizationMembersTable({
                     </>
                   }
                   chips={
-                    <ChipGrid columns="6.5rem 6rem">
-                      <Chip className="capitalize" icon={<ShieldIcon />} title="Role in this organization" tone="muted">
-                        {role?.replace('_', ' ') ?? 'user'}
-                      </Chip>
+                    <ChipGrid columns="8.5rem 6rem">
+                      {hasPlatformRole(user.role) ? (
+                        <Chip className="capitalize" icon={<StarIcon />} title="Platform role: works across all organizations" tone="blue">
+                          {formatGlobalRole(user.role)}
+                        </Chip>
+                      ) : (
+                        <Chip className="capitalize" icon={<ShieldIcon />} title="Role in this organization" tone="muted">
+                          {role?.replace('_', ' ') ?? 'user'}
+                        </Chip>
+                      )}
                       {user.active === false ? (
                         <Chip icon={<BanIcon />} title="Account is switched off" tone="warning">
                           Inactive

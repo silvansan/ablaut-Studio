@@ -4,6 +4,7 @@ import { getPayload } from 'payload'
 import { requireAppUser } from '@/lib/app-auth'
 import { getScopedOrganizationId } from '@/lib/org-context'
 import { getManageableOrganizations } from '@/lib/organization-data'
+import { hasPlatformRole } from '@/lib/organization-user-utils'
 import { hasOrganizationManagementAccess, hasPlatformWideOrganizationAccess } from '@/lib/organizations'
 import { getGloballyUnassignedUserIDs } from '@/lib/user-hub-access'
 import type { Organization, OrganizationMembership, User } from '@/payload-types'
@@ -140,6 +141,16 @@ export async function getUsersHubData(): Promise<UsersHubData> {
 
   // The pool of people without an organization belongs to the platform view, not to one organization.
   if (!scopedOrganizationID && (await hasOrganizationManagementAccess({ payload, user: currentUser } as never))) {
+    if (hasPlatformWideOrganizationAccess(currentUser)) {
+      // Platform admins see every organization: one row each, not one per organization seat.
+      // The loop below adds them back without an organization.
+      for (let index = entries.length - 1; index >= 0; index -= 1) {
+        if (hasPlatformRole(entries[index].globalRole)) {
+          entries.splice(index, 1)
+        }
+      }
+    }
+
     const memberUserIDs = new Set(entries.map((entry) => entry.userId))
 
     if (hasPlatformWideOrganizationAccess(currentUser)) {

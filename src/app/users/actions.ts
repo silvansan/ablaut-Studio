@@ -164,13 +164,16 @@ function actionErrorMessage(error: unknown, fallback: string) {
 function inviteDeliveryFeedback(args: {
   delivery: { delivered: boolean; error?: string; expiresIn: string }
   email: string
+  note?: string
 }): ActionFeedback {
+  const note = args.note ? ` ${args.note}` : ''
+
   if (args.delivery.delivered) {
-    return successFeedback(`Invitation sent to ${args.email}. The link works for ${args.delivery.expiresIn}.`)
+    return successFeedback(`Invitation sent to ${args.email}. The link works for ${args.delivery.expiresIn}.${note}`)
   }
 
   return successFeedback(
-    `${args.email} was added, but no email went out: ${args.delivery.error ?? 'delivery failed.'} Open their profile and use "Copy invite link" to share it yourself.`,
+    `${args.email} was added, but no email went out: ${args.delivery.error ?? 'delivery failed.'} Open their profile and use "Copy invite link" to share it yourself.${note}`,
   )
 }
 
@@ -219,7 +222,12 @@ async function performInviteUser(
     )
   }
 
-  if (organizationChoice === 'new') {
+  const canSetAdmin = isSuperAdminUser(currentUser)
+  const globalRole = canSetAdmin ? roleValue(formData, true) : 'moderator'
+  // Platform admins manage every organization already, so they get no organization seat.
+  const isPlatformAdminInvite = globalRole === 'admin'
+
+  if (!isPlatformAdminInvite && organizationChoice === 'new') {
     if (!isSuperAdminUser(currentUser)) {
       throw new Error('Only super admins can create organizations.')
     }
@@ -235,13 +243,15 @@ async function performInviteUser(
     organizationName = organization.name
   }
 
-  if (!organizationID) {
+  if (isPlatformAdminInvite) {
+    organizationID = undefined
+  } else if (!organizationID) {
     throw new Error('Choose an organization.')
+  } else {
+    await assertCanManageOrganization(payload, currentUser, organizationID)
   }
 
-  await assertCanManageOrganization(payload, currentUser, organizationID)
-
-  if (!organizationName) {
+  if (organizationID && !organizationName) {
     const organization = await payload
       .findByID({ collection: 'organizations', depth: 0, id: organizationID, overrideAccess: true })
       .catch(() => null)
@@ -249,8 +259,6 @@ async function performInviteUser(
   }
 
   const temporaryPassword = randomBytes(32).toString('base64url')
-  const canSetAdmin = isSuperAdminUser(currentUser)
-  const globalRole = canSetAdmin ? roleValue(formData, true) : 'moderator'
 
   const createdUser = await payload.create({
     collection: 'users',
@@ -270,19 +278,21 @@ async function performInviteUser(
     user: currentUser,
   })
 
-  await payload.create({
-    collection: 'organization-memberships',
-    data: {
-      invitedAt: new Date().toISOString(),
-      invitedBy: currentUser.id,
-      organization: organizationID,
-      roleInOrganization: membershipRoleValue(formData),
-      status: 'pending',
-      user: createdUser.id,
-    },
-    overrideAccess: true,
-    user: currentUser,
-  })
+  if (organizationID) {
+    await payload.create({
+      collection: 'organization-memberships',
+      data: {
+        invitedAt: new Date().toISOString(),
+        invitedBy: currentUser.id,
+        organization: organizationID,
+        roleInOrganization: membershipRoleValue(formData),
+        status: 'pending',
+        user: createdUser.id,
+      },
+      overrideAccess: true,
+      user: currentUser,
+    })
+  }
 
   const delivery = await sendUserActivationInviteEmail(payload, email, {
     inviterName: currentUser.name || currentUser.email,
@@ -299,7 +309,11 @@ async function performInviteUser(
 
   await revalidateOrganizationById(payload, organizationID)
 
-  return inviteDeliveryFeedback({ delivery, email })
+  return inviteDeliveryFeedback({
+    delivery,
+    email,
+    note: isPlatformAdminInvite ? 'Platform admins belong to no organization; find them under All users.' : undefined,
+  })
 }
 
 export async function updateUserAction(formData: FormData) {
