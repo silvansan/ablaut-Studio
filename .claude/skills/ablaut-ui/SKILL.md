@@ -64,6 +64,8 @@ style here and is fine. Raw hex or ad-hoc `rgba()` in a `.tsx` file is not.
 - **Page tops:** `PageHeader` (title + main actions) for list pages, `WorkspaceHeader` (title, chips,
   actions, tabs) for an event, organization or user. "Add" and "New" buttons open a drawer:
   `DrawerTrigger` + `DrawerActionForm`, which closes itself on success.
+- **Settings-style cards:** `SettingsPanel` (small heading, optional `hint` icon and `actions`, then the
+  form). Settings, Profile, Feedback and the speaker page all use it; do not hand-roll a card heading.
 - **Needs attention:** `DashboardActionCards` (small outlined items; red = needs action, amber = follow up).
 - **`us-hero-glow`** — legacy no-op positioning helper; do not use for new work.
 - **`us-neu-toggle`** — the (flat) toggle switch. **`us-toast`** — toasts, via `AppToastProvider`.
