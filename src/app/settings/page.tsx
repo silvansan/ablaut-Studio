@@ -2,11 +2,14 @@ import type { Metadata } from 'next'
 import Link from '@/components/OrgLink'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
+import type { ReactNode } from 'react'
 
 import { importConfigAction, updateSiteSettingsAction } from '@/app/settings/actions'
+import { AndroidIcon, DownloadIcon, OpenLinkIcon } from '@/components/ActionIcons'
+import { Field, Hint, SwitchField } from '@/components/FormFields'
 import { Layout } from '@/components/Layout'
 import { OrganizationSettingsPanel } from '@/components/OrganizationSettingsPanel'
-import { CollapsiblePanel } from '@/components/CollapsiblePanel'
+import { PageHeader } from '@/components/PageHeader'
 import { requireAppUser } from '@/lib/app-auth'
 import { pageMetadata } from '@/lib/branding'
 import { getManageableOrganizations } from '@/lib/organization-data'
@@ -16,6 +19,32 @@ import { isAdminUser, isSuperAdminUser } from '@/lib/permissions'
 export const metadata: Metadata = pageMetadata('Settings')
 
 export const dynamic = 'force-dynamic'
+
+/** One settings card: a small heading (with an optional hint and actions) over its content. */
+function SettingsPanel({
+  actions,
+  children,
+  hint,
+  title,
+}: {
+  actions?: ReactNode
+  children?: ReactNode
+  hint?: string
+  title: string
+}) {
+  return (
+    <article className="us-panel space-y-4 px-6 py-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="inline-flex items-center gap-1.5 text-base font-semibold" style={{ color: 'var(--us-green-dark)' }}>
+          {title}
+          {hint ? <Hint text={hint} /> : null}
+        </h3>
+        {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+      </div>
+      {children}
+    </article>
+  )
+}
 
 export default async function SettingsPage() {
   const user = await requireAppUser()
@@ -53,248 +82,184 @@ export default async function SettingsPage() {
   return (
     <Layout hideHeader title="Settings">
       <div className="space-y-4">
+        <PageHeader title="Settings" />
+
         {showPayloadAdmin && settings ? (
-          <form action={updateSiteSettingsAction} className="us-panel space-y-5 px-6 py-6">
-            <div>
-              <span className="us-chip us-chip-muted">Site</span>
-              <h2 className="mt-4 text-2xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
-                App-wide settings
-              </h2>
-              <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-                Public URLs, default listener behavior, token lifetime, and the LiveKit URL shown to browser and mobile
-                clients. QR codes follow the host used to open the app.
-              </p>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-                Site name
-                <input
-                  className="us-input mt-2"
-                  defaultValue={settings.siteName ?? 'ablaut'}
-                  name="siteName"
-                />
-              </label>
-
-              <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-                Support email
-                <input
-                  className="us-input mt-2"
-                  defaultValue={settings.supportEmail ?? ''}
-                  name="supportEmail"
-                  placeholder="support@example.com"
-                  type="email"
-                />
-              </label>
-            </div>
-
-            <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-              Public base URL
-              <input
-                className="us-input mt-2"
-                defaultValue={publicBaseUrl}
-                name="publicBaseUrl"
-                placeholder="https://studio.example.com"
-                type="url"
-              />
-              <span className="mt-1 block text-xs" style={{ color: 'var(--us-muted)' }}>
-                Set with <code>NEXT_PUBLIC_APP_URL</code> / <code>PUBLIC_BASE_URL</code>; this field overrides them.
-              </span>
-            </label>
-
-            <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-              LiveKit public URL
-              <input
-                className="us-input mt-2"
-                defaultValue={livekitPublicUrl}
-                name="livekitPublicUrl"
-                placeholder="wss://livekit.example.com"
-              />
-              <span className="mt-1 block text-xs" style={{ color: 'var(--us-muted)' }}>
-                The browser-reachable LiveKit WebSocket URL. Set with <code>LIVEKIT_URL</code> or this field.
-              </span>
-            </label>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-                Default token expiry, seconds
-                <input
-                  className="us-input mt-2"
-                  defaultValue={settings.defaultTokenExpiry ?? 3600}
-                  min={300}
-                  name="defaultTokenExpiry"
-                  type="number"
-                />
-              </label>
-
-              <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-                Default QR style
-                <select
-                  className="us-input mt-2"
-                  defaultValue={settings.defaultQrStyle ?? 'ablaut-default'}
-                  name="defaultQrStyle"
+          <SettingsPanel hint="Applies to every organization on this server." title="Site">
+            <form action={updateSiteSettingsAction} className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-12">
+                <Field className="md:col-span-6" label="Site name">
+                  <input className="us-input" defaultValue={settings.siteName ?? 'ablaut'} name="siteName" />
+                </Field>
+                <Field className="md:col-span-6" label="Support email">
+                  <input
+                    className="us-input"
+                    defaultValue={settings.supportEmail ?? ''}
+                    name="supportEmail"
+                    placeholder="support@example.com"
+                    type="email"
+                  />
+                </Field>
+                <Field
+                  className="md:col-span-6"
+                  hint="Overrides NEXT_PUBLIC_APP_URL / PUBLIC_BASE_URL. QR codes follow the address the app was opened with."
+                  label="Public base URL"
                 >
-                  <option value="ablaut-default">ablaut default</option>
-                  <option value="high-contrast">High Contrast</option>
-                </select>
-              </label>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <label
-                className="flex items-center gap-3 rounded-2xl border bg-white px-4 py-3 text-sm font-medium"
-                style={{ borderColor: 'var(--us-border)', color: 'var(--us-text)' }}
-              >
-                <input defaultChecked={settings.allowPublicListenerPages ?? true} name="allowPublicListenerPages" type="checkbox" />
-                Allow public listener pages
-              </label>
-
-              <label
-                className="flex items-center gap-3 rounded-2xl border bg-white px-4 py-3 text-sm font-medium"
-                style={{ borderColor: 'var(--us-border)', color: 'var(--us-text)' }}
-              >
-                <input defaultChecked={settings.requireEmailVerification ?? true} name="requireEmailVerification" type="checkbox" />
-                Require email verification
-              </label>
-            </div>
-
-            <button className="us-button-primary px-5 py-3 text-sm font-medium" type="submit">
-              Save settings
-            </button>
-          </form>
+                  <input
+                    className="us-input"
+                    defaultValue={publicBaseUrl}
+                    name="publicBaseUrl"
+                    placeholder="https://studio.example.com"
+                    type="url"
+                  />
+                </Field>
+                <Field
+                  className="md:col-span-6"
+                  hint="The LiveKit WebSocket address browsers and the app connect to. Overrides LIVEKIT_URL."
+                  label="LiveKit public URL"
+                >
+                  <input
+                    className="us-input"
+                    defaultValue={livekitPublicUrl}
+                    name="livekitPublicUrl"
+                    placeholder="wss://livekit.example.com"
+                  />
+                </Field>
+                <Field className="md:col-span-6" hint="Minimum 300." label="Token expiry (seconds)">
+                  <input
+                    className="us-input"
+                    defaultValue={settings.defaultTokenExpiry ?? 3600}
+                    min={300}
+                    name="defaultTokenExpiry"
+                    type="number"
+                  />
+                </Field>
+                <Field className="md:col-span-6" label="QR style">
+                  <select className="us-input" defaultValue={settings.defaultQrStyle ?? 'ablaut-default'} name="defaultQrStyle">
+                    <option value="ablaut-default">ablaut default</option>
+                    <option value="high-contrast">High contrast</option>
+                  </select>
+                </Field>
+              </div>
+              <div>
+                <SwitchField
+                  defaultChecked={settings.allowPublicListenerPages ?? true}
+                  label="Public listener pages"
+                  name="allowPublicListenerPages"
+                />
+                <SwitchField
+                  defaultChecked={settings.requireEmailVerification ?? true}
+                  label="Require email verification"
+                  name="requireEmailVerification"
+                />
+              </div>
+              <button className="us-button-primary px-4 py-2 text-sm font-medium" type="submit">
+                Save
+              </button>
+            </form>
+          </SettingsPanel>
         ) : null}
 
         {manageableOrganizations.length === 1 ? (
-          <div>
-            <OrganizationSettingsPanel canDelete={false} organization={manageableOrganizations[0]} />
-          </div>
+          <OrganizationSettingsPanel canDelete={false} organization={manageableOrganizations[0]} />
         ) : manageableOrganizations.length > 1 ? (
-          <article className="us-panel px-6 py-6">
-            <span className="us-chip us-chip-muted">Organizations</span>
-            <h2 className="mt-4 text-2xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
-              Multiple organizations
-            </h2>
-            <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              You manage {manageableOrganizations.length} organizations.
-            </p>
-            <Link className="us-button-primary mt-5 inline-flex px-4 py-2.5 text-sm font-medium" href="/organizations">
-              Open organizations
-            </Link>
-          </article>
+          <SettingsPanel
+            actions={
+              <Link className="us-button-secondary px-3 py-1.5 text-sm font-medium" href="/organizations">
+                Organizations
+              </Link>
+            }
+            hint={`You manage ${manageableOrganizations.length} organizations. Each has its own settings.`}
+            title="Organizations"
+          />
         ) : null}
 
         {showPayloadAdmin && settings ? (
-          <article className="us-panel px-6 py-6">
-            <span className="us-chip us-chip-muted">Mobile app</span>
-            <h2 className="mt-4 text-2xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
-              Android listener app footer
-            </h2>
-            <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              The site footer shows the latest Android release with a QR code pointing to this server&apos;s download
-              redirect. Metadata syncs from GitHub Releases on startup and can be refreshed with{' '}
-              <code>npm run sync:mobile-app</code>.
-            </p>
-            <dl className="mt-5 grid gap-3 text-sm md:grid-cols-2">
-              <div>
-                <dt style={{ color: 'var(--us-muted)' }}>Latest version</dt>
-                <dd className="font-medium" style={{ color: 'var(--us-text)' }}>
-                  {settings.mobileAppLatestVersion || 'Not synced yet'}
-                </dd>
-              </div>
-              <div>
-                <dt style={{ color: 'var(--us-muted)' }}>Git tag</dt>
-                <dd className="font-medium" style={{ color: 'var(--us-text)' }}>
-                  {settings.mobileAppLatestTag || '—'}
-                </dd>
-              </div>
-              <div>
-                <dt style={{ color: 'var(--us-muted)' }}>Last synced</dt>
-                <dd className="font-medium" style={{ color: 'var(--us-text)' }}>
-                  {settings.mobileAppLastSyncedAt ? new Date(settings.mobileAppLastSyncedAt).toLocaleString() : '—'}
-                </dd>
-              </div>
-              <div>
-                <dt style={{ color: 'var(--us-muted)' }}>GitHub repo</dt>
-                <dd className="font-medium" style={{ color: 'var(--us-text)' }}>
-                  {settings.mobileAppGithubRepo || 'silvansan/ablaut-App'}
-                </dd>
-              </div>
+          <SettingsPanel
+            hint="Shown in the footer with a download QR. Synced from GitHub Releases on startup, or with npm run sync:mobile-app."
+            title="Android app"
+          >
+            <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                ['Version', settings.mobileAppLatestVersion || 'Not synced yet'],
+                ['Tag', settings.mobileAppLatestTag || '—'],
+                [
+                  'Last synced',
+                  settings.mobileAppLastSyncedAt ? new Date(settings.mobileAppLastSyncedAt).toLocaleString() : '—',
+                ],
+                ['Repository', settings.mobileAppGithubRepo || 'silvansan/ablaut-App'],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <dt className="text-xs" style={{ color: 'var(--us-muted)' }}>
+                    {label}
+                  </dt>
+                  <dd className="inline-flex items-center gap-1.5 font-medium" style={{ color: 'var(--us-text)' }}>
+                    {label === 'Version' ? <AndroidIcon /> : null}
+                    {value}
+                  </dd>
+                </div>
+              ))}
             </dl>
-          </article>
+          </SettingsPanel>
         ) : null}
 
         {canTransferConfig ? (
-          <CollapsiblePanel
-            description="Export or import events, channels, organizations, users, and assignments. Password hashes only — never plain secrets."
-            title="Data import / export"
-          >
-            <p className="text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              Export or import configuration as JSON. Full config includes organizations, memberships, users, events (with
-              organization slug), channels, and event assignments. Speaker/listener passwords transfer only as stored
-              hashes. User passwords and secrets are never exported; imported users must activate or reset their password.
-            </p>
-
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link className="us-button-secondary px-4 py-2.5 text-sm font-medium" href="/api/config/export?scope=events">
-                Export events
-              </Link>
-              <Link className="us-button-secondary px-4 py-2.5 text-sm font-medium" href="/api/config/export?scope=channels">
-                Export channels
-              </Link>
-              {showPayloadAdmin ? (
-                <Link className="us-button-primary px-4 py-2.5 text-sm font-medium" href="/api/config/export?scope=full">
-                  Export full config
+          <SettingsPanel
+            actions={
+              <>
+                <Link className="us-button-secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium" href="/api/config/export?scope=events">
+                  <DownloadIcon />
+                  Events
                 </Link>
-              ) : null}
-            </div>
-
-            <form action={importConfigAction} className="mt-6 grid gap-4 lg:grid-cols-[220px_1fr_auto] lg:items-end">
-              <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-                Import scope
-                <select
-                  className="us-input mt-2"
-                  name="scope"
-                >
+                <Link className="us-button-secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium" href="/api/config/export?scope=channels">
+                  <DownloadIcon />
+                  Channels
+                </Link>
+                {showPayloadAdmin ? (
+                  <Link className="us-button-secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium" href="/api/config/export?scope=full">
+                    <DownloadIcon />
+                    Full config
+                  </Link>
+                ) : null}
+              </>
+            }
+            hint="JSON export and import of organizations, members, users, events, channels and team assignments. Speaker and listener passwords move only as hashes; user passwords never leave the server, so imported users set a new one."
+            title="Import / export"
+          >
+            <form action={importConfigAction} className="grid gap-3 md:grid-cols-12 md:items-end">
+              <Field className="md:col-span-3" label="Import">
+                <select className="us-input" name="scope">
                   <option value="events">Events</option>
                   <option value="channels">Channels</option>
                   {showPayloadAdmin ? <option value="full">Full config</option> : null}
                 </select>
-              </label>
-              <label className="block text-sm font-medium" style={{ color: 'var(--us-text)' }}>
-                Config JSON
-                <input
-                  accept="application/json,.json"
-                  className="us-input mt-2"
-                  name="configFile"
-                  required
-                  type="file"
-                />
-              </label>
-              <button className="us-button-primary px-5 py-3 text-sm font-medium" type="submit">
-                Import config
+              </Field>
+              <Field className="md:col-span-7" label="JSON file">
+                <input accept="application/json,.json" className="us-input" name="configFile" required type="file" />
+              </Field>
+              <button className="us-button-primary px-4 py-2 text-sm font-medium md:col-span-2" type="submit">
+                Import
               </button>
             </form>
-          </CollapsiblePanel>
+          </SettingsPanel>
         ) : null}
 
         {showPayloadAdmin ? (
-          <article className="us-panel px-6 py-6">
-            <span className="us-chip us-chip-muted">Advanced</span>
-            <h2 className="mt-4 text-2xl font-semibold tracking-tight" style={{ color: 'var(--us-green-dark)' }}>
-              Payload back office
-            </h2>
-            <p className="mt-3 text-sm leading-7" style={{ color: 'var(--us-muted)' }}>
-              Raw collections, globals, and fields not surfaced here. Super admins only.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link className="us-button-secondary px-4 py-2.5 text-sm font-medium" href="/admin/globals/site-settings">
-                Site settings in Payload
-              </Link>
-              <Link className="us-button-secondary px-4 py-2.5 text-sm font-medium" href="/admin">
-                Open Payload admin
-              </Link>
-            </div>
-          </article>
+          <SettingsPanel
+            actions={
+              <>
+                <Link className="us-button-secondary px-3 py-1.5 text-sm font-medium" href="/admin/globals/site-settings">
+                  Site settings
+                </Link>
+                <Link className="us-button-secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium" href="/admin">
+                  <OpenLinkIcon />
+                  Payload admin
+                </Link>
+              </>
+            }
+            hint="Raw collections and fields not shown in this app. Super admins only."
+            title="Back office"
+          />
         ) : null}
       </div>
     </Layout>
