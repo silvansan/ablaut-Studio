@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Children, useId, type CSSProperties, type ReactNode } from 'react'
+import { Fragment, useId, type CSSProperties, type ReactNode } from 'react'
 
 import { ArrowRightIcon, PencilIcon, TrashIcon } from '@/components/ActionIcons'
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton'
@@ -170,12 +170,18 @@ export function Chip({ children, className = '', dot, icon, title, tone }: ChipP
 
 /**
  * Lays chips out in fixed columns (`columns` is a CSS grid-template-columns value, e.g. "12rem 6rem").
- * Pass `null` for a chip that does not apply to keep the others aligned. Wraps on small screens.
+ * Pass `null` for a chip that does not apply to keep the others aligned, and `false` for a column
+ * that is not shown at all (drop it from `columns` too). Wraps on small screens.
  */
 export function ChipGrid({ children, columns }: { children: ReactNode; columns: string }) {
+  // Read the direct children rather than via Children.map, which turns `false` into `null`.
+  const cells = (Array.isArray(children) ? children : [children]) as ReactNode[]
+
   return (
     <div className="us-chip-grid" style={{ '--cols': columns } as CSSProperties}>
-      {Children.map(children, (child) => child ?? <span />)}
+      {cells.map((cell, index) =>
+        cell === false ? null : <Fragment key={index}>{cell ?? <span />}</Fragment>,
+      )}
     </div>
   )
 }

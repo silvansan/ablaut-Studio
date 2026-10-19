@@ -178,7 +178,7 @@ export function UsersHubTable({
               <ListRow
                 actions={<OpenIconButton href={`/users/${entry.userId}`} label={`Open ${entry.userName}`} />}
                 chips={
-                  <ChipGrid columns={showOrganizationColumn ? '12rem 6.5rem 7.5rem' : '6.5rem 7.5rem'}>
+                  <ChipGrid columns={showOrganizationColumn ? '12rem 6.5rem 8.5rem' : '6.5rem 8.5rem'}>
                     {showOrganizationColumn ? (
                       entry.organizationName && entry.organizationSlug ? (
                         <Link
@@ -201,7 +201,7 @@ export function UsersHubTable({
                           <span className="truncate">None</span>
                         </Link>
                       )
-                    ) : null}
+                    ) : false}
                     <Chip
                       className="capitalize"
                       icon={<ShieldIcon />}
